@@ -471,6 +471,9 @@ fabric.properties
 .idea/httpRequests
 .idea/caches/build_file_checksums.ser
 /EduConnect.Business/obj
-/EduConnect.Application/obj
-/EduConnect.DataAccess/Migrations
+/EduConnectApplication/obj
+/EduConnect.Domain/obj
+/EduConnect.Infrastruture/obj
+/EduConnect.Presentation/obj
+
 /EduConnect.Presentation/appsettings.json
