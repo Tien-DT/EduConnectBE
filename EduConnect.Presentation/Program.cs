@@ -71,7 +71,7 @@ namespace EduConnect.Presentation
                     RequireExpirationTime = false,
                     ValidAudience = config["JwtSettings:Audience"],
                     ValidIssuer = config["JwtSettings:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecrectKey"]!))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!))
                 };
             });
             var app = builder.Build();

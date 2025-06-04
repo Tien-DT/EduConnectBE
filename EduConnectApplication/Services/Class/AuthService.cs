@@ -102,7 +102,7 @@ namespace EduConnect.Application.Services.Class
                 new Claim(ClaimTypes.Role, account.RoleId.ToString())
             };
 
-                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecrectKey"]!));
+                var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!));
                 var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
 
                 var tokenDescriptor = new JwtSecurityToken(
