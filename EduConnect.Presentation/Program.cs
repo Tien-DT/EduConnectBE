@@ -1,6 +1,7 @@
 using EduConnect.Application.Services.Class;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Domain.Context;
+using EduConnect.Infrastruture.Options;
 using EduConnect.Infrastruture.Repositories.Class;
 using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -17,8 +18,11 @@ namespace EduConnect.Presentation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
+            builder.Services.AddCors();
+
             builder.Services.AddSwaggerGen(opt =>
             {
                 opt.SwaggerDoc("v1", new OpenApiInfo { Title = "EduConnect", Version = "v1" });
@@ -46,13 +50,22 @@ namespace EduConnect.Presentation
                     }
                 });
             });
+            builder.Services.Configure<GeminiOption>(builder.Configuration.GetSection("GeminiApi"));
+            builder.Services.AddMemoryCache();
+
+            builder.Services.AddHttpClient();
+            builder.Services.AddScoped<IChatBotService, ChatBotService>();
+            builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+
             var connectionString = builder.Configuration.GetConnectionString("EduConnectDb");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
+
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
                 options.TokenLifespan = TimeSpan.FromMinutes(5));
+
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
@@ -74,7 +87,15 @@ namespace EduConnect.Presentation
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!))
                 };
             });
+
             var app = builder.Build();
+
+            app.UseCors(option => option
+                .AllowAnyOrigin()
+                .AllowAnyMethod()
+                .AllowAnyHeader()
+                .WithExposedHeaders("Content-Disposition"));
+
             if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
             {
                 app.UseSwagger();
@@ -84,9 +105,7 @@ namespace EduConnect.Presentation
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();
-
             app.MapControllers();
-
             app.Run();
         }
     }
