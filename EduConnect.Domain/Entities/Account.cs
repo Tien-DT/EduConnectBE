@@ -18,4 +18,6 @@ public partial class Account
     public string? RefreshToken { get; set; }
 
     public DateTime? RefreshTokenExpTime { get; set; }
+
+    public virtual ICollection<Principal> Principals { get; set; } = new List<Principal>();
 }
