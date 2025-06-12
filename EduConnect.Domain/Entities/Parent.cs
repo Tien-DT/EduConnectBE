@@ -15,5 +15,7 @@ public partial class Parent
 
     public virtual ICollection<Feedback> Feedbacks { get; set; } = new List<Feedback>();
 
+    public virtual Account ParentNavigation { get; set; } = null!;
+
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
 }

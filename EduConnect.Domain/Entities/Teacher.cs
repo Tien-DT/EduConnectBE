@@ -17,5 +17,7 @@ public partial class Teacher
 
     public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 
+    public virtual Account TeacherNavigation { get; set; } = null!;
+
     public virtual ICollection<Timetable> Timetables { get; set; } = new List<Timetable>();
 }

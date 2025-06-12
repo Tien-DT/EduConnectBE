@@ -9,9 +9,9 @@ public partial class Principal
 
     public string? FullName { get; set; }
 
+    public string? Email { get; set; }
+
     public string? Phone { get; set; }
 
-    public Guid AccountId { get; set; }
-
-    public virtual Account Account { get; set; } = null!;
+    public virtual Account PrincipalNavigation { get; set; } = null!;
 }

@@ -5,19 +5,31 @@ namespace EduConnect.Domain.Entities;
 
 public partial class Account
 {
-    public Guid AccountId { get; set; }
+    public int AccountId { get; set; }
 
-    public string FullName { get; set; } = null!;
+    public string? Username { get; set; }
 
-    public string PasswordHash { get; set; } = null!;
+    public string? Password { get; set; }
 
-    public string Email { get; set; } = null!;
+    public string? Email { get; set; }
 
-    public int? RoleId { get; set; }
+    public int RoleId { get; set; }
+
+    public string? FullName { get; set; }
+
+    public string? PasswordHash { get; set; }
 
     public string? RefreshToken { get; set; }
 
     public DateTime? RefreshTokenExpTime { get; set; }
 
-    public virtual ICollection<Principal> Principals { get; set; } = new List<Principal>();
+    public virtual Parent? Parent { get; set; }
+
+    public virtual Principal? Principal { get; set; }
+
+    public virtual Role Role { get; set; } = null!;
+
+    public virtual Student? Student { get; set; }
+
+    public virtual Teacher? Teacher { get; set; }
 }

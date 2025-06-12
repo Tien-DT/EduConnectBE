@@ -17,9 +17,13 @@ public partial class Student
 
     public int ParentId { get; set; }
 
+    public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
+
     public virtual Class Class { get; set; } = null!;
 
     public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 
     public virtual Parent Parent { get; set; } = null!;
+
+    public virtual Account StudentNavigation { get; set; } = null!;
 }
