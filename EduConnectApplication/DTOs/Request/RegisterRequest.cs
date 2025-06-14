@@ -18,5 +18,8 @@ namespace EduConnect.Application.DTOs.Request
 
         [Required(ErrorMessage = "Please input Password!")]
         public string? Password { get; set; }
+
+        [Required(ErrorMessage = "Please input Role!")]
+        public int? Role { get; set; }
     }
 }

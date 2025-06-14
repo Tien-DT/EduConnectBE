@@ -78,7 +78,7 @@ namespace EduConnect.Application.Services.Class
                 account.Email = register.Email;
                 account.FullName = register.FullName;
                 account.PasswordHash = hashedPassword;
-                account.RoleId = 1;
+                account.RoleId = register.Role;
 
                 await _authRepository.AddAccountAsync(account);
                 await _authRepository.SaveChangesAsync();
