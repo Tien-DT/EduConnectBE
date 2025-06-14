@@ -3,21 +3,15 @@ using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
 using Microsoft.EntityFrameworkCore;
-using IndexAttribute = Microsoft.EntityFrameworkCore.IndexAttribute;
 
 namespace EduConnect.Domain.Entities;
 
 [Table("Account")]
-[Index("Username", Name = "UQ__Account__536C85E44D7B6C8C", IsUnique = true)]
 public partial class Account
 {
     [Key]
     [Column("AccountID")]
     public Guid AccountId { get; set; }
-
-    [StringLength(50)]
-    [Unicode(false)]
-    public string? Username { get; set; }
 
     [StringLength(100)]
     [Unicode(false)]
