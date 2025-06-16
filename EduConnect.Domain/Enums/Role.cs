@@ -8,7 +8,7 @@ namespace EduConnect.Domain.Enums
 {
     public enum Role
     {
-        Admin,
+        User,
         Teacher,
         Student,
         Parent

@@ -1,15 +1,21 @@
 using EduConnect.Application.Services.Class;
 using EduConnect.Application.Services.Interface;
-using EduConnect.Domain.Context;
+using EduConnect.Data;
+using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Options;
 using EduConnect.Infrastruture.Repositories.Class;
 using EduConnect.Infrastruture.Repositories.Interface;
+using EduConnect.Infrastruture.UnitOfWork.Class;
+using EduConnect.Infrastruture.UnitOfWork.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
+using System.Security.Claims;
 using System.Text;
+using AutoMapper;
+using EduConnect.Application.Mapping;
 
 namespace EduConnect.Presentation
 {
@@ -58,24 +64,41 @@ namespace EduConnect.Presentation
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
+            builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDb");
+            builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
+
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbAzure");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
             builder.Services.Configure<DataProtectionTokenProviderOptions>(options =>
                 options.TokenLifespan = TimeSpan.FromMinutes(5));
+            builder.Services.AddIdentity<ApplicationUser, IdentityRole>(options =>
+            {
+                options.Password.RequireDigit = true;
+                options.Password.RequiredLength = 8;
+                options.Password.RequireNonAlphanumeric = true;
+                options.Password.RequireUppercase = true;
+                options.Password.RequireLowercase = true;
+                options.Password.RequiredUniqueChars = 1;
+            })
+                            .AddDefaultTokenProviders()
+                            .AddTokenProvider<DataProtectorTokenProvider<ApplicationUser>>("EduConnect")
+                            .AddEntityFrameworkStores<EduConnectDbContext>();
 
             builder.Services.AddAuthentication(options =>
             {
                 options.DefaultAuthenticateScheme = JwtBearerDefaults.AuthenticationScheme;
                 options.DefaultChallengeScheme = JwtBearerDefaults.AuthenticationScheme;
+                options.DefaultScheme = JwtBearerDefaults.AuthenticationScheme;
             }).AddJwtBearer(options =>
             {
                 var config = builder.Configuration;
+                options.SaveToken = true;
                 options.RequireHttpsMetadata = false;
                 options.UseSecurityTokenValidators = true;
-                options.TokenValidationParameters = new TokenValidationParameters
+                options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
                     ClockSkew = TimeSpan.Zero,
                     ValidateIssuerSigningKey = true,
@@ -84,7 +107,8 @@ namespace EduConnect.Presentation
                     RequireExpirationTime = false,
                     ValidAudience = config["JwtSettings:Audience"],
                     ValidIssuer = config["JwtSettings:Issuer"],
-                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!))
+                    IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!)),
+                    RoleClaimType = "role"
                 };
             });
 
@@ -96,12 +120,9 @@ namespace EduConnect.Presentation
                 .AllowAnyHeader()
                 .WithExposedHeaders("Content-Disposition"));
 
-            if (app.Environment.IsDevelopment() || app.Environment.IsProduction())
-            {
-                app.UseSwagger();
-                app.UseSwaggerUI();
-            }
-
+            app.UseSwagger();
+            app.UseSwaggerUI();
+           
             app.UseHttpsRedirection();
             app.UseAuthentication();
             app.UseAuthorization();

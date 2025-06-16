@@ -2,47 +2,40 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
 
 namespace EduConnect.Domain.Entities;
 
-[Table("Timetable")]
 public partial class Timetable
 {
     [Key]
-    [Column("TimetableID")]
-    public int TimetableId { get; set; }
+    public int TimetableID { get; set; }
 
-    [Column("ClassID")]
-    public int ClassId { get; set; }
+    public int ClassID { get; set; }
 
-    [Column("TeacherID")]
-    public int TeacherId { get; set; }
+    public int TeacherID { get; set; }
 
+    [Required]
     [StringLength(100)]
-    [Unicode(false)]
-    public string Subject { get; set; } = null!;
+    public string Subject { get; set; } = string.Empty;
 
+    [Required]
     [StringLength(20)]
-    [Unicode(false)]
-    public string DayOfWeek { get; set; } = null!;
+    public string DayOfWeek { get; set; } = string.Empty;
 
-    public TimeOnly StartTime { get; set; }
+    [Required]
+    public TimeSpan StartTime { get; set; }
 
-    public TimeOnly EndTime { get; set; }
+    [Required]
+    public TimeSpan EndTime { get; set; }
 
     [StringLength(50)]
-    [Unicode(false)]
     public string? Room { get; set; }
 
-    [ForeignKey("ClassId")]
-    [InverseProperty("Timetables")]
+    [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;
 
-    [InverseProperty("Timetable")]
-    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
-
-    [ForeignKey("TeacherId")]
-    [InverseProperty("Timetables")]
+    [ForeignKey("TeacherID")]
     public virtual Teacher Teacher { get; set; } = null!;
+
+    public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }

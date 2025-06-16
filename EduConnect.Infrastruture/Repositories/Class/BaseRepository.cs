@@ -1,4 +1,4 @@
-﻿using EduConnect.Domain.Context;
+﻿using EduConnect.Data;
 using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
