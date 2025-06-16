@@ -8,10 +8,11 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class RegisterResponse
     {
-            public string Email { get; set; } = null!;
-            public int RoleId { get; set; }
-        }
+        public string Email { get; set; } = null!;
+        public string FirstName { get; set; } = null!;
+        public string LastName { get; set; } = null!;
     }
+}
 
 
 

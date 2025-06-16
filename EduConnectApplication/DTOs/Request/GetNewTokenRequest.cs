@@ -8,7 +8,7 @@ namespace EduConnect.Application.DTOs.Request
 {
     public class GetNewTokenRequest
     {
-        public required Guid AccountId { get; set; } 
+        public required string AccountId { get; set; } = null!;
         public required string RefreshToken { get; set; } = null!;
     }
 }

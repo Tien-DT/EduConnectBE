@@ -2,30 +2,21 @@
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-using Microsoft.EntityFrameworkCore;
-using IndexAttribute = Microsoft.EntityFrameworkCore.IndexAttribute;
 
 namespace EduConnect.Domain.Entities;
 
-[Table("ClassTeacher")]
-[Index("ClassId", "TeacherId", Name = "UQ_ClassTeacher", IsUnique = true)]
 public partial class ClassTeacher
 {
     [Key]
-    [Column("ID")]
-    public int Id { get; set; }
+    public int ID { get; set; }
 
-    [Column("ClassID")]
-    public int ClassId { get; set; }
+    public int ClassID { get; set; }
 
-    [Column("TeacherID")]
-    public int TeacherId { get; set; }
+    public int TeacherID { get; set; }
 
-    [ForeignKey("ClassId")]
-    [InverseProperty("ClassTeachers")]
+    [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;
 
-    [ForeignKey("TeacherId")]
-    [InverseProperty("ClassTeachers")]
+    [ForeignKey("TeacherID")]
     public virtual Teacher Teacher { get; set; } = null!;
 }
