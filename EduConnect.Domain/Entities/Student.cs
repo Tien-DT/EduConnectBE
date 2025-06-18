@@ -8,14 +8,14 @@ namespace EduConnect.Domain.Entities;
 public partial class Student
 {
     [Key]
-    public int StudentID { get; set; }
+    public string StudentID { get; set; } = string.Empty;
 
     [Required]
     public string AccountID { get; set; } = string.Empty;
 
-    public int ParentID { get; set; }
+    public string ParentID { get; set; } = string.Empty;
 
-    public int ClassID { get; set; }
+    public int ClassID { get; set; } 
 
     [StringLength(100)]
     public string? FullName { get; set; }
@@ -36,4 +36,5 @@ public partial class Student
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
+    public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
 }

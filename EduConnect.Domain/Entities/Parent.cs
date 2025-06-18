@@ -8,7 +8,7 @@ namespace EduConnect.Domain.Entities;
 public partial class Parent
 {
     [Key]
-    public int ParentID { get; set; }
+    public string ParentID { get; set; } = string.Empty;
 
     [Required]
     public string AccountID { get; set; } = string.Empty;

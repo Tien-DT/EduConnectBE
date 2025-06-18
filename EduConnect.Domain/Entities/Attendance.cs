@@ -12,7 +12,7 @@ public partial class Attendance
 
     public int LessonID { get; set; }
 
-    public int StudentID { get; set; }
+    public string StudentID { get; set; } = string.Empty;
 
     public bool? IsPresent { get; set; }
 

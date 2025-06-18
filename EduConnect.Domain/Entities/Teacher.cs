@@ -8,7 +8,7 @@ namespace EduConnect.Domain.Entities;
 public partial class Teacher
 {
     [Key]
-    public int TeacherID { get; set; }
+    public string TeacherID { get; set; } = string.Empty;
 
     [Required]
     public string AccountID { get; set; } = string.Empty;

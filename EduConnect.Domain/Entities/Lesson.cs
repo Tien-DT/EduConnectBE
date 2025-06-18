@@ -10,18 +10,17 @@ public partial class Lesson
     [Key]
     public int LessonID { get; set; }
 
-    public int ClassID { get; set; }
+    public int ClassID { get; set; } 
 
-    public int TeacherID { get; set; }
+    public string TeacherID { get; set; } = string.Empty;
 
     public int TimetableID { get; set; }
 
     [Required]
-    [StringLength(100)]
-    public string Subject { get; set; } = string.Empty;
+    public DateTime Date { get; set; }
 
     [Required]
-    public DateTime Date { get; set; }
+    public int SubjectId { get; set; }
 
     [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;
@@ -31,6 +30,9 @@ public partial class Lesson
 
     [ForeignKey("TimetableID")]
     public virtual Timetable Timetable { get; set; } = null!;
+
+    [ForeignKey("SubjectId")]
+    public virtual Subject Subject { get; set; } = null!;
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();

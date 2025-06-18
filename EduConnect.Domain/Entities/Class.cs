@@ -7,7 +7,7 @@ namespace EduConnect.Domain.Entities;
 public partial class Class
 {
     [Key]
-    public int ClassID { get; set; }
+    public int ClassID { get; set; } 
 
     [StringLength(50)]
     public string? ClassName { get; set; }

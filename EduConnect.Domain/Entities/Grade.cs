@@ -10,7 +10,7 @@ public partial class Grade
     [Key]
     public int GradeID { get; set; }
 
-    public int StudentID { get; set; }
+    public string StudentID { get; set; } = string.Empty;
 
     public int LessonID { get; set; }
 

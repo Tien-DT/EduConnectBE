@@ -12,7 +12,7 @@ public partial class Timetable
 
     public int ClassID { get; set; }
 
-    public int TeacherID { get; set; }
+    public string TeacherID { get; set; } = string.Empty; 
 
     [Required]
     [StringLength(100)]

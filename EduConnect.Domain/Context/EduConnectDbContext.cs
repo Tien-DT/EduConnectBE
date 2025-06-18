@@ -9,6 +9,7 @@ namespace EduConnect.Data
         public EduConnectDbContext(DbContextOptions<EduConnectDbContext> options) : base(options)
         {
         }
+
         public DbSet<ApplicationUser> ApplicationUsers { get; set; }
         public DbSet<Class> Classes { get; set; }
         public DbSet<Student> Students { get; set; }
@@ -23,10 +24,14 @@ namespace EduConnect.Data
         public DbSet<LessonReport> LessonReports { get; set; }
         public DbSet<Feedback> Feedbacks { get; set; }
         public DbSet<RefreshToken> RefreshTokens { get; set; }
+        public DbSet<Exam> Exams { get; set; }
+        public DbSet<Subject> Subjects { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
+
+            // Table Mappings
             modelBuilder.Entity<Class>().ToTable("Class");
             modelBuilder.Entity<Student>().ToTable("Student");
             modelBuilder.Entity<Teacher>().ToTable("Teacher");
@@ -40,6 +45,15 @@ namespace EduConnect.Data
             modelBuilder.Entity<LessonReport>().ToTable("LessonReport");
             modelBuilder.Entity<Feedback>().ToTable("Feedback");
             modelBuilder.Entity<RefreshToken>().ToTable("RefreshToken");
+            modelBuilder.Entity<Exam>().ToTable("Exam");
+            modelBuilder.Entity<Subject>().ToTable("Subject");
+
+            // Unique Indexes
+            modelBuilder.Entity<Subject>()
+                .HasIndex(s => s.SubjectCode)
+                .HasName("UQ_Subject_Code")
+                .IsUnique();
+
             modelBuilder.Entity<ClassTeacher>()
                 .HasIndex(ct => new { ct.ClassID, ct.TeacherID })
                 .HasName("UQ_ClassTeacher")
@@ -56,14 +70,11 @@ namespace EduConnect.Data
                 .IsUnique();
 
             modelBuilder.Entity<Lesson>()
-                .HasIndex(l => new { l.ClassID, l.Subject, l.Date, l.TeacherID })
+                .HasIndex(l => new { l.ClassID, l.SubjectId, l.Date, l.TeacherID })
                 .HasName("UQ_Lesson")
                 .IsUnique();
 
-            modelBuilder.Entity<RefreshToken>()
-                .Property(rt => rt.RefreshTokenValue)
-                .HasColumnName("RefreshToken");
-
+            // Foreign Key Relationships and Constraints
             modelBuilder.Entity<Student>()
                 .HasOne(s => s.Account)
                 .WithOne(u => u.Student)
@@ -150,6 +161,24 @@ namespace EduConnect.Data
                 .HasOne(g => g.Lesson)
                 .WithMany(l => l.Grades)
                 .HasForeignKey(g => g.LessonID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Exam>()
+                .HasOne(e => e.Subject)
+                .WithMany(s => s.Exams)
+                .HasForeignKey(e => e.SubjectId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Exam>()
+                .HasOne(e => e.Student)
+                .WithMany(s => s.Exams)
+                .HasForeignKey(e => e.StudentID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Lesson>()
+                .HasOne(l => l.Subject)
+                .WithMany(s => s.Lessons)
+                .HasForeignKey(l => l.SubjectId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

@@ -8,7 +8,7 @@ namespace EduConnect.Domain.Entities;
 public partial class Principal
 {
     [Key]
-    public int PrincipalID { get; set; }
+    public string PrincipalID { get; set; } = string.Empty;
 
     [Required]
     public string AccountID { get; set; } = string.Empty;

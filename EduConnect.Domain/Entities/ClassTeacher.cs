@@ -12,7 +12,7 @@ public partial class ClassTeacher
 
     public int ClassID { get; set; }
 
-    public int TeacherID { get; set; }
+    public string TeacherID { get; set; } = string.Empty;
 
     [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;

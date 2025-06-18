@@ -10,7 +10,7 @@ public partial class Feedback
     [Key]
     public int FeedbackID { get; set; }
 
-    public int ParentID { get; set; }
+    public string ParentID { get; set; } = string.Empty;
 
     [Column(TypeName = "text")]
     public string? Content { get; set; }
