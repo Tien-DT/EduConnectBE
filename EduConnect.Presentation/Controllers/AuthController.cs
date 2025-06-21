@@ -56,6 +56,23 @@ namespace EduConnect.Presentation.Controllers
             return Ok(response);
         }
 
+        [HttpPost("login-with-google")]
+        public async Task<IActionResult> LoginWithGoogle(GoogleLoginRequest login)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            var response = await _authService.LoginWithGoogleAsync(login);
+            if (!response.Success)
+            {
+                return BadRequest(response);
+            }
+            return Ok(response);
+
+        }
+
+
         [HttpGet("checkauthor")]
         public IActionResult CheckAuthor()
         {

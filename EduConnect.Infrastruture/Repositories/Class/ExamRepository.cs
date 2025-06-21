@@ -1,0 +1,18 @@
+﻿using EduConnect.Data;
+using EduConnect.Domain.Entities;
+using EduConnect.Infrastruture.Repositories.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EduConnect.Infrastruture.Repositories.Class
+{
+    public class ExamRepository : BaseRepository<Exam, int>, IExamRepository
+    {
+        public ExamRepository(EduConnectDbContext eduConnectDbContext) : base(eduConnectDbContext)
+        {
+        }
+    }
+}

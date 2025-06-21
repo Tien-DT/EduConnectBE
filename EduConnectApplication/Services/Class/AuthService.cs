@@ -2,9 +2,12 @@
 using EduConnect.Application.DTOs.Response;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Domain.Entities;
+using EduConnect.Domain.Enums;
 using EduConnect.Infrastruture.Repositories.Interface;
+using Google.Apis.Auth;
 using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
+using Microsoft.Win32;
 using System;
 using System.Collections.Generic;
 using System.IdentityModel.Tokens.Jwt;
@@ -13,7 +16,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using EduConnect.Domain.Enums;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -308,6 +310,79 @@ namespace EduConnect.Application.Services.Class
             }
 
             return await _authRepository.GetUserByIdAsync(userId);
+        }
+
+        public async Task<ApiResponse<LoginResponse>> LoginWithGoogleAsync(GoogleLoginRequest login)
+        {
+            var settings = new GoogleJsonWebSignature.ValidationSettings()
+            {
+                Audience = new[] { "668880851511-s0p1n6k2j1bhbfrerk3ip32ms2udg9dn.apps.googleusercontent.com" }
+            };
+
+            var payload = await GoogleJsonWebSignature.ValidateAsync(login.IdToken, settings);
+
+            if (payload == null)
+            {
+                return ApiResponse<LoginResponse>.ErrorResponse(
+                    new List<string> { "Invalid Google token." },
+                    "Login Failed"
+                );
+            }
+
+            var existingAccount = await _authRepository.FindByEmailAsync(payload.Email);
+            if(existingAccount != null)
+            {
+                var tokenRes = await GenerateToken(existingAccount);
+                return ApiResponse<LoginResponse>.SuccessResponse(
+                    new LoginResponse
+                    {
+                        Token = tokenRes,
+                        RefreshToken = await SaveRefreshToken(existingAccount)
+                    },
+                    "Google Login Succeeded"
+                );
+            }
+
+            var account = new ApplicationUser
+            {
+                Id = Guid.NewGuid().ToString(),
+                Email = payload.Email,
+                UserName = payload.Email,
+                NormalizedEmail = payload.Email.ToUpperInvariant(),
+                NormalizedUserName = payload.Email.ToUpperInvariant(),
+                FirstName = payload.GivenName ?? string.Empty,
+                LastName = payload.FamilyName ?? string.Empty,
+                EmailConfirmed = true,
+                PhoneNumberConfirmed = false,
+                TwoFactorEnabled = false,
+                LockoutEnabled = true,
+                AccessFailedCount = 0,
+                IsActive = true,
+                CreatedAt = DateTime.UtcNow,
+                SecurityStamp = Guid.NewGuid().ToString(),
+                ConcurrencyStamp = Guid.NewGuid().ToString(),
+                AvatarUrl = payload.Picture ?? string.Empty
+            };
+
+            var createResult = await _authRepository.CreateUserAsync(existingAccount, null);
+
+            if (!createResult.Succeeded)
+            {
+                return ApiResponse<LoginResponse>.ErrorResponse(
+                    createResult.Errors.Select(e => e.Description).ToList(),
+                    "Google Login Failed"
+                );
+            }
+            var token = await GenerateToken(existingAccount);
+            return ApiResponse<LoginResponse>.SuccessResponse(
+                new LoginResponse
+                {
+                    Token = token,
+                    RefreshToken = await SaveRefreshToken(existingAccount)
+                },
+                "Google Login Succeeded"
+            );
+
         }
     }
 }

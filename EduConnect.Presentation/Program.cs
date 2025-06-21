@@ -68,7 +68,7 @@ namespace EduConnect.Presentation
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbAzure");
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectLocal");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
@@ -110,7 +110,13 @@ namespace EduConnect.Presentation
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!)),
                     RoleClaimType = "role"
                 };
-            });
+            }).AddGoogle(options =>
+             {
+                 var config = builder.Configuration;
+                 options.ClientId = config["Google:ClientId"]!;
+                 options.ClientSecret = config["Google:ClientSecret"]!;
+                 //options.CallbackPath = "/api/login-with-google"; 
+             });
 
             var app = builder.Build();
 
