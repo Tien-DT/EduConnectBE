@@ -18,7 +18,7 @@ namespace EduConnect.Application.Services.Interface
         
         Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request);
         
-        Task<ApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
+        Task<PagedApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
             string accountId, 
             DateTime? startDate = null, 
             DateTime? endDate = null, 
@@ -26,7 +26,7 @@ namespace EduConnect.Application.Services.Interface
             int? pageIndex = null,
             int? pageSize = null);
             
-        Task<ApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
+        Task<PagedApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
             string studentId, 
             DateTime? startDate = null, 
             DateTime? endDate = null, 

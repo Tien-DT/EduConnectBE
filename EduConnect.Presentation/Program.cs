@@ -72,7 +72,7 @@ namespace EduConnect.Presentation
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbLocal");
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectDb");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 

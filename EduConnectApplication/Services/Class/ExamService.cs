@@ -200,7 +200,7 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
+        public async Task<PagedApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
             string accountId, 
             DateTime? startDate = null, 
             DateTime? endDate = null, 
@@ -222,78 +222,58 @@ namespace EduConnect.Application.Services.Class
 
                     if (exams == null || !exams.Any())
                     {
-                        var emptyResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                        return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                             new List<ExamResponse>(),
-                            "Không có lịch thi trong thời gian này"
+                            "Không có lịch thi trong thời gian này",
+                            0,
+                            pageIndex.Value,
+                            pageSize.Value
                         );
-                        
-                        emptyResponse.TotalCount = 0;
-                        emptyResponse.PageIndex = pageIndex.Value;
-                        emptyResponse.PageSize = pageSize.Value;
-                        emptyResponse.TotalPages = 0;
-                        
-                        return emptyResponse;
                     }
 
                     var examResponses = _mapper.Map<List<ExamResponse>>(exams);
-                    var response = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                         examResponses,
-                        "Exams retrieved successfully"
+                        "Exams retrieved successfully",
+                        totalCount,
+                        pageIndex.Value,
+                        pageSize.Value
                     );
-                    
-                    response.TotalCount = totalCount;
-                    response.PageIndex = pageIndex.Value;
-                    response.PageSize = pageSize.Value;
-                    response.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize.Value);
-                    
-                    return response;
                 }
 
                 var allExams = await _examRepository.GetExamsByAccountIdAsync(accountId, startDate, endDate, ascending);
                 if (allExams == null || !allExams.Any())
                 {
-                    var emptyResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
-                        new List<ExamResponse>(), 
-                        "Không có lịch thi trong thời gian này"
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                        new List<ExamResponse>(),
+                        "Không có lịch thi trong thời gian này",
+                        0,
+                        1,
+                        0
                     );
-                    
-                    emptyResponse.TotalCount = 0;
-                    emptyResponse.PageIndex = 1;
-                    emptyResponse.PageSize = allExams?.Count ?? 0;
-                    emptyResponse.TotalPages = 0;
-                    
-                    return emptyResponse;
                 }
 
                 var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
-                var allResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
-                    allExamResponses, 
-                    "Exams retrieved successfully"
+                return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                    allExamResponses,
+                    "Exams retrieved successfully",
+                    allExamResponses.Count,
+                    1,
+                    allExamResponses.Count
                 );
-                
-                allResponse.TotalCount = allExamResponses.Count;
-                allResponse.PageIndex = 1;
-                allResponse.PageSize = allExamResponses.Count;
-                allResponse.TotalPages = 1;
-                
-                return allResponse;
             }
             catch (Exception ex)
             {
-                var errorResponse = ApiResponse<List<ExamResponse>>.ErrorResponse(
-                    new List<string> { ex.Message }, 
-                    "Error retrieving exams"
+                return PagedApiResponse<List<ExamResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error retrieving exams",
+                    pageIndex ?? 0,
+                    pageSize ?? 0
                 );
-                errorResponse.TotalCount = 0;
-                errorResponse.PageIndex = pageIndex ?? 0;
-                errorResponse.PageSize = pageSize ?? 0;
-                errorResponse.TotalPages = 0;
-                
-                return errorResponse;
             }
         }
 
-        public async Task<ApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
+        public async Task<PagedApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
             string studentId, 
             DateTime? startDate = null, 
             DateTime? endDate = null, 
@@ -315,73 +295,53 @@ namespace EduConnect.Application.Services.Class
 
                     if (exams == null || !exams.Any())
                     {
-                        var emptyResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                        return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                             new List<ExamResponse>(),
-                            "Không có lịch thi trong thời gian này"
+                            "Không có lịch thi trong thời gian này",
+                            0,
+                            pageIndex.Value,
+                            pageSize.Value
                         );
-                        
-                        emptyResponse.TotalCount = 0;
-                        emptyResponse.PageIndex = pageIndex.Value;
-                        emptyResponse.PageSize = pageSize.Value;
-                        emptyResponse.TotalPages = 0;
-                        
-                        return emptyResponse;
                     }
 
                     var examResponses = _mapper.Map<List<ExamResponse>>(exams);
-                    var response = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                         examResponses,
-                        "Exams retrieved successfully"
+                        "Exams retrieved successfully",
+                        totalCount,
+                        pageIndex.Value,
+                        pageSize.Value
                     );
-                    
-                    response.TotalCount = totalCount;
-                    response.PageIndex = pageIndex.Value;
-                    response.PageSize = pageSize.Value;
-                    response.TotalPages = (int)Math.Ceiling((double)totalCount / pageSize.Value);
-                    
-                    return response;
                 }
                 var allExams = await _examRepository.GetExamByStudentIdAsync(studentId, startDate, endDate, ascending);
                 if (allExams == null || !allExams.Any())
                 {
-                    var emptyResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                         new List<ExamResponse>(),
-                        "Không có lịch thi trong thời gian này"
+                        "Không có lịch thi trong thời gian này",
+                        0,
+                        1,
+                        0
                     );
-                    
-                    emptyResponse.TotalCount = 0;
-                    emptyResponse.PageIndex = 1;
-                    emptyResponse.PageSize = allExams?.Count ?? 0;
-                    emptyResponse.TotalPages = 0;
-                    
-                    return emptyResponse;
                 }
 
                 var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
-                var allResponse = ApiResponse<List<ExamResponse>>.SuccessResponse(
+                return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                     allExamResponses,
-                    "Exams retrieved successfully"
+                    "Exams retrieved successfully",
+                    allExamResponses.Count,
+                    1,
+                    allExamResponses.Count
                 );
-                
-                allResponse.TotalCount = allExamResponses.Count;
-                allResponse.PageIndex = 1;
-                allResponse.PageSize = allExamResponses.Count;
-                allResponse.TotalPages = 1;
-                
-                return allResponse;
             }
             catch (Exception ex)
             {
-                var errorResponse = ApiResponse<List<ExamResponse>>.ErrorResponse(
+                return PagedApiResponse<List<ExamResponse>>.ErrorPagedResponse(
                     new List<string> { ex.Message },
-                    "Error retrieving exams"
+                    "Error retrieving exams",
+                    pageIndex ?? 0,
+                    pageSize ?? 0
                 );
-                errorResponse.TotalCount = 0;
-                errorResponse.PageIndex = pageIndex ?? 0;
-                errorResponse.PageSize = pageSize ?? 0;
-                errorResponse.TotalPages = 0;
-                
-                return errorResponse;
             }
         }
     }
