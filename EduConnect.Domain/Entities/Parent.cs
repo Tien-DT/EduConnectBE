@@ -16,8 +16,7 @@ public partial class Parent
     [StringLength(100)]
     public string? FullName { get; set; }
 
-    [StringLength(100)]
-    public string? Email { get; set; }
+    public bool? IsDeleted { get; set; }
 
     [ForeignKey("AccountID")]
     public virtual ApplicationUser Account { get; set; } = null!;

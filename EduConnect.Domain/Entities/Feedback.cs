@@ -16,6 +16,7 @@ public partial class Feedback
     public string? Content { get; set; }
 
     public DateTime? DateTime { get; set; }
+    public bool? IsDeleted { get; set; }
 
     [StringLength(100)]
     public string? Target { get; set; }

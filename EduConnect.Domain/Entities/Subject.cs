@@ -22,7 +22,7 @@ namespace EduConnect.Domain.Entities
         [StringLength(500)]
         public string? Description { get; set; }
 
-        public bool IsActive { get; set; } = true;
+        public bool? IsDeleted { get; set; }
 
         public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();

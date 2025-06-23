@@ -16,6 +16,8 @@ public partial class LessonReport
 
     public int? AbsentStudents { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     [Column(TypeName = "text")]
     public string? Remarks { get; set; }
 

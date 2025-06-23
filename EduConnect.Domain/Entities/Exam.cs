@@ -33,6 +33,7 @@ namespace EduConnect.Domain.Entities
 
         [StringLength(50)]
         public string? Room { get; set; }
+        public bool? IsDeleted { get; set; }
 
         [Required]
         public string StudentID { get; set; } = string.Empty;

@@ -12,6 +12,8 @@ public partial class ClassTeacher
 
     public int ClassID { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     public string TeacherID { get; set; } = string.Empty;
 
     [ForeignKey("ClassID")]

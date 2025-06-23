@@ -26,12 +26,12 @@ namespace EduConnect.Data
         public DbSet<RefreshToken> RefreshTokens { get; set; }
         public DbSet<Exam> Exams { get; set; }
         public DbSet<Subject> Subjects { get; set; }
+        public DbSet<TimetableSlot> TimetableSlots { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
 
-            // Table Mappings
             modelBuilder.Entity<Class>().ToTable("Class");
             modelBuilder.Entity<Student>().ToTable("Student");
             modelBuilder.Entity<Teacher>().ToTable("Teacher");
@@ -39,6 +39,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<Principal>().ToTable("Principal");
             modelBuilder.Entity<ClassTeacher>().ToTable("ClassTeacher");
             modelBuilder.Entity<Timetable>().ToTable("Timetable");
+            modelBuilder.Entity<TimetableSlot>().ToTable("TimetableSlot"); 
             modelBuilder.Entity<Lesson>().ToTable("Lesson");
             modelBuilder.Entity<Attendance>().ToTable("Attendance");
             modelBuilder.Entity<Grade>().ToTable("Grade");
@@ -48,7 +49,6 @@ namespace EduConnect.Data
             modelBuilder.Entity<Exam>().ToTable("Exam");
             modelBuilder.Entity<Subject>().ToTable("Subject");
 
-            // Unique Indexes
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
                 .HasName("UQ_Subject_Code")
@@ -74,7 +74,11 @@ namespace EduConnect.Data
                 .HasName("UQ_Lesson")
                 .IsUnique();
 
-            // Foreign Key Relationships and Constraints
+            modelBuilder.Entity<TimetableSlot>()
+                .HasIndex(ts => new { ts.TimetableID, ts.DayOfWeek, ts.Period })
+                .HasName("UQ_TimetableSlot_Period")
+                .IsUnique();
+
             modelBuilder.Entity<Student>()
                 .HasOne(s => s.Account)
                 .WithOne(u => u.Student)
@@ -179,6 +183,24 @@ namespace EduConnect.Data
                 .HasOne(l => l.Subject)
                 .WithMany(s => s.Lessons)
                 .HasForeignKey(l => l.SubjectId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<TimetableSlot>()
+                .HasOne(ts => ts.Timetable)
+                .WithMany(t => t.TimetableSlots)
+                .HasForeignKey(ts => ts.TimetableID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<TimetableSlot>()
+                .HasOne(ts => ts.Teacher)
+                .WithMany() 
+                .HasForeignKey(ts => ts.TeacherID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<TimetableSlot>()
+                .HasOne(ts => ts.Subject)
+                .WithMany() 
+                .HasForeignKey(ts => ts.SubjectId)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }
