@@ -1,0 +1,28 @@
+using EduConnect.Application.DTOs.Response;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Threading.Tasks;
+
+namespace EduConnect.Application.Services.Interface
+{
+    public interface IExamService
+    {
+        Task<ApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
+            string accountId, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null, 
+            bool ascending = false,
+            int? pageIndex = null,
+            int? pageSize = null);
+            
+        Task<ApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
+            string studentId, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null, 
+            bool ascending = false,
+            int? pageIndex = null,
+            int? pageSize = null);
+    }
+}

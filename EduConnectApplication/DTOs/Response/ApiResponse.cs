@@ -11,8 +11,11 @@ namespace EduConnect.Application.DTOs.Response
         public bool Success { get; set; }
         public string? Message { get; set; }
         public T? Data { get; set; }
-        public List<String>? Error { get; set; }
-
+        public List<String>? Error { get; set; }        
+        public int TotalCount { get; set; }
+        public int PageIndex { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
 
         public static ApiResponse<T> SuccessResponse(T data, string message)
         {
@@ -25,7 +28,6 @@ namespace EduConnect.Application.DTOs.Response
             };
         }
 
-
         public static ApiResponse<T> ErrorResponse(List<string> errors, string errorMessage)
         {
             return new ApiResponse<T>
@@ -33,9 +35,8 @@ namespace EduConnect.Application.DTOs.Response
                 Success = false,
                 Message = errorMessage,
                 Data = default,
-                Error = errors
+                Error = errors,
             };
         }
     }
-
 }
