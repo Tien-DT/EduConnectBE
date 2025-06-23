@@ -28,6 +28,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\EduConnect.Infrastruture\EduConnect.Infrastruture.csproj" />
+    <ProjectReference Include="..\EduConnect.Domain\EduConnect.Domain.csproj" />
   </ItemGroup>
 
 </Project>

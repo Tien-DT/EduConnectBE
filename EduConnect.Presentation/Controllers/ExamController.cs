@@ -1,4 +1,6 @@
+using EduConnect.Application.DTOs.Request;
 using EduConnect.Application.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -100,6 +102,42 @@ namespace EduConnect.Presentation.Controllers
                 return Ok(result);
             }
 
+            return BadRequest(result);
+        }
+
+        [HttpPost("by-classid")]
+        public async Task<IActionResult> CreateExamsForClass([FromBody] CreateClassExamRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var result = await _examService.CreateClassExamsAsync(request);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            
+            return BadRequest(result);
+        }
+
+        [HttpPost("by-principal")]
+        public async Task<IActionResult> CreateExamsForStudents([FromBody] CreatePrincipalExamRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var result = await _examService.CreatePrincipalExamsAsync(request);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            
             return BadRequest(result);
         }
     }
