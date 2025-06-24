@@ -1,6 +1,7 @@
 ﻿using EduConnect.Data;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
+using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -50,6 +51,20 @@ namespace EduConnect.Infrastruture.Repositories.Class
         public Task<Student?> UpdateAsync(string id, Student entity)
         {
             throw new NotImplementedException();
+        }
+
+        public async Task<List<Student>> GetStudentsByClassIdAsync(int classId)
+        {
+            return await _context.Students
+                .Where(s => s.ClassID == classId && (s.IsDeleted == null || s.IsDeleted == false))
+                .ToListAsync();
+        }
+
+        public async Task<List<Student>> GetStudentsByIdsAsync(List<string> studentIds)
+        {
+            return await _context.Students
+                .Where(s => studentIds.Contains(s.StudentID) && (s.IsDeleted == null || s.IsDeleted == false))
+                .ToListAsync();
         }
     }
 }

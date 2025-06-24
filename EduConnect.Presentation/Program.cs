@@ -68,6 +68,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            builder.Services.AddScoped<IClassTeacherRepository, ClassTeacherRepository>();
+            builder.Services.AddScoped<IPrincipalRepository, PrincipalRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);

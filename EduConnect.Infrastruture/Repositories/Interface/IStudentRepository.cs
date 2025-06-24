@@ -10,5 +10,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
     public interface IStudentRepository
     {
         Task<IEnumerable<Student>> GetAllAsync();
+        Task<List<Student>> GetStudentsByClassIdAsync(int classId);
+        Task<List<Student>> GetStudentsByIdsAsync(List<string> studentIds);
     }
 }

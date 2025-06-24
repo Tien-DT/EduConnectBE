@@ -11,8 +11,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
     {
         Task<List<Exam>> GetExamByStudentIdAsync(string studentId, DateTime? startDate = null, DateTime? endDate = null, bool ascending = false);
         Task<List<Exam>> GetExamsByAccountIdAsync(string accountId, DateTime? startDate = null, DateTime? endDate = null, bool ascending = false);
-        
-        // Paged methods
         Task<(List<Exam> items, int totalCount)> GetPagedExamByStudentIdAsync(
             string studentId,
             int pageIndex,
@@ -32,5 +30,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
         Task CreateExamAsync(Exam exam);
         Task UpdateExamAsync(Exam exam);
         Task DeleteExamAsync(int id);
+        IQueryable<Exam> GetExamQueryable(); 
     }
 }

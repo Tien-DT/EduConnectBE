@@ -1,15 +1,13 @@
 ﻿using AutoMapper;
 using EduConnect.Application.DTOs.Request;
 using EduConnect.Application.DTOs.Response;
+using EduConnect.Application.QueryHelpers;
 using EduConnect.Application.Services.Interface;
-using EduConnect.Data;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
-using Microsoft.EntityFrameworkCore;
 using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 
 namespace EduConnect.Application.Services.Class
@@ -18,13 +16,22 @@ namespace EduConnect.Application.Services.Class
     {
         private readonly IExamRepository _examRepository;
         private readonly IMapper _mapper;
-        private readonly EduConnectDbContext _dbContext;
+        private readonly IClassTeacherRepository _classTeacherRepository;
+        private readonly IPrincipalRepository _principalRepository;
+        private readonly IStudentRepository _studentRepository;
 
-        public ExamService(IExamRepository examRepository, IMapper mapper, EduConnectDbContext dbContext)
+        public ExamService(
+            IExamRepository examRepository,
+            IMapper mapper,
+            IClassTeacherRepository classTeacherRepository,
+            IPrincipalRepository principalRepository,
+            IStudentRepository studentRepository)
         {
             _examRepository = examRepository;
             _mapper = mapper;
-            _dbContext = dbContext;
+            _classTeacherRepository = classTeacherRepository;
+            _principalRepository = principalRepository;
+            _studentRepository = studentRepository;
         }
 
         public async Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request)
@@ -103,9 +110,7 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                var isValidTeacher = await _dbContext.ClassTeachers
-                    .AnyAsync(ct => ct.ClassID == request.ClassId && 
-                                    ct.Teacher.AccountID == request.TeacherAccountId);
+                var isValidTeacher = await _classTeacherRepository.IsTeacherAssignedToClassAsync(request.ClassId, request.TeacherAccountId);
 
                 if (!isValidTeacher)
                 {
@@ -114,12 +119,9 @@ namespace EduConnect.Application.Services.Class
                         "Unauthorized access");
                 }
 
-                var students = await _dbContext.Students
-                    .Where(s => s.ClassID == request.ClassId && 
-                               (s.IsDeleted == null || s.IsDeleted == false))
-                    .ToListAsync();
+                var students = await _studentRepository.GetStudentsByClassIdAsync(request.ClassId);
 
-                if (!students.Any())
+                if (students == null || !students.Any())
                 {
                     return ApiResponse<List<ExamResponse>>.ErrorResponse(
                         new List<string> { "No active students found in this class." },
@@ -149,9 +151,7 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                var isPrincipal = await _dbContext.Principals
-                    .AnyAsync(p => p.AccountID == request.PrincipalAccountId && 
-                                  (p.IsDeleted == null || p.IsDeleted == false));
+                var isPrincipal = await _principalRepository.IsValidPrincipalAsync(request.PrincipalAccountId);
 
                 if (!isPrincipal)
                 {
@@ -159,12 +159,9 @@ namespace EduConnect.Application.Services.Class
                         new List<string> { "Only principals can create exams for multiple students." },
                         "Unauthorized access");
                 }
-                var validStudents = await _dbContext.Students
-                    .Where(s => request.StudentIds.Contains(s.StudentID) && 
-                               (s.IsDeleted == null || s.IsDeleted == false))
-                    .ToListAsync();
+                var validStudents = await _studentRepository.GetStudentsByIdsAsync(request.StudentIds);
 
-                if (!validStudents.Any())
+                if (validStudents == null || !validStudents.Any())
                 {
                     return ApiResponse<List<ExamResponse>>.ErrorResponse(
                         new List<string> { "No active students found with the provided IDs." },
@@ -343,6 +340,41 @@ namespace EduConnect.Application.Services.Class
                     pageSize ?? 0
                 );
             }
+        }
+
+        public async Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
+            string? studentId = null,
+            string? searchTerm = null,
+            string? sortBy = null,
+            bool ascending = true,
+            int pageIndex = 1,
+            int pageSize = 10)
+        {
+            var query = _examRepository.GetExamQueryable();
+
+            if (!string.IsNullOrWhiteSpace(studentId))
+            {
+                query = query.Where(e => e.StudentID == studentId && e.IsDeleted != true);
+            }
+            else
+            {
+                query = query.Where(e => e.IsDeleted != true);
+            }
+
+            query = ExamQueryHelper.ApplySearch(query, searchTerm);
+            query = ExamQueryHelper.ApplySort(query, sortBy, ascending);
+
+            var totalCount = await System.Threading.Tasks.Task.FromResult(query.Count());
+            var items = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            var examResponses = _mapper.Map<List<ExamResponse>>(items);
+
+            return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                examResponses,
+                "Exams filtered, sorted, and searched successfully",
+                totalCount,
+                pageIndex,
+                pageSize
+            );
         }
     }
 }

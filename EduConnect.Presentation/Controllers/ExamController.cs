@@ -140,5 +140,22 @@ namespace EduConnect.Presentation.Controllers
             
             return BadRequest(result);
         }
+
+        [HttpGet("exam")]
+        public async Task<IActionResult> FilterSortSearchExams(
+            [FromQuery] string? studentId = null,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string? sortBy = null,
+            [FromQuery] bool ascending = true,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10)
+        {
+            var result = await _examService.FilterSortSearchExamsAsync(studentId, searchTerm, sortBy, ascending, pageIndex, pageSize);
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            return BadRequest(result);
+        }
     }
 }

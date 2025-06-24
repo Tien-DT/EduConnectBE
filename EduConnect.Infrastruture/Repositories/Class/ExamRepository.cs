@@ -71,8 +71,6 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             var query = _context.Exams
                 .Where(e => e.StudentID == studentId && e.IsDeleted != true);
-
-            // Apply date filters
             if (startDate.HasValue)
             {
                 query = query.Where(e => e.ExamDate >= startDate.Value);
@@ -82,14 +80,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
             {
                 query = query.Where(e => e.ExamDate <= endDate.Value);
             }
-
-            // Include the Subject entity
             query = query.Include(e => e.Subject);
 
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
 
-            // Apply sorting
             if (ascending)
             {
                 query = query.OrderBy(e => e.ExamDate);
@@ -98,8 +92,6 @@ namespace EduConnect.Infrastruture.Repositories.Class
             {
                 query = query.OrderByDescending(e => e.ExamDate);
             }
-
-            // Apply pagination
             var items = await query
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -158,8 +150,6 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             var query = _context.Exams
                 .Where(e => e.StudentID == student.StudentID && e.IsDeleted != true);
-
-            // Apply date filters
             if (startDate.HasValue)
             {
                 query = query.Where(e => e.ExamDate >= startDate.Value);
@@ -169,14 +159,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
             {
                 query = query.Where(e => e.ExamDate <= endDate.Value);
             }
-
-            // Include the Subject entity
             query = query.Include(e => e.Subject);
-
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
-
-            // Apply sorting
             if (ascending)
             {
                 query = query.OrderBy(e => e.ExamDate);
@@ -185,8 +169,6 @@ namespace EduConnect.Infrastruture.Repositories.Class
             {
                 query = query.OrderByDescending(e => e.ExamDate);
             }
-
-            // Apply pagination
             var items = await query
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -199,6 +181,11 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             _context.Exams.Update(exam);
             await _context.SaveChangesAsync();
+        }
+
+        public IQueryable<Exam> GetExamQueryable()
+        {
+            return _context.Exams.AsQueryable();
         }
     }
 }

@@ -33,6 +33,13 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = false,
             int? pageIndex = null,
             int? pageSize = null);
-
+            
+        Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
+            string? studentId = null,
+            string? searchTerm = null,
+            string? sortBy = null,
+            bool ascending = true,
+            int pageIndex = 1,
+            int pageSize = 10);
     }
 }
