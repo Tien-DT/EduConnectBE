@@ -16,6 +16,8 @@ using System.Security.Claims;
 using System.Text;
 using AutoMapper;
 using EduConnect.Application.Mapping;
+using CloudinaryDotNet;
+using Microsoft.Extensions.Options;
 
 namespace EduConnect.Presentation
 {
@@ -68,7 +70,16 @@ namespace EduConnect.Presentation
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbAzure");
+            builder.Services.Configure<CloudinarySettings>(builder.Configuration.GetSection("CloudinarySettings"));
+            builder.Services.AddSingleton(x => {
+                var config = x.GetRequiredService<IOptions<CloudinarySettings>>().Value;
+                var account = new Account(config.CloudName, config.ApiKey, config.ApiSecret);
+                return new Cloudinary(account);
+            });
+
+            builder.Services.AddTransient<EduConnectApplication.Services.Class.FileUploadService>();
+
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbLocal");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 

@@ -1,6 +1,7 @@
 ﻿using EduConnect.Domain.Entities;
 using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.EntityFrameworkCore.Design;
 
 namespace EduConnect.Data
 {
@@ -180,6 +181,18 @@ namespace EduConnect.Data
                 .WithMany(s => s.Lessons)
                 .HasForeignKey(l => l.SubjectId)
                 .OnDelete(DeleteBehavior.NoAction);
+        }
+    }
+
+    public class EduConnectDbContextFactory : IDesignTimeDbContextFactory<EduConnectDbContext>
+    {
+        public EduConnectDbContext CreateDbContext(string[] args)
+        {
+            var optionsBuilder = new DbContextOptionsBuilder<EduConnectDbContext>();
+            // Sử dụng connection string local, bạn có thể thay đổi nếu cần
+            var connectionString = "Server=DESKTOP-DFIQPFU\\MSSQLSERVER03;Database=EduConnect;User Id=sa;Password=12345;TrustServerCertificate=True;";
+            optionsBuilder.UseSqlServer(connectionString);
+            return new EduConnectDbContext(optionsBuilder.Options);
         }
     }
 }
