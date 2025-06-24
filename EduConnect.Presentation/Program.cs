@@ -88,7 +88,7 @@ namespace EduConnect.Presentation
 
             builder.Services.AddTransient<EduConnectApplication.Services.Class.FileUploadService>();
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbLocal");
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectDb");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 
