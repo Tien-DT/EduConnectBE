@@ -1,0 +1,380 @@
+﻿using AutoMapper;
+using EduConnect.Application.DTOs.Request;
+using EduConnect.Application.DTOs.Response;
+using EduConnect.Application.QueryHelpers;
+using EduConnect.Application.Services.Interface;
+using EduConnect.Domain.Entities;
+using EduConnect.Infrastruture.Repositories.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace EduConnect.Application.Services.Class
+{
+    public class ExamService : IExamService
+    {
+        private readonly IExamRepository _examRepository;
+        private readonly IMapper _mapper;
+        private readonly IClassTeacherRepository _classTeacherRepository;
+        private readonly IPrincipalRepository _principalRepository;
+        private readonly IStudentRepository _studentRepository;
+
+        public ExamService(
+            IExamRepository examRepository,
+            IMapper mapper,
+            IClassTeacherRepository classTeacherRepository,
+            IPrincipalRepository principalRepository,
+            IStudentRepository studentRepository)
+        {
+            _examRepository = examRepository;
+            _mapper = mapper;
+            _classTeacherRepository = classTeacherRepository;
+            _principalRepository = principalRepository;
+            _studentRepository = studentRepository;
+        }
+
+        public async Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request)
+        {
+            try
+            {
+                var exam = new Exam
+                {
+                    SubjectId = request.SubjectId,
+                    ExamType = request.ExamType,
+                    ExamNote = request.ExamNote,
+                    ExamDate = request.ExamDate,
+                    GradeDate = request.GradeDate,
+                    Room = request.Room,
+                    StudentID = request.StudentID,
+                    IsDeleted = false
+                };
+
+                await _examRepository.CreateExamAsync(exam);
+                
+                var response = _mapper.Map<ExamResponse>(exam);
+                
+                return ApiResponse<ExamResponse>.SuccessResponse(
+                    response,
+                    "Exam created successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<ExamResponse>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error creating exam");
+            }
+        }
+
+        public async Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests)
+        {
+            try
+            {
+                var createdExams = new List<ExamResponse>();
+                var errors = new List<string>();
+
+                foreach (var request in requests)
+                {
+                    var result = await CreateExamAsync(request);
+                    
+                    if (result.Success)
+                    {
+                        createdExams.Add(result.Data);
+                    }
+                    else
+                    {
+                        errors.AddRange(result.Error);
+                    }
+                }
+
+                if (errors.Any())
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        errors,
+                        "Some exams could not be created");
+                }
+
+                return ApiResponse<List<ExamResponse>>.SuccessResponse(
+                    createdExams,
+                    "All exams created successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error creating exams");
+            }
+        }
+
+        public async Task<ApiResponse<List<ExamResponse>>> CreateClassExamsAsync(CreateClassExamRequest request)
+        {
+            try
+            {
+                var isValidTeacher = await _classTeacherRepository.IsTeacherAssignedToClassAsync(request.ClassId, request.TeacherAccountId);
+
+                if (!isValidTeacher)
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        new List<string> { "Teacher is not assigned to this class." },
+                        "Unauthorized access");
+                }
+
+                var students = await _studentRepository.GetStudentsByClassIdAsync(request.ClassId);
+
+                if (students == null || !students.Any())
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        new List<string> { "No active students found in this class." },
+                        "No students found");
+                }
+                var examRequests = students.Select(s => new CreateExamRequest
+                {
+                    SubjectId = request.SubjectId,
+                    ExamType = request.ExamType,
+                    ExamNote = request.ExamNote,
+                    ExamDate = request.ExamDate,
+                    GradeDate = request.GradeDate,
+                    Room = request.Room,
+                    StudentID = s.StudentID
+                }).ToList();
+                return await CreateBulkExamsAsync(examRequests);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error creating class exams");
+            }
+        }
+
+        public async Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request)
+        {
+            try
+            {
+                var isPrincipal = await _principalRepository.IsValidPrincipalAsync(request.PrincipalAccountId);
+
+                if (!isPrincipal)
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        new List<string> { "Only principals can create exams for multiple students." },
+                        "Unauthorized access");
+                }
+                var validStudents = await _studentRepository.GetStudentsByIdsAsync(request.StudentIds);
+
+                if (validStudents == null || !validStudents.Any())
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        new List<string> { "No active students found with the provided IDs." },
+                        "No students found");
+                }
+
+                var foundStudentIds = validStudents.Select(s => s.StudentID).ToList();
+                var invalidStudentIds = request.StudentIds.Except(foundStudentIds).ToList();
+                
+                if (invalidStudentIds.Any())
+                {
+                    return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                        new List<string> { $"The following student IDs were not found or are inactive: {string.Join(", ", invalidStudentIds)}" },
+                        "Invalid student IDs");
+                }
+                var examRequests = validStudents.Select(s => new CreateExamRequest
+                {
+                    SubjectId = request.SubjectId,
+                    ExamType = request.ExamType,
+                    ExamNote = request.ExamNote,
+                    ExamDate = request.ExamDate,
+                    GradeDate = request.GradeDate,
+                    Room = request.Room,
+                    StudentID = s.StudentID
+                }).ToList();
+                return await CreateBulkExamsAsync(examRequests);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<ExamResponse>>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error creating exams for students");
+            }
+        }
+
+        public async Task<PagedApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
+            string accountId, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null, 
+            bool ascending = false,
+            int? pageIndex = null,
+            int? pageSize = null)
+        {
+            try
+            {
+                if (pageIndex.HasValue && pageSize.HasValue)
+                {
+                    var (exams, totalCount) = await _examRepository.GetPagedExamsByAccountIdAsync(
+                        accountId,
+                        pageIndex.Value,
+                        pageSize.Value,
+                        startDate,
+                        endDate,
+                        ascending);
+
+                    if (exams == null || !exams.Any())
+                    {
+                        return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                            new List<ExamResponse>(),
+                            "Không có lịch thi trong thời gian này",
+                            0,
+                            pageIndex.Value,
+                            pageSize.Value
+                        );
+                    }
+
+                    var examResponses = _mapper.Map<List<ExamResponse>>(exams);
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                        examResponses,
+                        "Exams retrieved successfully",
+                        totalCount,
+                        pageIndex.Value,
+                        pageSize.Value
+                    );
+                }
+
+                var allExams = await _examRepository.GetExamsByAccountIdAsync(accountId, startDate, endDate, ascending);
+                if (allExams == null || !allExams.Any())
+                {
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                        new List<ExamResponse>(),
+                        "Không có lịch thi trong thời gian này",
+                        0,
+                        1,
+                        0
+                    );
+                }
+
+                var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
+                return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                    allExamResponses,
+                    "Exams retrieved successfully",
+                    allExamResponses.Count,
+                    1,
+                    allExamResponses.Count
+                );
+            }
+            catch (Exception ex)
+            {
+                return PagedApiResponse<List<ExamResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error retrieving exams",
+                    pageIndex ?? 0,
+                    pageSize ?? 0
+                );
+            }
+        }
+
+        public async Task<PagedApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
+            string studentId, 
+            DateTime? startDate = null, 
+            DateTime? endDate = null, 
+            bool ascending = false,
+            int? pageIndex = null,
+            int? pageSize = null)
+        {
+            try
+            {
+                if (pageIndex.HasValue && pageSize.HasValue)
+                {
+                    var (exams, totalCount) = await _examRepository.GetPagedExamByStudentIdAsync(
+                        studentId,
+                        pageIndex.Value,
+                        pageSize.Value,
+                        startDate,
+                        endDate,
+                        ascending);
+
+                    if (exams == null || !exams.Any())
+                    {
+                        return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                            new List<ExamResponse>(),
+                            "Không có lịch thi trong thời gian này",
+                            0,
+                            pageIndex.Value,
+                            pageSize.Value
+                        );
+                    }
+
+                    var examResponses = _mapper.Map<List<ExamResponse>>(exams);
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                        examResponses,
+                        "Exams retrieved successfully",
+                        totalCount,
+                        pageIndex.Value,
+                        pageSize.Value
+                    );
+                }
+                var allExams = await _examRepository.GetExamByStudentIdAsync(studentId, startDate, endDate, ascending);
+                if (allExams == null || !allExams.Any())
+                {
+                    return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                        new List<ExamResponse>(),
+                        "Không có lịch thi trong thời gian này",
+                        0,
+                        1,
+                        0
+                    );
+                }
+
+                var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
+                return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                    allExamResponses,
+                    "Exams retrieved successfully",
+                    allExamResponses.Count,
+                    1,
+                    allExamResponses.Count
+                );
+            }
+            catch (Exception ex)
+            {
+                return PagedApiResponse<List<ExamResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error retrieving exams",
+                    pageIndex ?? 0,
+                    pageSize ?? 0
+                );
+            }
+        }
+
+        public async Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
+            string? studentId = null,
+            string? searchTerm = null,
+            string? sortBy = null,
+            bool ascending = true,
+            int pageIndex = 1,
+            int pageSize = 10)
+        {
+            var query = _examRepository.GetExamQueryable();
+
+            if (!string.IsNullOrWhiteSpace(studentId))
+            {
+                query = query.Where(e => e.StudentID == studentId && e.IsDeleted != true);
+            }
+            else
+            {
+                query = query.Where(e => e.IsDeleted != true);
+            }
+
+            query = ExamQueryHelper.ApplySearch(query, searchTerm);
+            query = ExamQueryHelper.ApplySort(query, sortBy, ascending);
+
+            var totalCount = await System.Threading.Tasks.Task.FromResult(query.Count());
+            var items = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            var examResponses = _mapper.Map<List<ExamResponse>>(items);
+
+            return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
+                examResponses,
+                "Exams filtered, sorted, and searched successfully",
+                totalCount,
+                pageIndex,
+                pageSize
+            );
+        }
+    }
+}

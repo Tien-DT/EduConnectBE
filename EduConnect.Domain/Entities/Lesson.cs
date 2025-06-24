@@ -22,6 +22,8 @@ public partial class Lesson
     [Required]
     public int SubjectId { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;
 

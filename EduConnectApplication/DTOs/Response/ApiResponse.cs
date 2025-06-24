@@ -11,8 +11,7 @@ namespace EduConnect.Application.DTOs.Response
         public bool Success { get; set; }
         public string? Message { get; set; }
         public T? Data { get; set; }
-        public List<String>? Error { get; set; }
-
+        public List<String>? Error { get; set; }        
 
         public static ApiResponse<T> SuccessResponse(T data, string message)
         {
@@ -25,7 +24,6 @@ namespace EduConnect.Application.DTOs.Response
             };
         }
 
-
         public static ApiResponse<T> ErrorResponse(List<string> errors, string errorMessage)
         {
             return new ApiResponse<T>
@@ -33,9 +31,48 @@ namespace EduConnect.Application.DTOs.Response
                 Success = false,
                 Message = errorMessage,
                 Data = default,
-                Error = errors
+                Error = errors,
             };
         }
     }
 
+    public class PagedApiResponse<T> : ApiResponse<T>
+    {
+        public int TotalCount { get; set; }
+        public int PageIndex { get; set; }
+        public int PageSize { get; set; }
+        public int TotalPages { get; set; }
+
+        public static PagedApiResponse<T> SuccessPagedResponse(T data, string message, 
+            int totalCount, int pageIndex, int pageSize)
+        {
+            return new PagedApiResponse<T>
+            {
+                Success = true,
+                Message = message,
+                Data = data,
+                Error = null,
+                TotalCount = totalCount,
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                TotalPages = (int)Math.Ceiling((double)totalCount / pageSize)
+            };
+        }
+
+        public static PagedApiResponse<T> ErrorPagedResponse(List<string> errors, string errorMessage,
+            int pageIndex = 0, int pageSize = 0)
+        {
+            return new PagedApiResponse<T>
+            {
+                Success = false,
+                Message = errorMessage,
+                Data = default,
+                Error = errors,
+                TotalCount = 0,
+                PageIndex = pageIndex,
+                PageSize = pageSize,
+                TotalPages = 0
+            };
+        }
+    }
 }

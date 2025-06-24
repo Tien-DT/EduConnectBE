@@ -56,24 +56,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(response);
         }
 
-        [HttpGet("checkauthor")]
-        public IActionResult CheckAuthor()
-        {
-            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
-            var email = User.FindFirst(ClaimTypes.Email)?.Value;
-            var role = User.FindFirst(ClaimTypes.Role)?.Value;
-
-            return Ok(new
-            {
-                Message = "Authorized",
-                UserId = userId,
-                Email = email,
-                Role = role
-            });
-        }
-
-
-        [HttpPost("GetNewToken")]
+        [HttpPost("new-token")]
         public async Task<ActionResult<ApiResponse<GetNewTokenResponse>>> GetNewToken(GetNewTokenRequest request)
         {
             if (!ModelState.IsValid)

@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using EduConnect.Domain.Entities;
 using System.ComponentModel.DataAnnotations;
 using System.ComponentModel.DataAnnotations.Schema;
-
-namespace EduConnect.Domain.Entities;
 
 public partial class Timetable
 {
@@ -12,30 +9,21 @@ public partial class Timetable
 
     public int ClassID { get; set; }
 
-    public string TeacherID { get; set; } = string.Empty; 
-
     [Required]
     [StringLength(100)]
-    public string Subject { get; set; } = string.Empty;
+    public string Name { get; set; } = string.Empty; 
 
     [Required]
-    [StringLength(20)]
-    public string DayOfWeek { get; set; } = string.Empty;
+    public DateTime StartDate { get; set; }
 
     [Required]
-    public TimeSpan StartTime { get; set; }
+    public DateTime EndDate { get; set; }
 
-    [Required]
-    public TimeSpan EndTime { get; set; }
-
-    [StringLength(50)]
-    public string? Room { get; set; }
+    public bool? IsDeleted { get; set; }
 
     [ForeignKey("ClassID")]
     public virtual Class Class { get; set; } = null!;
 
-    [ForeignKey("TeacherID")]
-    public virtual Teacher Teacher { get; set; } = null!;
-
+    public virtual ICollection<TimetableSlot> TimetableSlots { get; set; } = new List<TimetableSlot>();
     public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
 }

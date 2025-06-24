@@ -25,6 +25,8 @@ public partial class Student
     [StringLength(10)]
     public string? Gender { get; set; }
 
+    public bool? IsDeleted { get; set; }
+
     [ForeignKey("AccountID")]
     public virtual ApplicationUser Account { get; set; } = null!;
 

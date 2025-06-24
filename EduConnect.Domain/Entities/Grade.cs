@@ -19,6 +19,13 @@ public partial class Grade
 
     public double? Score { get; set; }
 
+    public int? GradeLevel { get; set; }
+
+    public string? Semester { get; set; }
+    public bool? IsDeleted { get; set; }
+
+
+
     [StringLength(255)]
     public string? Evaluation { get; set; }
 

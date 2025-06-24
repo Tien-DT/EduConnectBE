@@ -11,6 +11,7 @@ public partial class Class
 
     [StringLength(50)]
     public string? ClassName { get; set; }
+    public bool? IsDeleted { get; set; }
 
     public virtual ICollection<Student> Students { get; set; } = new List<Student>();
     public virtual ICollection<ClassTeacher> ClassTeachers { get; set; } = new List<ClassTeacher>();

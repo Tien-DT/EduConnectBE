@@ -16,6 +16,8 @@ public partial class Attendance
 
     public bool? IsPresent { get; set; }
 
+    public bool? IsDeleted { get; set; } 
+
     [Column(TypeName = "text")]
     public string? Note { get; set; }
 
