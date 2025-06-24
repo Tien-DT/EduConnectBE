@@ -66,5 +66,37 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Where(s => studentIds.Contains(s.StudentID) && (s.IsDeleted == null || s.IsDeleted == false))
                 .ToListAsync();
         }
+
+        public async Task<Timetable?> GetLatestTimetableByClassIdAsync(int classId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.Timetables
+                .Include(t => t.TimetableSlots)
+                    .ThenInclude(slot => slot.Subject)
+                .Include(t => t.TimetableSlots)
+                    .ThenInclude(slot => slot.Teacher)
+                .Where(t => t.ClassID == classId && (t.IsDeleted == null || t.IsDeleted == false));
+            if (startDate.HasValue)
+                query = query.Where(t => t.StartDate >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(t => t.EndDate <= endDate.Value);
+            return await query.OrderByDescending(t => t.StartDate).FirstOrDefaultAsync();
+        }
+
+        public async Task<List<Timetable>> GetAllTimetablesByClassIdAsync(int classId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = _context.Timetables
+                .Include(t => t.TimetableSlots)
+                    .ThenInclude(slot => slot.Subject)
+                .Include(t => t.TimetableSlots)
+                    .ThenInclude(slot => slot.Teacher)
+                .Where(t => t.ClassID == classId && (t.IsDeleted == null || t.IsDeleted == false));
+            
+            if (startDate.HasValue)
+                query = query.Where(t => t.EndDate >= startDate.Value);
+            if (endDate.HasValue)
+                query = query.Where(t => t.StartDate <= endDate.Value);
+            
+            return await query.OrderByDescending(t => t.StartDate).ToListAsync();
+        }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using EduConnect.Application.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
+using System;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -25,6 +26,24 @@ namespace EduConnect.Presentation.Controllers
         {
             var students = await _studentService.GetAllStudentsAsync();
             return Ok(students);
+        }
+
+        [HttpGet("timetable/{studentId}")]
+        public async Task<IActionResult> GetTimetableByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            var timetable = await _studentService.GetTimetableByStudentIdAsync(studentId, startDate, endDate);
+            if (timetable == null)
+                return NotFound(new { message = "Student or timetable not found" });
+            return Ok(timetable);
+        }
+
+        [HttpGet("timetables/{studentId}")]
+        public async Task<IActionResult> GetAllTimetablesByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        {
+            var timetables = await _studentService.GetAllTimetablesByStudentIdAsync(studentId, startDate, endDate);
+            if (!timetables.Success)
+                return NotFound(timetables);
+            return Ok(timetables);
         }
     }
 }

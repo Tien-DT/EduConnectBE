@@ -29,7 +29,6 @@ namespace EduConnect.Application.QueryHelpers
                 return ascending ? query.OrderBy(e => e.ExamType) : query.OrderByDescending(e => e.ExamType);
             if (sortBy.ToLower() == "room")
                 return ascending ? query.OrderBy(e => e.Room) : query.OrderByDescending(e => e.Room);
-            // Có th? m? r?ng thêm các tr??ng khác
             return query;
         }
     }

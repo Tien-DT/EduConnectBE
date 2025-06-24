@@ -12,5 +12,7 @@ namespace EduConnect.Application.Services.Interface
     {
         Task<IEnumerable<Student>> GetAllStudentsAsync();
         Task<PagedResponse<Student>> GetPagedStudentsAsync(int pageIndex, int pageSize);
+        Task<ApiResponse<TimetableResponse>> GetTimetableByStudentIdAsync(string studentId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<ApiResponse<List<TimetableResponse>>> GetAllTimetablesByStudentIdAsync(string studentId, DateTime? startDate = null, DateTime? endDate = null);
     }
 }
