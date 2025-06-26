@@ -15,7 +15,7 @@ public partial class Student
 
     public string ParentID { get; set; } = string.Empty;
 
-    public int ClassID { get; set; } 
+    public int? ClassID { get; set; } 
 
     [StringLength(100)]
     public string? FullName { get; set; }

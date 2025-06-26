@@ -14,20 +14,6 @@ namespace EduConnect.Presentation.Controllers
             _studentService = studentService;
         }
 
-        [HttpGet("paged")]
-        public async Task<IActionResult> GetPagedStudents([FromQuery] int pageIndex = 1, [FromQuery] int pageSize = 10)
-        {
-            var pagedResult = await _studentService.GetPagedStudentsAsync(pageIndex, pageSize);
-            return Ok(pagedResult);
-        }
-
-        [HttpGet("getall")]
-        public async Task<IActionResult> GetAllStudents()
-        {
-            var students = await _studentService.GetAllStudentsAsync();
-            return Ok(students);
-        }
-
         [HttpGet("timetable/{studentId}")]
         public async Task<IActionResult> GetTimetableByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {

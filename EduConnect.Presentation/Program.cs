@@ -76,6 +76,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IBaseRepository<Timetable, int>, BaseRepository<Timetable, int>>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
             builder.Services.AddScoped<ITimetableSlotRepository, TimetableSlotRepository>();
+            builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
+            builder.Services.AddScoped<ITimetableService, TimetableService>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 

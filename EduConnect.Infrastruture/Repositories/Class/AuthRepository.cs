@@ -142,5 +142,21 @@ namespace EduConnect.Infrastruture.Repositories.Class
             var user = await _userManager.FindByEmailAsync(email);
             return user != null;
         }
+
+        public async Task<ApplicationUser?> FindByGoogleIdAsync(string googleId)
+        {
+            return await _userManager.Users
+                .FirstOrDefaultAsync(u => u.GoogleId == googleId);
+        }
+
+        public async Task<IdentityResult> UpdateUserAsync(ApplicationUser user)
+        {
+            return await _userManager.UpdateAsync(user);
+        }
+
+        public async Task<IdentityResult> CreateUserWithoutPasswordAsync(ApplicationUser user)
+        {
+            return await _userManager.CreateAsync(user);
+        }
     }
 }

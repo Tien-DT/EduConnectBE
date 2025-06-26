@@ -9,5 +9,6 @@ namespace EduConnect.Application.Services.Interface
         Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest login);
         Task<ApiResponse<RegisterResponse>> RegisterAsync(RegisterRequest register);
         Task<ApiResponse<GetNewTokenResponse>> GetNewTokenAsync(GetNewTokenRequest request);
+        Task<ApiResponse<LoginResponse>> GoogleLoginAsync(GoogleLoginRequest request);
     }
 }

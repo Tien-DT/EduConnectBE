@@ -17,6 +17,7 @@ namespace EduConnect.Domain.Entities
         public DateTime? DeteledAt { get; set; }
         public string AvatarUrl { get; set; } = string.Empty;
         public bool IsActive { get; set; } = true;
+        public string? GoogleId { get; set; } = string.Empty;
 
         public virtual Student? Student { get; set; }
         public virtual Teacher? Teacher { get; set; }

@@ -43,7 +43,7 @@ namespace EduConnect.Application.Services.Class
             {
                 return ApiResponse<TimetableResponse>.ErrorResponse(new List<string> { "Student not found" }, "Student not found");
             }
-            var timetable = await _studentRepository.GetLatestTimetableByClassIdAsync(student.ClassID, startDate, endDate);
+            var timetable = await _studentRepository.GetLatestTimetableByClassIdAsync(student.ClassID ?? 0, startDate, endDate);
             if (timetable == null)
             {
                 return ApiResponse<TimetableResponse>.ErrorResponse(new List<string> { "No timetable found for this class" }, "No timetable found");
@@ -81,7 +81,7 @@ namespace EduConnect.Application.Services.Class
                 return ApiResponse<List<TimetableResponse>>.ErrorResponse(new List<string> { "Student not found" }, "Student not found");
             }
             
-            var timetables = await _studentRepository.GetAllTimetablesByClassIdAsync(student.ClassID, startDate, endDate);
+            var timetables = await _studentRepository.GetAllTimetablesByClassIdAsync(student.ClassID ?? 0, startDate, endDate);
             if (timetables == null || !timetables.Any())
             {
                 return ApiResponse<List<TimetableResponse>>.ErrorResponse(new List<string> { "No timetables found for this class" }, "No timetables found");

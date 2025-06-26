@@ -71,5 +71,21 @@ namespace EduConnect.Presentation.Controllers
             }
             return Ok(result);
         }
+
+        [HttpPost("google-login")]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleLogin(GoogleLoginRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _authService.GoogleLoginAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
     }
 }

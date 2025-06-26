@@ -7,8 +7,11 @@ namespace EduConnect.Infrastruture.Repositories.Interface
     public interface IAuthRepository
     {
         Task<ApplicationUser?> FindByEmailAsync(string email);
+        Task<ApplicationUser?> FindByGoogleIdAsync(string googleId);
         Task<ApplicationUser?> GetUserByIdAsync(string userId);
         Task<IdentityResult> CreateUserAsync(ApplicationUser user, string password);
+        Task<IdentityResult> CreateUserWithoutPasswordAsync(ApplicationUser user);
+        Task<IdentityResult> UpdateUserAsync(ApplicationUser user);
         Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
         Task<IdentityResult> AddToRoleAsync(ApplicationUser user, string roleId);
         Task<IdentityResult> AddToRoleByNameAsync(ApplicationUser user, string roleName);

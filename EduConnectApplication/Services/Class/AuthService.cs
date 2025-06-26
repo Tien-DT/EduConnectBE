@@ -75,12 +75,11 @@ namespace EduConnect.Application.Services.Class
 
                 string token = await GenerateToken(account);
                 string refreshToken = await SaveRefreshToken(account);
-                var roles = await _authRepository.GetRolesAsync(account);
 
                 var response = new LoginResponse
                 {
                     Token = token,
-                    RefreshToken = refreshToken,
+                    RefreshToken = refreshToken
                 };
 
                 return ApiResponse<LoginResponse>.SuccessResponse(response, "Login Succeeded");
@@ -261,7 +260,8 @@ namespace EduConnect.Application.Services.Class
             {
                 new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
-                new Claim(ClaimTypes.Email, account.Email)
+                new Claim(ClaimTypes.Email, account.Email),
+                new Claim("avatar_url", account.AvatarUrl ?? string.Empty)
             };
 
             var roles = await _authRepository.GetRolesAsync(account);
@@ -308,6 +308,101 @@ namespace EduConnect.Application.Services.Class
             }
 
             return await _authRepository.GetUserByIdAsync(userId);
+        }
+
+        public async Task<ApiResponse<LoginResponse>> GoogleLoginAsync(GoogleLoginRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.GoogleId) || string.IsNullOrWhiteSpace(request.Email))
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Google ID and email are required." },
+                        "Google Login Failed"
+                    );
+                }
+                var existingUser = await _authRepository.FindByEmailAsync(request.Email);
+                
+                if (existingUser != null)
+                {
+                    existingUser.GoogleId = request.GoogleId;
+                    existingUser.AvatarUrl = request.Picture; 
+                    existingUser.UpdatedAt = DateTime.UtcNow;
+                    var updateResult = await _authRepository.UpdateUserAsync(existingUser);
+                    if (!updateResult.Succeeded)
+                    {
+                        return ApiResponse<LoginResponse>.ErrorResponse(
+                            new List<string> { "Failed to link Google account." },
+                            "Google Login Failed"
+                        );
+                    }
+                }
+                else
+                {
+                    existingUser = new ApplicationUser
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Email = request.Email,
+                        UserName = request.Email,
+                        NormalizedEmail = request.Email.ToUpperInvariant(),
+                        NormalizedUserName = request.Email.ToUpperInvariant(),
+                        FirstName = request.GivenName,
+                        LastName = request.FamilyName,
+                        GoogleId = request.GoogleId,
+                        AvatarUrl = request.Picture,
+                        EmailConfirmed = request.EmailVerified,
+                        PhoneNumberConfirmed = false,
+                        TwoFactorEnabled = false,
+                        LockoutEnabled = false,
+                        AccessFailedCount = 0,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        ConcurrencyStamp = Guid.NewGuid().ToString()
+                    };
+                    var createResult = await _authRepository.CreateUserWithoutPasswordAsync(existingUser);
+                    if (!createResult.Succeeded)
+                    {
+                        return ApiResponse<LoginResponse>.ErrorResponse(
+                            createResult.Errors.Select(e => e.Description).ToList(),
+                            "Google Login Failed"
+                        );
+                    }
+                    var roleResult = await _authRepository.AddToRoleAsync(existingUser, "0");
+                    if (!roleResult.Succeeded)
+                    {
+                        return ApiResponse<LoginResponse>.ErrorResponse(
+                            new List<string> { "Failed to assign default role." },
+                            "Google Login Failed"
+                        );
+                    }
+                    existingUser = await _authRepository.GetUserByIdAsync(existingUser.Id);
+                }
+                if (!existingUser.IsActive)
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Account is not active." },
+                        "Google Login Failed"
+                    );
+                }
+                string token = await GenerateToken(existingUser);
+                string refreshToken = await SaveRefreshToken(existingUser);
+
+                var response = new LoginResponse
+                {
+                    Token = token,
+                    RefreshToken = refreshToken
+                };
+
+                return ApiResponse<LoginResponse>.SuccessResponse(response, "Google Login Succeeded");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<LoginResponse>.ErrorResponse(
+                    new List<string> { "An error occurred during Google login. Please try again." },
+                    "Google Login Failed"
+                );
+            }
         }
     }
 }
