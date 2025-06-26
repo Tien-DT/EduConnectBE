@@ -24,23 +24,18 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                // Validate class ID
                 if (request.ClassID <= 0)
                 {
                     return ApiResponse<TimetableResponse>.ErrorResponse(
                         new List<string> { "Invalid class ID. Class ID must be greater than 0." },
                         "Invalid class ID");
                 }
-
-                // Validate date range
                 if (request.StartDate >= request.EndDate)
                 {
                     return ApiResponse<TimetableResponse>.ErrorResponse(
                         new List<string> { "Start date must be before end date" },
                         "Invalid date range");
                 }
-
-                // Check if there is already a timetable for this class in the date range
                 bool timetableExists = await _timetableRepository.IsTimetableExistsForClassAndDateRangeAsync(
                     request.ClassID, request.StartDate, request.EndDate);
 
@@ -50,8 +45,6 @@ namespace EduConnect.Application.Services.Class
                         new List<string> { "A timetable already exists for this class in the given date range" },
                         "Timetable already exists");
                 }
-
-                // Check for duplicate periods in the same day
                 var duplicatePeriods = request.Slots
                     .GroupBy(s => new { s.DayOfWeek, s.Period })
                     .Where(g => g.Count() > 1)
@@ -64,8 +57,6 @@ namespace EduConnect.Application.Services.Class
                         new List<string> { $"Duplicate periods found: {string.Join("; ", duplicatePeriods)}" },
                         "Duplicate time slots found");
                 }
-
-                // Create timetable entity
                 var timetable = new Timetable
                 {
                     ClassID = request.ClassID,
@@ -74,8 +65,6 @@ namespace EduConnect.Application.Services.Class
                     EndDate = request.EndDate,
                     IsDeleted = false
                 };
-
-                // Create timetable slots
                 foreach (var slotRequest in request.Slots)
                 {
                     var timetableSlot = new TimetableSlot
@@ -95,10 +84,7 @@ namespace EduConnect.Application.Services.Class
 
                 try
                 {
-                    // Save timetable to database
                     var createdTimetable = await _timetableRepository.CreateTimetableAsync(timetable);
-
-                    // Create response
                     var response = new TimetableResponse
                     {
                         TimetableID = createdTimetable.TimetableID,
@@ -124,17 +110,14 @@ namespace EduConnect.Application.Services.Class
                 }
                 catch (DbUpdateException dbEx)
                 {
-                    // Handle specific database errors
                     string errorMessage = "Database error occurred while saving timetable.";
 
                     if (dbEx.InnerException != null)
                     {
-                        // Check for foreign key violations
                         if (dbEx.InnerException.Message.Contains("FOREIGN KEY"))
                         {
                             errorMessage = "Invalid reference: The class, teacher, or subject may not exist.";
                         }
-                        // Check for unique constraint violations
                         else if (dbEx.InnerException.Message.Contains("UNIQUE") ||
                                 dbEx.InnerException.Message.Contains("UQ_TimetableSlot_Period"))
                         {
@@ -153,7 +136,6 @@ namespace EduConnect.Application.Services.Class
             }
             catch (Exception ex)
             {
-                // Get the innermost exception for better error details
                 var innerException = ex;
                 while (innerException.InnerException != null)
                 {

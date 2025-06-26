@@ -13,7 +13,6 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
-using EduConnect.Domain.Enums;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -400,7 +399,7 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<LoginResponse>.SuccessResponse(response, "Google Login Succeeded");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return ApiResponse<LoginResponse>.ErrorResponse(
                     new List<string> { "An error occurred during Google login. Please try again." },
