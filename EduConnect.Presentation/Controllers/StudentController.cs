@@ -1,6 +1,9 @@
 ﻿using EduConnect.Application.Services.Interface;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using Microsoft.AspNetCore.Authorization;
+using System.Security.Claims;
+using System.Linq;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -14,16 +17,8 @@ namespace EduConnect.Presentation.Controllers
             _studentService = studentService;
         }
 
-        [HttpGet("timetable/{studentId}")]
-        public async Task<IActionResult> GetTimetableByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
-        {
-            var timetable = await _studentService.GetTimetableByStudentIdAsync(studentId, startDate, endDate);
-            if (timetable == null)
-                return NotFound(new { message = "Student or timetable not found" });
-            return Ok(timetable);
-        }
-
         [HttpGet("timetables/{studentId}")]
+        [Authorize(Roles = "Student")]
         public async Task<IActionResult> GetAllTimetablesByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var timetables = await _studentService.GetAllTimetablesByStudentIdAsync(studentId, startDate, endDate);

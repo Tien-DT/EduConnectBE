@@ -122,15 +122,16 @@ namespace EduConnect.Presentation
                 options.UseSecurityTokenValidators = true;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.Zero,
+                    ClockSkew = TimeSpan.FromMinutes(5), 
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    RequireExpirationTime = false,
+                    RequireExpirationTime = false, 
+                    ValidateLifetime = false,
                     ValidAudience = config["JwtSettings:Audience"],
                     ValidIssuer = config["JwtSettings:Issuer"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!)),
-                    RoleClaimType = "role"
+                    RoleClaimType = ClaimTypes.Role 
                 };
             });
 

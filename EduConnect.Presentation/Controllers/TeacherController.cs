@@ -1,4 +1,5 @@
 using EduConnect.Application.Services.Interface;
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
@@ -16,6 +17,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
         [HttpGet("timetable/{teacherId}")]
+        [Authorize(Roles ="Teacher")]
         public async Task<IActionResult> GetTimetableByTeacherId(string teacherId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var result = await _teacherService.GetTimetableByTeacherIdAsync(teacherId, startDate, endDate);

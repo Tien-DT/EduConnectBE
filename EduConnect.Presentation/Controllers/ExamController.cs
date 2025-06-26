@@ -3,7 +3,10 @@ using EduConnect.Application.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
+using System.Security.Claims;
 using System.Threading.Tasks;
+using System.Linq;
+using System.Security.Claims;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -157,5 +160,44 @@ namespace EduConnect.Presentation.Controllers
             }
             return BadRequest(result);
         }
+        
+        [HttpGet("test-student-role")]
+        [Authorize(Roles = "Student")]
+        public IActionResult TestStudentRole()
+        {
+            return Ok("OK - User role authorization successful");
+        }
+
+        [HttpGet("test-user-role")]
+        [Authorize(Roles = "User")]
+        public IActionResult TestUserRole()
+        {
+            return Ok("OK - User role authorization successful");
+        }
+
+        [HttpGet("test-actual-student-role")]
+        [Authorize(Roles = "Student")]
+        public IActionResult TestActualStudentRole()
+        {
+            return Ok("OK - Student role authorization successful");
+        }
+        
+        [HttpGet("debug-claims")]
+        [Authorize]
+        public IActionResult DebugClaims()
+        {
+            var claims = User.Claims.Select(c => new { c.Type, c.Value }).ToList();
+            var roles = User.FindAll(ClaimTypes.Role).Select(c => c.Value).ToList();
+            var customRoles = User.FindAll("role").Select(c => c.Value).ToList();
+            
+            return Ok(new
+            {
+                AllClaims = claims,
+                StandardRoles = roles,
+                CustomRoles = customRoles,
+                IsInStudentRole = User.IsInRole("Student"),
+                UserIdentity = User.Identity?.Name
+            });
+        }   
     }
 }
