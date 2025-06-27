@@ -10,7 +10,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
     {
         Task<IEnumerable<Teacher>> GetAllActiveTeachersAsync();
         Task<Teacher?> GetTeacherWithDetailsAsync(string teacherId);
-        Task<IEnumerable<Teacher>> SearchTeachersAsync(string searchTerm);
+        Task<IEnumerable<Teacher>> SearchTeachersAsync(string searchTerm = "");
         Task<IEnumerable<Teacher>> SortTeachersAsync(string sortBy = "FullName", bool ascending = true);
         Task<(IEnumerable<Teacher> Teachers, int TotalCount)> GetPagedTeachersAsync(
             int pageIndex, 

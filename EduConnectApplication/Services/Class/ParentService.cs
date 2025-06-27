@@ -126,5 +126,99 @@ namespace EduConnect.Application.Services.Class
                 );
             }
         }
+
+        public async Task<PagedApiResponse<List<StudentResponse>>> GetStudentsByParentIdAsync(
+            string parentId,
+            int pageIndex = 0,
+            int pageSize = 10,
+            string? searchTerm = null,
+            string sortBy = "FullName",
+            bool ascending = true)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(parentId))
+                {
+                    return PagedApiResponse<List<StudentResponse>>.ErrorPagedResponse(
+                        new List<string> { "Parent ID is required" },
+                        "Invalid parent ID",
+                        pageIndex,
+                        pageSize);
+                }
+
+                if (pageSize <= 0) pageSize = 10;
+                if (pageIndex < 0) pageIndex = 0;
+
+                var parent = await _parentRepository.GetParentWithDetailsAsync(parentId);
+                
+                if (parent == null)
+                {
+                    return PagedApiResponse<List<StudentResponse>>.ErrorPagedResponse(
+                        new List<string> { "Parent not found" },
+                        "Parent not found",
+                        pageIndex,
+                        pageSize);
+                }
+
+                var students = parent.Students?.Where(s => s.IsDeleted != true).AsQueryable();
+                
+                if (students == null || !students.Any())
+                {
+                    return PagedApiResponse<List<StudentResponse>>.SuccessPagedResponse(
+                        new List<StudentResponse>(),
+                        "No students found for this parent",
+                        0,
+                        pageIndex,
+                        pageSize);
+                }
+
+                // Apply search and sort using helper
+                students = StudentQueryHelper.ApplySearch(students, searchTerm);
+                students = StudentQueryHelper.ApplySort(students, sortBy, ascending);
+
+                var totalCount = students.Count();
+                var pagedStudents = students.Skip(pageIndex * pageSize).Take(pageSize).ToList();
+
+                var studentResponses = pagedStudents.Select(MapToStudentResponse).ToList();
+
+                return PagedApiResponse<List<StudentResponse>>.SuccessPagedResponse(
+                    studentResponses,
+                    "Students retrieved successfully",
+                    totalCount,
+                    pageIndex,
+                    pageSize);
+            }
+            catch (Exception ex)
+            {
+                return PagedApiResponse<List<StudentResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error retrieving students",
+                    pageIndex,
+                    pageSize);
+            }
+        }
+
+        private StudentResponse MapToStudentResponse(Student student)
+        {
+            return new StudentResponse
+            {
+                StudentID = student.StudentID,
+                AccountID = student.AccountID,
+                ParentID = student.ParentID,
+                ClassID = student.ClassID,
+                FullName = student.FullName ?? string.Empty,
+                Email = student.Account?.Email ?? string.Empty,
+                FirstName = student.Account?.FirstName ?? string.Empty,
+                LastName = student.Account?.LastName ?? string.Empty,
+                AvatarUrl = student.Account?.AvatarUrl ?? string.Empty,
+                IsActive = student.Account?.IsActive ?? false,
+                CreatedAt = student.Account?.CreatedAt,
+                UpdatedAt = student.Account?.UpdatedAt,
+                DateOfBirth = student.DateOfBirth,
+                Gender = student.Gender ?? string.Empty,
+                ClassName = student.Class?.ClassName ?? string.Empty,
+                ParentName = student.Parent?.FullName ?? string.Empty
+            };
+        }
     }
 }

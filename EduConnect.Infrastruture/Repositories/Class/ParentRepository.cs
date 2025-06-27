@@ -42,6 +42,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .Where(p => p.IsDeleted != true)
                 .ToListAsync();
         }
@@ -52,6 +54,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .Where(p => p.IsDeleted != true && p.Account.IsActive)
                 .ToListAsync();
         }
@@ -62,36 +66,47 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .FirstOrDefaultAsync(p => p.ParentID == id && p.IsDeleted != true);
         }
 
         public async Task<Parent?> GetParentWithDetailsAsync(string parentId)
         {
-            return await _context.Parents
+            var parent = await _context.Parents
                 .Include(p => p.Account)
-                .Include(p => p.Students)
-                    .ThenInclude(s => s.Account)
                 .Include(p => p.Feedbacks)
                 .FirstOrDefaultAsync(p => p.ParentID == parentId && p.IsDeleted != true);
+                
+            if (parent != null)
+            {
+                await _context.Entry(parent)
+                    .Collection(p => p.Students)
+                    .Query()
+                    .Where(s => s.IsDeleted != true)
+                    .Include(s => s.Account)
+                    .Include(s => s.Class)
+                    .LoadAsync();
+            }
+            
+            return parent;
         }
 
-        public async Task<IEnumerable<Parent>> SearchParentsAsync(string searchTerm)
+        public async Task<IEnumerable<Parent>> SearchParentsAsync(string searchTerm = "")
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return await GetAllActiveParentsAsync();
 
-            searchTerm = searchTerm.ToLower();
-            return await _context.Parents
+            var query = _context.Parents
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
-                .Where(p => p.IsDeleted != true && p.Account.IsActive &&
-                    (p.FullName != null && p.FullName.ToLower().Contains(searchTerm) ||
-                     p.ParentID.ToLower().Contains(searchTerm) ||
-                     p.Account.Email != null && p.Account.Email.ToLower().Contains(searchTerm) ||
-                     p.Account.FirstName.ToLower().Contains(searchTerm) ||
-                     p.Account.LastName.ToLower().Contains(searchTerm)))
-                .ToListAsync();
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
+                .Where(p => p.IsDeleted != true && p.Account.IsActive);
+
+            query = ApplySearchFilter(query, searchTerm);
+            return await query.ToListAsync();
         }
 
         public async Task<IEnumerable<Parent>> SortParentsAsync(string sortBy = "FullName", bool ascending = true)
@@ -100,37 +115,11 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .Where(p => p.IsDeleted != true && p.Account.IsActive);
 
-            switch (sortBy.ToLower())
-            {
-                case "fullname":
-                    query = ascending 
-                        ? query.OrderBy(p => p.FullName)
-                        : query.OrderByDescending(p => p.FullName);
-                    break;
-                case "parentid":
-                    query = ascending 
-                        ? query.OrderBy(p => p.ParentID)
-                        : query.OrderByDescending(p => p.ParentID);
-                    break;
-                case "email":
-                    query = ascending 
-                        ? query.OrderBy(p => p.Account.Email)
-                        : query.OrderByDescending(p => p.Account.Email);
-                    break;
-                case "createdat":
-                    query = ascending 
-                        ? query.OrderBy(p => p.Account.CreatedAt)
-                        : query.OrderByDescending(p => p.Account.CreatedAt);
-                    break;
-                default:
-                    query = ascending 
-                        ? query.OrderBy(p => p.FullName)
-                        : query.OrderByDescending(p => p.FullName);
-                    break;
-            }
-
+            query = ApplySortFilter(query, sortBy, ascending);
             return await query.ToListAsync();
         }
 
@@ -145,54 +134,15 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .Where(p => p.IsDeleted != true && p.Account.IsActive);
-
-            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                searchTerm = searchTerm.ToLower();
-                query = query.Where(p => 
-                    (p.FullName != null && p.FullName.ToLower().Contains(searchTerm)) ||
-                    p.ParentID.ToLower().Contains(searchTerm) ||
-                    (p.Account.Email != null && p.Account.Email.ToLower().Contains(searchTerm)) ||
-                    p.Account.FirstName.ToLower().Contains(searchTerm) ||
-                    p.Account.LastName.ToLower().Contains(searchTerm));
+                query = ApplySearchFilter(query, searchTerm);
             }
-
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
-
-            // Apply sorting
-            switch (sortBy.ToLower())
-            {
-                case "fullname":
-                    query = ascending 
-                        ? query.OrderBy(p => p.FullName)
-                        : query.OrderByDescending(p => p.FullName);
-                    break;
-                case "parentid":
-                    query = ascending 
-                        ? query.OrderBy(p => p.ParentID)
-                        : query.OrderByDescending(p => p.ParentID);
-                    break;
-                case "email":
-                    query = ascending 
-                        ? query.OrderBy(p => p.Account.Email)
-                        : query.OrderByDescending(p => p.Account.Email);
-                    break;
-                case "createdat":
-                    query = ascending 
-                        ? query.OrderBy(p => p.Account.CreatedAt)
-                        : query.OrderByDescending(p => p.Account.CreatedAt);
-                    break;
-                default:
-                    query = ascending 
-                        ? query.OrderBy(p => p.FullName)
-                        : query.OrderByDescending(p => p.FullName);
-                    break;
-            }
-
-            // Apply pagination
+            query = ApplySortFilter(query, sortBy, ascending);
             var parents = await query
                 .Skip(pageIndex * pageSize)
                 .Take(pageSize)
@@ -220,8 +170,55 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(p => p.Account)
                 .Include(p => p.Students)
                     .ThenInclude(s => s.Account)
+                .Include(p => p.Students)
+                    .ThenInclude(s => s.Class)
                 .Where(p => p.IsDeleted != true && p.Account.IsActive)
                 .AsQueryable();
+        }
+        private IQueryable<Parent> ApplySearchFilter(IQueryable<Parent> query, string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+
+            var lowerTerm = searchTerm.ToLower();
+            return query.Where(p =>
+                (p.FullName != null && p.FullName.ToLower().Contains(lowerTerm)) ||
+                p.ParentID.ToLower().Contains(lowerTerm) ||
+                (p.Account != null && (
+                    (p.Account.Email != null && p.Account.Email.ToLower().Contains(lowerTerm)) ||
+                    p.Account.FirstName.ToLower().Contains(lowerTerm) ||
+                    p.Account.LastName.ToLower().Contains(lowerTerm)
+                ))
+            );
+        }
+
+        private IQueryable<Parent> ApplySortFilter(IQueryable<Parent> query, string? sortBy, bool ascending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "FullName";
+
+            switch (sortBy.ToLower())
+            {
+                case "fullname":
+                    return ascending 
+                        ? query.OrderBy(p => p.FullName)
+                        : query.OrderByDescending(p => p.FullName);
+                case "parentid":
+                    return ascending 
+                        ? query.OrderBy(p => p.ParentID)
+                        : query.OrderByDescending(p => p.ParentID);
+                case "email":
+                    return ascending 
+                        ? query.OrderBy(p => p.Account.Email)
+                        : query.OrderByDescending(p => p.Account.Email);
+                case "createdat":
+                    return ascending 
+                        ? query.OrderBy(p => p.Account.CreatedAt)
+                        : query.OrderByDescending(p => p.Account.CreatedAt);
+                default:
+                    return ascending 
+                        ? query.OrderBy(p => p.FullName)
+                        : query.OrderByDescending(p => p.FullName);
+            }
         }
     }
 }

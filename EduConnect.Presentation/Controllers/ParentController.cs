@@ -39,5 +39,20 @@ namespace EduConnect.Presentation.Controllers
                 return Ok(result);
             return NotFound(result);
         }
+
+        [HttpGet("{parentId}/students")]
+        public async Task<IActionResult> GetStudentsByParentId(
+            string parentId,
+            [FromQuery] int pageIndex = 0,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "FullName",
+            [FromQuery] bool ascending = true)
+        {
+            var result = await _parentService.GetStudentsByParentIdAsync(parentId, pageIndex, pageSize, searchTerm, sortBy, ascending);
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
     }
 }

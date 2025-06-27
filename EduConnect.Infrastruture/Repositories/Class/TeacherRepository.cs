@@ -74,23 +74,19 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .FirstOrDefaultAsync(t => t.TeacherID == teacherId && t.IsDeleted != true);
         }
 
-        public async Task<IEnumerable<Teacher>> SearchTeachersAsync(string searchTerm)
+        public async Task<IEnumerable<Teacher>> SearchTeachersAsync(string searchTerm = "")
         {
             if (string.IsNullOrWhiteSpace(searchTerm))
                 return await GetAllActiveTeachersAsync();
 
-            searchTerm = searchTerm.ToLower();
-            return await _context.Teachers
+            var query = _context.Teachers
                 .Include(t => t.Account)
                 .Include(t => t.ClassTeachers)
                     .ThenInclude(ct => ct.Class)
-                .Where(t => t.IsDeleted != true && t.Account.IsActive &&
-                    (t.FullName != null && t.FullName.ToLower().Contains(searchTerm) ||
-                     t.TeacherID.ToLower().Contains(searchTerm) ||
-                     t.Account.Email != null && t.Account.Email.ToLower().Contains(searchTerm) ||
-                     t.Account.FirstName.ToLower().Contains(searchTerm) ||
-                     t.Account.LastName.ToLower().Contains(searchTerm)))
-                .ToListAsync();
+                .Where(t => t.IsDeleted != true && t.Account.IsActive);
+
+            query = ApplySearchFilter(query, searchTerm);
+            return await query.ToListAsync();
         }
 
         public async Task<IEnumerable<Teacher>> SortTeachersAsync(string sortBy = "FullName", bool ascending = true)
@@ -101,35 +97,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
                     .ThenInclude(ct => ct.Class)
                 .Where(t => t.IsDeleted != true && t.Account.IsActive);
 
-            switch (sortBy.ToLower())
-            {
-                case "fullname":
-                    query = ascending 
-                        ? query.OrderBy(t => t.FullName)
-                        : query.OrderByDescending(t => t.FullName);
-                    break;
-                case "teacherid":
-                    query = ascending 
-                        ? query.OrderBy(t => t.TeacherID)
-                        : query.OrderByDescending(t => t.TeacherID);
-                    break;
-                case "email":
-                    query = ascending 
-                        ? query.OrderBy(t => t.Account.Email)
-                        : query.OrderByDescending(t => t.Account.Email);
-                    break;
-                case "createdat":
-                    query = ascending 
-                        ? query.OrderBy(t => t.Account.CreatedAt)
-                        : query.OrderByDescending(t => t.Account.CreatedAt);
-                    break;
-                default:
-                    query = ascending 
-                        ? query.OrderBy(t => t.FullName)
-                        : query.OrderByDescending(t => t.FullName);
-                    break;
-            }
-
+            query = ApplySortFilter(query, sortBy, ascending);
             return await query.ToListAsync();
         }
 
@@ -145,53 +113,13 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(t => t.ClassTeachers)
                     .ThenInclude(ct => ct.Class)
                 .Where(t => t.IsDeleted != true && t.Account.IsActive);
-
-            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                searchTerm = searchTerm.ToLower();
-                query = query.Where(t => 
-                    (t.FullName != null && t.FullName.ToLower().Contains(searchTerm)) ||
-                    t.TeacherID.ToLower().Contains(searchTerm) ||
-                    (t.Account.Email != null && t.Account.Email.ToLower().Contains(searchTerm)) ||
-                    t.Account.FirstName.ToLower().Contains(searchTerm) ||
-                    t.Account.LastName.ToLower().Contains(searchTerm));
+                query = ApplySearchFilter(query, searchTerm);
             }
 
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
-
-            // Apply sorting
-            switch (sortBy.ToLower())
-            {
-                case "fullname":
-                    query = ascending 
-                        ? query.OrderBy(t => t.FullName)
-                        : query.OrderByDescending(t => t.FullName);
-                    break;
-                case "teacherid":
-                    query = ascending 
-                        ? query.OrderBy(t => t.TeacherID)
-                        : query.OrderByDescending(t => t.TeacherID);
-                    break;
-                case "email":
-                    query = ascending 
-                        ? query.OrderBy(t => t.Account.Email)
-                        : query.OrderByDescending(t => t.Account.Email);
-                    break;
-                case "createdat":
-                    query = ascending 
-                        ? query.OrderBy(t => t.Account.CreatedAt)
-                        : query.OrderByDescending(t => t.Account.CreatedAt);
-                    break;
-                default:
-                    query = ascending 
-                        ? query.OrderBy(t => t.FullName)
-                        : query.OrderByDescending(t => t.FullName);
-                    break;
-            }
-
-            // Apply pagination
+            query = ApplySortFilter(query, sortBy, ascending);
             var teachers = await query
                 .Skip(pageIndex * pageSize)
                 .Take(pageSize)
@@ -221,6 +149,51 @@ namespace EduConnect.Infrastruture.Repositories.Class
                     .ThenInclude(ct => ct.Class)
                 .Where(t => t.IsDeleted != true && t.Account.IsActive)
                 .AsQueryable();
+        }
+        private IQueryable<Teacher> ApplySearchFilter(IQueryable<Teacher> query, string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+
+            var lowerTerm = searchTerm.ToLower();
+            return query.Where(t =>
+                (t.FullName != null && t.FullName.ToLower().Contains(lowerTerm)) ||
+                t.TeacherID.ToLower().Contains(lowerTerm) ||
+                (t.Account != null && (
+                    (t.Account.Email != null && t.Account.Email.ToLower().Contains(lowerTerm)) ||
+                    t.Account.FirstName.ToLower().Contains(lowerTerm) ||
+                    t.Account.LastName.ToLower().Contains(lowerTerm)
+                ))
+            );
+        }
+
+        private IQueryable<Teacher> ApplySortFilter(IQueryable<Teacher> query, string? sortBy, bool ascending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "FullName";
+
+            switch (sortBy.ToLower())
+            {
+                case "fullname":
+                    return ascending 
+                        ? query.OrderBy(t => t.FullName)
+                        : query.OrderByDescending(t => t.FullName);
+                case "teacherid":
+                    return ascending 
+                        ? query.OrderBy(t => t.TeacherID)
+                        : query.OrderByDescending(t => t.TeacherID);
+                case "email":
+                    return ascending 
+                        ? query.OrderBy(t => t.Account.Email)
+                        : query.OrderByDescending(t => t.Account.Email);
+                case "createdat":
+                    return ascending 
+                        ? query.OrderBy(t => t.Account.CreatedAt)
+                        : query.OrderByDescending(t => t.Account.CreatedAt);
+                default:
+                    return ascending 
+                        ? query.OrderBy(t => t.FullName)
+                        : query.OrderByDescending(t => t.FullName);
+            }
         }
     }
 }

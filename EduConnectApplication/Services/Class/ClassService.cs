@@ -1,4 +1,5 @@
 using EduConnect.Application.DTOs.Response;
+using EduConnect.Application.QueryHelpers;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
@@ -21,32 +22,28 @@ namespace EduConnect.Application.Services.Class
         }
         public async Task<IEnumerable<EduConnect.Domain.Entities.Class>> SearchClassesAsync(string? searchTerm)
         {
-            var all = await _classRepository.GetAllAsync();
-            if (string.IsNullOrWhiteSpace(searchTerm)) return all;
-            return all.Where(c => c.ClassName != null && c.ClassName.ToLower().Contains(searchTerm.ToLower()));
+            var query = (await _classRepository.GetAllAsync()).AsQueryable();
+            query = ClassQueryHelper.ApplySearch(query, searchTerm);
+            return query.ToList();
         }
+        
         public async Task<IEnumerable<EduConnect.Domain.Entities.Class>> SortClassesAsync(string? sortBy, bool ascending = true)
         {
-            var all = await _classRepository.GetAllAsync();
-            if (string.IsNullOrWhiteSpace(sortBy) || sortBy.ToLower() == "classname")
-            {
-                return ascending ? all.OrderBy(c => c.ClassName) : all.OrderByDescending(c => c.ClassName);
-            }
-            return all;
+            var query = (await _classRepository.GetAllAsync()).AsQueryable();
+            query = ClassQueryHelper.ApplySort(query, sortBy, ascending);
+            return query.ToList();
         }
+        
         public async Task<PagedResponse<EduConnect.Domain.Entities.Class>> GetPagedClassesAsync(int pageIndex, int pageSize, string? searchTerm = null, string? sortBy = null, bool ascending = true)
         {
-            var all = await _classRepository.GetAllAsync();
-            if (!string.IsNullOrWhiteSpace(searchTerm))
-            {
-                all = all.Where(c => c.ClassName != null && c.ClassName.ToLower().Contains(searchTerm.ToLower()));
-            }
-            if (string.IsNullOrWhiteSpace(sortBy) || sortBy.ToLower() == "classname")
-            {
-                all = ascending ? all.OrderBy(c => c.ClassName) : all.OrderByDescending(c => c.ClassName);
-            }
-            var totalCount = all.Count();
-            var items = all.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            var query = (await _classRepository.GetAllAsync()).AsQueryable();
+            
+            query = ClassQueryHelper.ApplySearch(query, searchTerm);
+            query = ClassQueryHelper.ApplySort(query, sortBy, ascending);
+            
+            var totalCount = query.Count();
+            var items = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
+            
             return new PagedResponse<EduConnect.Domain.Entities.Class>
             {
                 Items = items,

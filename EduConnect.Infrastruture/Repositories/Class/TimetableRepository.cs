@@ -59,7 +59,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
             }
             await _context.Timetables.AddAsync(timetable);
             await _context.SaveChangesAsync();
-            return await GetTimetableByIdAsync(timetable.TimetableID);
+            var result = await GetTimetableByIdAsync(timetable.TimetableID);
+            return result!;
         }
 
         public async Task<Timetable?> GetTimetableByIdAsync(int timetableId)
@@ -83,17 +84,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(t => t.Class)
                 .Where(t => t.ClassID == classId && (t.IsDeleted != true));
 
-            if (startDate.HasValue)
-            {
-                query = query.Where(t => t.EndDate >= startDate.Value);
-            }
+            query = ApplyDateFilter(query, startDate, endDate);
+            query = ApplySortFilter(query, "startdate", false); 
 
-            if (endDate.HasValue)
-            {
-                query = query.Where(t => t.StartDate <= endDate.Value);
-            }
-
-            return await query.OrderByDescending(t => t.StartDate).ToListAsync();
+            return await query.ToListAsync();
         }
 
         public async Task<bool> DeleteTimetableAsync(int timetableId)
@@ -129,6 +123,47 @@ namespace EduConnect.Infrastruture.Repositories.Class
                      (t.StartDate >= startDate && t.EndDate <= endDate) ||
                      (t.StartDate <= startDate && t.EndDate >= endDate))
                 );
+        }
+
+        private IQueryable<Timetable> ApplyDateFilter(IQueryable<Timetable> query, DateTime? startDate, DateTime? endDate)
+        {
+            if (startDate.HasValue)
+            {
+                query = query.Where(t => t.EndDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(t => t.StartDate <= endDate.Value);
+            }
+
+            return query;
+        }
+
+        private IQueryable<Timetable> ApplySortFilter(IQueryable<Timetable> query, string? sortBy, bool ascending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "startdate";
+
+            switch (sortBy.ToLower())
+            {
+                case "startdate":
+                    return ascending 
+                        ? query.OrderBy(t => t.StartDate)
+                        : query.OrderByDescending(t => t.StartDate);
+                case "enddate":
+                    return ascending 
+                        ? query.OrderBy(t => t.EndDate)
+                        : query.OrderByDescending(t => t.EndDate);
+                case "classname":
+                    return ascending 
+                        ? query.OrderBy(t => t.Class.ClassName)
+                        : query.OrderByDescending(t => t.Class.ClassName);
+                default:
+                    return ascending 
+                        ? query.OrderBy(t => t.StartDate)
+                        : query.OrderByDescending(t => t.StartDate);
+            }
         }
     }
 }

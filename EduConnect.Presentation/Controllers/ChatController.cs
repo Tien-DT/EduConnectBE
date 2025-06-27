@@ -16,7 +16,7 @@ namespace EduConnect.Presentation.Controllers
             _chatBotService = chatBotService;
         }
 
-        [HttpPost("SendChatBot")]
+        [HttpPost("chat")]
         public async Task<IActionResult> SendChatBot([FromBody] List<ChatMessageRequest> messages)
         {
             try

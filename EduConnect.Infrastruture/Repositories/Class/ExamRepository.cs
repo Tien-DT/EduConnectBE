@@ -38,25 +38,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             var query = _context.Exams
                 .Where(e => e.StudentID == studentId && e.IsDeleted != true);
-            if (startDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate <= endDate.Value);
-            }
+            
+            query = ApplyDateFilter(query, startDate, endDate);
             query = query.Include(e => e.Subject);
-
-            if (ascending)
-            {
-                query = query.OrderBy(e => e.ExamDate);
-            }
-            else
-            {
-                query = query.OrderByDescending(e => e.ExamDate);
-            }
+            query = ApplySortFilter(query, "examdate", ascending);
 
             return await query.ToListAsync();
         }
@@ -71,27 +56,13 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             var query = _context.Exams
                 .Where(e => e.StudentID == studentId && e.IsDeleted != true);
-            if (startDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate <= endDate.Value);
-            }
+            
+            query = ApplyDateFilter(query, startDate, endDate);
             query = query.Include(e => e.Subject);
 
             var totalCount = await query.CountAsync();
 
-            if (ascending)
-            {
-                query = query.OrderBy(e => e.ExamDate);
-            }
-            else
-            {
-                query = query.OrderByDescending(e => e.ExamDate);
-            }
+            query = ApplySortFilter(query, "examdate", ascending);
             var items = await query
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -111,25 +82,9 @@ namespace EduConnect.Infrastruture.Repositories.Class
             var query = _context.Exams
                 .Where(e => e.StudentID == student.StudentID && e.IsDeleted != true);
 
-            if (startDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate <= endDate.Value);
-            }
+            query = ApplyDateFilter(query, startDate, endDate);
             query = query.Include(e => e.Subject);
-
-            if (ascending)
-            {
-                query = query.OrderBy(e => e.ExamDate);
-            }
-            else
-            {
-                query = query.OrderByDescending(e => e.ExamDate);
-            }
+            query = ApplySortFilter(query, "examdate", ascending);
 
             return await query.ToListAsync();
         }
@@ -150,25 +105,12 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             var query = _context.Exams
                 .Where(e => e.StudentID == student.StudentID && e.IsDeleted != true);
-            if (startDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate >= startDate.Value);
-            }
-
-            if (endDate.HasValue)
-            {
-                query = query.Where(e => e.ExamDate <= endDate.Value);
-            }
+            
+            query = ApplyDateFilter(query, startDate, endDate);
             query = query.Include(e => e.Subject);
             var totalCount = await query.CountAsync();
-            if (ascending)
-            {
-                query = query.OrderBy(e => e.ExamDate);
-            }
-            else
-            {
-                query = query.OrderByDescending(e => e.ExamDate);
-            }
+            
+            query = ApplySortFilter(query, "examdate", ascending);
             var items = await query
                 .Skip((pageIndex - 1) * pageSize)
                 .Take(pageSize)
@@ -186,6 +128,48 @@ namespace EduConnect.Infrastruture.Repositories.Class
         public IQueryable<Exam> GetExamQueryable()
         {
             return _context.Exams.AsQueryable();
+        }
+
+        // Private helper methods for consistent query filtering
+        private IQueryable<Exam> ApplyDateFilter(IQueryable<Exam> query, DateTime? startDate, DateTime? endDate)
+        {
+            if (startDate.HasValue)
+            {
+                query = query.Where(e => e.ExamDate >= startDate.Value);
+            }
+
+            if (endDate.HasValue)
+            {
+                query = query.Where(e => e.ExamDate <= endDate.Value);
+            }
+
+            return query;
+        }
+
+        private IQueryable<Exam> ApplySortFilter(IQueryable<Exam> query, string? sortBy, bool ascending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "examdate";
+
+            switch (sortBy.ToLower())
+            {
+                case "examdate":
+                    return ascending 
+                        ? query.OrderBy(e => e.ExamDate)
+                        : query.OrderByDescending(e => e.ExamDate);
+                case "examtype":
+                    return ascending 
+                        ? query.OrderBy(e => e.ExamType)
+                        : query.OrderByDescending(e => e.ExamType);
+                case "room":
+                    return ascending 
+                        ? query.OrderBy(e => e.Room)
+                        : query.OrderByDescending(e => e.Room);
+                default:
+                    return ascending 
+                        ? query.OrderBy(e => e.ExamDate)
+                        : query.OrderByDescending(e => e.ExamDate);
+            }
         }
     }
 }

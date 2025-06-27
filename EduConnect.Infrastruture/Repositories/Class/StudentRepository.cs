@@ -78,65 +78,12 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 .Include(s => s.Class)
                 .Include(s => s.Parent)
                 .Where(s => s.IsDeleted != true && s.Account.IsActive);
-
-            // Apply search filter
             if (!string.IsNullOrWhiteSpace(searchTerm))
             {
-                searchTerm = searchTerm.ToLower();
-                query = query.Where(s => 
-                    (s.FullName != null && s.FullName.ToLower().Contains(searchTerm)) ||
-                    s.StudentID.ToLower().Contains(searchTerm) ||
-                    (s.Account.Email != null && s.Account.Email.ToLower().Contains(searchTerm)) ||
-                    s.Account.FirstName.ToLower().Contains(searchTerm) ||
-                    s.Account.LastName.ToLower().Contains(searchTerm) ||
-                    (s.Class != null && s.Class.ClassName != null && s.Class.ClassName.ToLower().Contains(searchTerm)) ||
-                    (s.Parent != null && s.Parent.FullName != null && s.Parent.FullName.ToLower().Contains(searchTerm)));
+                query = ApplySearchFilter(query, searchTerm);
             }
-
-            // Get total count before pagination
             var totalCount = await query.CountAsync();
-
-            // Apply sorting
-            switch (sortBy.ToLower())
-            {
-                case "fullname":
-                    query = ascending 
-                        ? query.OrderBy(s => s.FullName)
-                        : query.OrderByDescending(s => s.FullName);
-                    break;
-                case "studentid":
-                    query = ascending 
-                        ? query.OrderBy(s => s.StudentID)
-                        : query.OrderByDescending(s => s.StudentID);
-                    break;
-                case "email":
-                    query = ascending 
-                        ? query.OrderBy(s => s.Account.Email)
-                        : query.OrderByDescending(s => s.Account.Email);
-                    break;
-                case "createdat":
-                    query = ascending 
-                        ? query.OrderBy(s => s.Account.CreatedAt)
-                        : query.OrderByDescending(s => s.Account.CreatedAt);
-                    break;
-                case "dateofbirth":
-                    query = ascending 
-                        ? query.OrderBy(s => s.DateOfBirth)
-                        : query.OrderByDescending(s => s.DateOfBirth);
-                    break;
-                case "classname":
-                    query = ascending 
-                        ? query.OrderBy(s => s.Class.ClassName)
-                        : query.OrderByDescending(s => s.Class.ClassName);
-                    break;
-                default:
-                    query = ascending 
-                        ? query.OrderBy(s => s.FullName)
-                        : query.OrderByDescending(s => s.FullName);
-                    break;
-            }
-
-            // Apply pagination
+            query = ApplySortFilter(query, sortBy, ascending);
             var students = await query
                 .Skip(pageIndex * pageSize)
                 .Take(pageSize)
@@ -210,6 +157,62 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 query = query.Where(t => t.StartDate <= endDate.Value);
             
             return await query.OrderByDescending(t => t.StartDate).ToListAsync();
+        }
+
+        private IQueryable<Student> ApplySearchFilter(IQueryable<Student> query, string searchTerm)
+        {
+            if (string.IsNullOrWhiteSpace(searchTerm)) return query;
+
+            var lowerTerm = searchTerm.ToLower();
+            return query.Where(s =>
+                (s.FullName != null && s.FullName.ToLower().Contains(lowerTerm)) ||
+                s.StudentID.ToLower().Contains(lowerTerm) ||
+                (s.Account != null && (
+                    (s.Account.Email != null && s.Account.Email.ToLower().Contains(lowerTerm)) ||
+                    s.Account.FirstName.ToLower().Contains(lowerTerm) ||
+                    s.Account.LastName.ToLower().Contains(lowerTerm)
+                )) ||
+                (s.Class != null && s.Class.ClassName != null && s.Class.ClassName.ToLower().Contains(lowerTerm)) ||
+                (s.Parent != null && s.Parent.FullName != null && s.Parent.FullName.ToLower().Contains(lowerTerm))
+            );
+        }
+
+        private IQueryable<Student> ApplySortFilter(IQueryable<Student> query, string? sortBy, bool ascending)
+        {
+            if (string.IsNullOrWhiteSpace(sortBy))
+                sortBy = "FullName";
+
+            switch (sortBy.ToLower())
+            {
+                case "fullname":
+                    return ascending 
+                        ? query.OrderBy(s => s.FullName)
+                        : query.OrderByDescending(s => s.FullName);
+                case "studentid":
+                    return ascending 
+                        ? query.OrderBy(s => s.StudentID)
+                        : query.OrderByDescending(s => s.StudentID);
+                case "email":
+                    return ascending 
+                        ? query.OrderBy(s => s.Account.Email)
+                        : query.OrderByDescending(s => s.Account.Email);
+                case "createdat":
+                    return ascending 
+                        ? query.OrderBy(s => s.Account.CreatedAt)
+                        : query.OrderByDescending(s => s.Account.CreatedAt);
+                case "dateofbirth":
+                    return ascending 
+                        ? query.OrderBy(s => s.DateOfBirth)
+                        : query.OrderByDescending(s => s.DateOfBirth);
+                case "classname":
+                    return ascending 
+                        ? query.OrderBy(s => s.Class.ClassName)
+                        : query.OrderByDescending(s => s.Class.ClassName);
+                default:
+                    return ascending 
+                        ? query.OrderBy(s => s.FullName)
+                        : query.OrderByDescending(s => s.FullName);
+            }
         }
     }
 }

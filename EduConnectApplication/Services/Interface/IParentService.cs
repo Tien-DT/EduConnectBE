@@ -21,5 +21,12 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = true,
             int pageIndex = 0,
             int pageSize = 10);
+        Task<PagedApiResponse<List<StudentResponse>>> GetStudentsByParentIdAsync(
+            string parentId,
+            int pageIndex = 0,
+            int pageSize = 10,
+            string? searchTerm = null,
+            string sortBy = "FullName",
+            bool ascending = true);
     }
 }
