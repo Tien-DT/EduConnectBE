@@ -4,6 +4,7 @@ using System;
 using Microsoft.AspNetCore.Authorization;
 using System.Security.Claims;
 using System.Linq;
+using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -15,6 +16,29 @@ namespace EduConnect.Presentation.Controllers
         public StudentController(IStudentService studentService)
         {
             _studentService = studentService;
+        }
+
+        [HttpGet("Students")]
+        public async Task<IActionResult> GetStudents(
+            [FromQuery] int pageIndex = 0,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "FullName",
+            [FromQuery] bool ascending = true)
+        {
+            var result = await _studentService.GetStudentsAsync(pageIndex, pageSize, searchTerm, sortBy, ascending);
+            if (result.Success)
+                return Ok(result);
+            return NotFound(result);
+        }
+
+        [HttpGet("{studentId}")]
+        public async Task<IActionResult> GetStudentById(string studentId)
+        {
+            var result = await _studentService.GetStudentByIdAsync(studentId);
+            if (result.Success)
+                return Ok(result);
+            return NotFound(result);
         }
 
         [HttpGet("timetables/{studentId}")]

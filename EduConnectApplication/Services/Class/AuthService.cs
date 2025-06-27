@@ -83,7 +83,7 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<LoginResponse>.SuccessResponse(response, "Login Succeeded");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return ApiResponse<LoginResponse>.ErrorResponse(
                     new List<string> { "An error occurred during login. Please try again." },
@@ -177,13 +177,16 @@ namespace EduConnect.Application.Services.Class
                 }
 
                 var roleName = register.Role.ToString();
-                var roleResult = await _authRepository.AddToRoleAsync(accountRegister, roleName);
-                if (!roleResult.Succeeded)
+                if (!string.IsNullOrEmpty(roleName))
                 {
-                    return ApiResponse<RegisterResponse>.ErrorResponse(
-                        roleResult.Errors.Select(e => e.Description).ToList(),
-                        "Role Assignment Failed"
-                    );
+                    var roleResult = await _authRepository.AddToRoleAsync(accountRegister, roleName);
+                    if (!roleResult.Succeeded)
+                    {
+                        return ApiResponse<RegisterResponse>.ErrorResponse(
+                            roleResult.Errors.Select(e => e.Description).ToList(),
+                            "Role Assignment Failed"
+                        );
+                    }
                 }
 
                 var responseDTO = new RegisterResponse
@@ -244,7 +247,7 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<GetNewTokenResponse>.SuccessResponse(response, "Token refreshed successfully");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return ApiResponse<GetNewTokenResponse>.ErrorResponse(
                     new List<string> { "An error occurred during token refresh. Please try again." },
@@ -259,9 +262,12 @@ namespace EduConnect.Application.Services.Class
             {
                 new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
-                new Claim(ClaimTypes.Email, account.Email),
-                new Claim("avatar_url", account.AvatarUrl ?? string.Empty)
+                new Claim(ClaimTypes.Email, account.Email ?? string.Empty)
             };
+            if (!string.IsNullOrWhiteSpace(account.AvatarUrl))
+            {
+                claims.Add(new Claim("avatar_url", account.AvatarUrl));
+            }
 
             var roles = await _authRepository.GetRolesAsync(account);
             foreach (var role in roles)
@@ -329,7 +335,6 @@ namespace EduConnect.Application.Services.Class
                 if (existingUser != null)
                 {
                     existingUser.GoogleId = request.GoogleId;
-                    existingUser.AvatarUrl = request.Picture; 
                     existingUser.UpdatedAt = DateTime.UtcNow;
                     var updateResult = await _authRepository.UpdateUserAsync(existingUser);
                     if (!updateResult.Succeeded)
@@ -352,7 +357,7 @@ namespace EduConnect.Application.Services.Class
                         FirstName = request.GivenName,
                         LastName = request.FamilyName,
                         GoogleId = request.GoogleId,
-                        AvatarUrl = request.Picture,
+                        AvatarUrl = !string.IsNullOrWhiteSpace(request.Picture) ? request.Picture : string.Empty,
                         EmailConfirmed = request.EmailVerified,
                         PhoneNumberConfirmed = false,
                         TwoFactorEnabled = false,
@@ -381,6 +386,14 @@ namespace EduConnect.Application.Services.Class
                     }
                     existingUser = await _authRepository.GetUserByIdAsync(existingUser.Id);
                 }
+                if (existingUser == null)
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Failed to retrieve user information." },
+                        "Google Login Failed"
+                    );
+                }
+                
                 if (!existingUser.IsActive)
                 {
                     return ApiResponse<LoginResponse>.ErrorResponse(

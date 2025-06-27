@@ -1,5 +1,6 @@
 using AutoMapper;
 using EduConnect.Application.DTOs.Response;
+using EduConnect.Application.QueryHelpers;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
@@ -13,10 +14,12 @@ namespace EduConnect.Application.Services.Class
     public class TeacherService : ITeacherService
     {
         private readonly ITimetableSlotRepository _timetableSlotRepository;
+        private readonly ITeacherRepository _teacherRepository;
 
-        public TeacherService(ITimetableSlotRepository timetableSlotRepository)
+        public TeacherService(ITimetableSlotRepository timetableSlotRepository, ITeacherRepository teacherRepository)
         {
             _timetableSlotRepository = timetableSlotRepository;
+            _teacherRepository = teacherRepository;
         }
 
         public async Task<ApiResponse<TimetableResponse>> GetTimetableByTeacherIdAsync(string teacherId, DateTime? startDate = null, DateTime? endDate = null)
@@ -45,6 +48,112 @@ namespace EduConnect.Application.Services.Class
                 }).ToList()
             };
             return ApiResponse<TimetableResponse>.SuccessResponse(response, "Timetable slots retrieved successfully");
+        }
+
+        public async Task<ApiResponse<TeacherResponse>> GetTeacherByIdAsync(string teacherId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(teacherId))
+                {
+                    return ApiResponse<TeacherResponse>.ErrorResponse(
+                        new List<string> { "Teacher ID is required" }, 
+                        "Invalid teacher ID");
+                }
+
+                var teacher = await _teacherRepository.GetTeacherWithDetailsAsync(teacherId);
+                
+                if (teacher == null)
+                {
+                    return ApiResponse<TeacherResponse>.ErrorResponse(
+                        new List<string> { "Teacher not found" }, 
+                        "Teacher not found");
+                }
+
+                var teacherResponse = MapToTeacherResponse(teacher);
+
+                return ApiResponse<TeacherResponse>.SuccessResponse(
+                    teacherResponse, 
+                    "Teacher retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<TeacherResponse>.ErrorResponse(
+                    new List<string> { ex.Message }, 
+                    "Error retrieving teacher");
+            }
+        }
+
+        public async Task<PagedApiResponse<List<TeacherResponse>>> GetTeachersAsync(
+            int pageIndex = 0, 
+            int pageSize = 10, 
+            string? searchTerm = null, 
+            string sortBy = "FullName", 
+            bool ascending = true)
+        {
+            return await FilterSortSearchTeachersAsync(searchTerm, sortBy, ascending, pageIndex, pageSize);
+        }
+
+        private TeacherResponse MapToTeacherResponse(Teacher teacher)
+        {
+            return new TeacherResponse
+            {
+                TeacherID = teacher.TeacherID,
+                AccountID = teacher.AccountID,
+                FullName = teacher.FullName ?? string.Empty,
+                Email = teacher.Account?.Email ?? string.Empty,
+                FirstName = teacher.Account?.FirstName ?? string.Empty,
+                LastName = teacher.Account?.LastName ?? string.Empty,
+                AvatarUrl = teacher.Account?.AvatarUrl ?? string.Empty,
+                IsActive = teacher.Account?.IsActive ?? false,
+                CreatedAt = teacher.Account?.CreatedAt,
+                UpdatedAt = teacher.Account?.UpdatedAt,
+                Classes = teacher.ClassTeachers?.Where(ct => ct.IsDeleted != true)
+                    .Select(ct => ct.Class?.ClassName ?? string.Empty)
+                    .Where(className => !string.IsNullOrEmpty(className))
+                    .ToList() ?? new List<string>()
+            };
+        }
+
+        public async Task<PagedApiResponse<List<TeacherResponse>>> FilterSortSearchTeachersAsync(
+            string? searchTerm = null,
+            string? sortBy = null,
+            bool ascending = true,
+            int pageIndex = 0,
+            int pageSize = 10)
+        {
+            try
+            {
+                if (pageSize <= 0) pageSize = 10;
+                if (pageIndex < 0) pageIndex = 0;
+
+                var query = _teacherRepository.GetTeacherQueryable();
+
+                query = TeacherQueryHelper.ApplySearch(query, searchTerm);
+                query = TeacherQueryHelper.ApplySort(query, sortBy, ascending);
+
+                var totalCount = await Task.FromResult(query.Count());
+                var items = await Task.FromResult(query.Skip(pageIndex * pageSize).Take(pageSize).ToList());
+
+                var teacherResponses = items.Select(MapToTeacherResponse).ToList();
+
+                return PagedApiResponse<List<TeacherResponse>>.SuccessPagedResponse(
+                    teacherResponses,
+                    "Teachers filtered, sorted, and searched successfully",
+                    totalCount,
+                    pageIndex,
+                    pageSize
+                );
+            }
+            catch (Exception ex)
+            {
+                return PagedApiResponse<List<TeacherResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error filtering, sorting, and searching teachers",
+                    pageIndex,
+                    pageSize
+                );
+            }
         }
     }
 }

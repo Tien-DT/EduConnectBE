@@ -38,8 +38,121 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
         public Task<IEnumerable<Student>> GetAllAsync()
         {
-            var students = _context.Students.ToList();
+            var students = _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Class)
+                .Include(s => s.Parent)
+                .Where(s => s.IsDeleted != true)
+                .ToList();
             return Task.FromResult<IEnumerable<Student>>(students);
+        }
+
+        public async Task<IEnumerable<Student>> GetAllActiveStudentsAsync()
+        {
+            return await _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Class)
+                .Include(s => s.Parent)
+                .Where(s => s.IsDeleted != true && s.Account.IsActive)
+                .ToListAsync();
+        }
+
+        public async Task<Student?> GetStudentWithDetailsAsync(string studentId)
+        {
+            return await _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Class)
+                .Include(s => s.Parent)
+                .FirstOrDefaultAsync(s => s.StudentID == studentId && s.IsDeleted != true);
+        }
+
+        public async Task<(IEnumerable<Student> Students, int TotalCount)> GetPagedStudentsAsync(
+            int pageIndex, 
+            int pageSize, 
+            string? searchTerm = null, 
+            string sortBy = "FullName", 
+            bool ascending = true)
+        {
+            var query = _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Class)
+                .Include(s => s.Parent)
+                .Where(s => s.IsDeleted != true && s.Account.IsActive);
+
+            // Apply search filter
+            if (!string.IsNullOrWhiteSpace(searchTerm))
+            {
+                searchTerm = searchTerm.ToLower();
+                query = query.Where(s => 
+                    (s.FullName != null && s.FullName.ToLower().Contains(searchTerm)) ||
+                    s.StudentID.ToLower().Contains(searchTerm) ||
+                    (s.Account.Email != null && s.Account.Email.ToLower().Contains(searchTerm)) ||
+                    s.Account.FirstName.ToLower().Contains(searchTerm) ||
+                    s.Account.LastName.ToLower().Contains(searchTerm) ||
+                    (s.Class != null && s.Class.ClassName != null && s.Class.ClassName.ToLower().Contains(searchTerm)) ||
+                    (s.Parent != null && s.Parent.FullName != null && s.Parent.FullName.ToLower().Contains(searchTerm)));
+            }
+
+            // Get total count before pagination
+            var totalCount = await query.CountAsync();
+
+            // Apply sorting
+            switch (sortBy.ToLower())
+            {
+                case "fullname":
+                    query = ascending 
+                        ? query.OrderBy(s => s.FullName)
+                        : query.OrderByDescending(s => s.FullName);
+                    break;
+                case "studentid":
+                    query = ascending 
+                        ? query.OrderBy(s => s.StudentID)
+                        : query.OrderByDescending(s => s.StudentID);
+                    break;
+                case "email":
+                    query = ascending 
+                        ? query.OrderBy(s => s.Account.Email)
+                        : query.OrderByDescending(s => s.Account.Email);
+                    break;
+                case "createdat":
+                    query = ascending 
+                        ? query.OrderBy(s => s.Account.CreatedAt)
+                        : query.OrderByDescending(s => s.Account.CreatedAt);
+                    break;
+                case "dateofbirth":
+                    query = ascending 
+                        ? query.OrderBy(s => s.DateOfBirth)
+                        : query.OrderByDescending(s => s.DateOfBirth);
+                    break;
+                case "classname":
+                    query = ascending 
+                        ? query.OrderBy(s => s.Class.ClassName)
+                        : query.OrderByDescending(s => s.Class.ClassName);
+                    break;
+                default:
+                    query = ascending 
+                        ? query.OrderBy(s => s.FullName)
+                        : query.OrderByDescending(s => s.FullName);
+                    break;
+            }
+
+            // Apply pagination
+            var students = await query
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
+                .ToListAsync();
+
+            return (students, totalCount);
+        }
+
+        public IQueryable<Student> GetStudentQueryable()
+        {
+            return _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Class)
+                .Include(s => s.Parent)
+                .Where(s => s.IsDeleted != true && s.Account.IsActive)
+                .AsQueryable();
         }
 
         public Task<Student?> GetByIdAsync(string id)

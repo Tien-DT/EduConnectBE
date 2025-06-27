@@ -16,6 +16,29 @@ namespace EduConnect.Presentation.Controllers
             _teacherService = teacherService;
         }
 
+        [HttpGet("Teachers")]
+        public async Task<IActionResult> GetTeachers(
+            [FromQuery] int pageIndex = 0,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "FullName",
+            [FromQuery] bool ascending = true)
+        {
+            var result = await _teacherService.GetTeachersAsync(pageIndex, pageSize, searchTerm, sortBy, ascending);
+            if (result.Success)
+                return Ok(result);
+            return NotFound(result);
+        }
+
+        [HttpGet("{teacherId}")]
+        public async Task<IActionResult> GetTeacherById(string teacherId)
+        {
+            var result = await _teacherService.GetTeacherByIdAsync(teacherId);
+            if (result.Success)
+                return Ok(result);
+            return NotFound(result);
+        }
+
         [HttpGet("timetable/{teacherId}")]
         [Authorize(Roles ="Teacher")]
         public async Task<IActionResult> GetTimetableByTeacherId(string teacherId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)

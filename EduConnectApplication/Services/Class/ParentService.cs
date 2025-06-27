@@ -1,0 +1,130 @@
+using AutoMapper;
+using EduConnect.Application.DTOs.Response;
+using EduConnect.Application.QueryHelpers;
+using EduConnect.Application.Services.Interface;
+using EduConnect.Domain.Entities;
+using EduConnect.Infrastruture.Repositories.Interface;
+using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
+
+namespace EduConnect.Application.Services.Class
+{
+    public class ParentService : IParentService
+    {
+        private readonly IParentRepository _parentRepository;
+
+        public ParentService(IParentRepository parentRepository)
+        {
+            _parentRepository = parentRepository;
+        }
+
+        public async Task<ApiResponse<ParentResponse>> GetParentByIdAsync(string parentId)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(parentId))
+                {
+                    return ApiResponse<ParentResponse>.ErrorResponse(
+                        new List<string> { "Parent ID is required" }, 
+                        "Invalid parent ID");
+                }
+
+                var parent = await _parentRepository.GetParentWithDetailsAsync(parentId);
+                
+                if (parent == null)
+                {
+                    return ApiResponse<ParentResponse>.ErrorResponse(
+                        new List<string> { "Parent not found" }, 
+                        "Parent not found");
+                }
+
+                var parentResponse = MapToParentResponse(parent);
+
+                return ApiResponse<ParentResponse>.SuccessResponse(
+                    parentResponse, 
+                    "Parent retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<ParentResponse>.ErrorResponse(
+                    new List<string> { ex.Message }, 
+                    "Error retrieving parent");
+            }
+        }
+
+        public async Task<PagedApiResponse<List<ParentResponse>>> GetParentsAsync(
+            int pageIndex = 0, 
+            int pageSize = 10, 
+            string? searchTerm = null, 
+            string sortBy = "FullName", 
+            bool ascending = true)
+        {
+            return await FilterSortSearchParentsAsync(searchTerm, sortBy, ascending, pageIndex, pageSize);
+        }
+
+        private ParentResponse MapToParentResponse(Parent parent)
+        {
+            return new ParentResponse
+            {
+                ParentID = parent.ParentID,
+                AccountID = parent.AccountID,
+                FullName = parent.FullName ?? string.Empty,
+                Email = parent.Account?.Email ?? string.Empty,
+                FirstName = parent.Account?.FirstName ?? string.Empty,
+                LastName = parent.Account?.LastName ?? string.Empty,
+                AvatarUrl = parent.Account?.AvatarUrl ?? string.Empty,
+                IsActive = parent.Account?.IsActive ?? false,
+                CreatedAt = parent.Account?.CreatedAt,
+                UpdatedAt = parent.Account?.UpdatedAt,
+                StudentNames = parent.Students?.Where(s => s.IsDeleted != true)
+                    .Select(s => s.FullName ?? string.Empty)
+                    .Where(name => !string.IsNullOrEmpty(name))
+                    .ToList() ?? new List<string>(),
+                TotalStudents = parent.Students?.Count(s => s.IsDeleted != true) ?? 0
+            };
+        }
+
+        public async Task<PagedApiResponse<List<ParentResponse>>> FilterSortSearchParentsAsync(
+            string? searchTerm = null,
+            string? sortBy = null,
+            bool ascending = true,
+            int pageIndex = 0,
+            int pageSize = 10)
+        {
+            try
+            {
+                if (pageSize <= 0) pageSize = 10;
+                if (pageIndex < 0) pageIndex = 0;
+
+                var query = _parentRepository.GetParentQueryable();
+
+                query = ParentQueryHelper.ApplySearch(query, searchTerm);
+                query = ParentQueryHelper.ApplySort(query, sortBy, ascending);
+
+                var totalCount = await Task.FromResult(query.Count());
+                var items = await Task.FromResult(query.Skip(pageIndex * pageSize).Take(pageSize).ToList());
+
+                var parentResponses = items.Select(MapToParentResponse).ToList();
+
+                return PagedApiResponse<List<ParentResponse>>.SuccessPagedResponse(
+                    parentResponses,
+                    "Parents filtered, sorted, and searched successfully",
+                    totalCount,
+                    pageIndex,
+                    pageSize
+                );
+            }
+            catch (Exception ex)
+            {
+                return PagedApiResponse<List<ParentResponse>>.ErrorPagedResponse(
+                    new List<string> { ex.Message },
+                    "Error filtering, sorting, and searching parents",
+                    pageIndex,
+                    pageSize
+                );
+            }
+        }
+    }
+}

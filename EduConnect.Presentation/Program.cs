@@ -76,6 +76,9 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IBaseRepository<Timetable, int>, BaseRepository<Timetable, int>>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
+            builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
+            builder.Services.AddScoped<IParentService, ParentService>();
+            builder.Services.AddScoped<IParentRepository, ParentRepository>();
             builder.Services.AddScoped<ITimetableSlotRepository, TimetableSlotRepository>();
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
