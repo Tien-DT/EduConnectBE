@@ -15,6 +15,8 @@ namespace EduConnect.Infrastruture.Repositories.Interface
         Task<bool> CheckPasswordAsync(ApplicationUser user, string password);
         Task<IdentityResult> AddToRoleAsync(ApplicationUser user, string roleId);
         Task<IdentityResult> AddToRoleByNameAsync(ApplicationUser user, string roleName);
+        Task<IdentityResult> RemoveFromRoleByNameAsync(ApplicationUser user, string roleName);
+        Task<IdentityResult> ReplaceRoleAsync(ApplicationUser user, string oldRoleName, string newRoleName);
         Task<IList<string>> GetRolesAsync(ApplicationUser user);
         Task SaveRefreshTokenAsync(string userId, string refreshToken, DateTime expTime);
         Task<ApplicationUser?> GetUserWithRolesAsync(string userId);

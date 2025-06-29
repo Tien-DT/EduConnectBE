@@ -110,7 +110,7 @@ namespace EduConnect.Application.Services.Class
                 }
                 catch (DbUpdateException dbEx)
                 {
-                    string errorMessage = "Database error occurred while saving timetable.";
+                    string errorMessage = "Lỗi cơ sở dữ liệu xảy ra khi lưu thời khóa biểu.";
 
                     if (dbEx.InnerException != null)
                     {
@@ -121,17 +121,17 @@ namespace EduConnect.Application.Services.Class
                         else if (dbEx.InnerException.Message.Contains("UNIQUE") ||
                                 dbEx.InnerException.Message.Contains("UQ_TimetableSlot_Period"))
                         {
-                            errorMessage = "Duplicate period found for the same day. Each day can only have one slot per period number.";
+                            errorMessage = "Tìm thấy tiết học trùng lặp trong cùng một ngày. Mỗi ngày chỉ có thể có một tiết học cho mỗi số tiết.";
                         }
 
                         return ApiResponse<TimetableResponse>.ErrorResponse(
                             new List<string> { errorMessage, dbEx.InnerException.Message },
-                            "Database constraint violation");
+                            "Vi phạm ràng buộc cơ sở dữ liệu");
                     }
 
                     return ApiResponse<TimetableResponse>.ErrorResponse(
                         new List<string> { errorMessage, dbEx.Message },
-                        "Database error");
+                        "Lỗi cơ sở dữ liệu");
                 }
             }
             catch (Exception ex)
@@ -144,7 +144,7 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<TimetableResponse>.ErrorResponse(
                     new List<string> { innerException.Message },
-                    "Error creating timetable");
+                    "Lỗi khi tạo thời khóa biểu");
             }
         }
 

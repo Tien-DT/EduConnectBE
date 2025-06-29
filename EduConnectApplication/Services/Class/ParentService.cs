@@ -171,8 +171,6 @@ namespace EduConnect.Application.Services.Class
                         pageIndex,
                         pageSize);
                 }
-
-                // Apply search and sort using helper
                 students = StudentQueryHelper.ApplySearch(students, searchTerm);
                 students = StudentQueryHelper.ApplySort(students, sortBy, ascending);
 

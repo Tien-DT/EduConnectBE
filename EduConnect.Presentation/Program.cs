@@ -1,5 +1,8 @@
 using EduConnect.Application.Services.Class;
 using EduConnect.Application.Services.Interface;
+using EduConnect.Application.Services.Background;
+using EduConnect.Application.Services.Cache;
+using EduConnect.Application.Services.Queue;
 using EduConnect.Data;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Options;
@@ -59,10 +62,28 @@ namespace EduConnect.Presentation
                 });
             });
             builder.Services.Configure<GeminiOption>(builder.Configuration.GetSection("GeminiApi"));
+            builder.Services.Configure<RedisOption>(builder.Configuration.GetSection("Redis"));
             builder.Services.AddMemoryCache();
+
+            // Redis Configuration
+            var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
+            if (!string.IsNullOrEmpty(redisConnectionString))
+            {
+                builder.Services.AddStackExchangeRedisCache(options =>
+                {
+                    options.Configuration = redisConnectionString;
+                });
+            }
+            else
+            {
+                // Fallback to in-memory cache if Redis is not configured
+                builder.Services.AddMemoryCache();
+            }
 
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IChatBotService, ChatBotService>();
+            builder.Services.AddScoped<IGeminiFunctionService, GeminiFunctionService>();
+            builder.Services.AddScoped<IChatCacheService, ChatCacheService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
@@ -75,13 +96,22 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IPrincipalRepository, PrincipalRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IBaseRepository<Timetable, int>, BaseRepository<Timetable, int>>();
+            builder.Services.AddScoped<IBaseRepository<Class, int>, BaseRepository<Class, int>>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
             builder.Services.AddScoped<IParentService, ParentService>();
             builder.Services.AddScoped<IParentRepository, ParentRepository>();
+            builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<ITimetableSlotRepository, TimetableSlotRepository>();
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
+            builder.Services.AddScoped<IClassService, ClassService>();
+
+            // Email services
+            builder.Services.AddScoped<IEmailService, EmailService>();
+            builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
+            builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
+            builder.Services.AddHostedService<EmailQueueBackgroundService>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
@@ -126,12 +156,12 @@ namespace EduConnect.Presentation
                 options.UseSecurityTokenValidators = true;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.FromMinutes(5), 
+                    ClockSkew = TimeSpan.FromSeconds(5), 
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = false,
                     ValidateAudience = false,
-                    RequireExpirationTime = false, 
-                    ValidateLifetime = false,
+                    RequireExpirationTime = true, 
+                    ValidateLifetime = true,
                     ValidAudience = config["JwtSettings:Audience"],
                     ValidIssuer = config["JwtSettings:Issuer"],
                     IssuerSigningKey = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(config["JwtSettings:SecretKey"]!)),

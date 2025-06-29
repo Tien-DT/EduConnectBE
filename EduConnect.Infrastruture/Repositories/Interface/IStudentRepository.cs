@@ -7,9 +7,8 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Infrastruture.Repositories.Interface
 {
-    public interface IStudentRepository
+    public interface IStudentRepository : IBaseRepository<Student, string>
     {
-        Task<IEnumerable<Student>> GetAllAsync();
         Task<IEnumerable<Student>> GetAllActiveStudentsAsync();
         Task<Student?> GetStudentWithDetailsAsync(string studentId);
         Task<List<Student>> GetStudentsByClassIdAsync(int classId);

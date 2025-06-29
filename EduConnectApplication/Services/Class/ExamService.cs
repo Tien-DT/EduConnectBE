@@ -62,7 +62,7 @@ namespace EduConnect.Application.Services.Class
             {
                 return ApiResponse<ExamResponse>.ErrorResponse(
                     new List<string> { ex.Message },
-                    "Error creating exam");
+                    "Lỗi khi tạo bài kiểm tra");
             }
         }
 
@@ -102,7 +102,7 @@ namespace EduConnect.Application.Services.Class
             {
                 return ApiResponse<List<ExamResponse>>.ErrorResponse(
                     new List<string> { ex.Message },
-                    "Error creating exams");
+                    "Lỗi khi tạo các bài kiểm tra");
             }
         }
 
@@ -143,7 +143,7 @@ namespace EduConnect.Application.Services.Class
             {
                 return ApiResponse<List<ExamResponse>>.ErrorResponse(
                     new List<string> { ex.Message },
-                    "Error creating class exams");
+                    "Lỗi khi tạo bài kiểm tra cho lớp học");
             }
         }
 
@@ -193,7 +193,7 @@ namespace EduConnect.Application.Services.Class
             {
                 return ApiResponse<List<ExamResponse>>.ErrorResponse(
                     new List<string> { ex.Message },
-                    "Error creating exams for students");
+                    "Lỗi khi tạo bài kiểm tra cho học sinh");
             }
         }
 

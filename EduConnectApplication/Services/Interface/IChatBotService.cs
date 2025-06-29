@@ -12,5 +12,8 @@ namespace EduConnect.Application.Services.Interface
     {
         Task<ApiResponse<ChatMessageResponse>> SendPromptAsync(string prompt);
         Task<ChatMessageResponse> GenerateChatReplyAsync(List<ChatMessageRequest> chatHistory);
+        Task<ApiResponse<ChatMessageResponse>> SendPromptWithFunctionsAsync(string prompt);
+        Task<ApiResponse<ChatMessageResponse>> SendPromptWithCachedHistoryAsync(ChatWithHistoryRequest request);
+        Task<ApiResponse<ChatMessageResponse>> SendPromptWithFunctionsAndHistoryAsync(List<ChatMessageRequest> conversationHistory);
     }
 }

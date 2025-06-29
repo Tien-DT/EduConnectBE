@@ -24,8 +24,5 @@ namespace EduConnect.Application.DTOs.Request
 
         [Required(ErrorMessage = "Please confirm Password!")]
         public string? ConfirmPassword { get; set; } = null!;
-
-        [Required(ErrorMessage = "Please input Role!")]
-        public int? Role { get; set; } = null!;
     }
 }

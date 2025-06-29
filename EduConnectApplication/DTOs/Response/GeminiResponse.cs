@@ -43,7 +43,19 @@ namespace EduConnect.Application.DTOs.Response
     internal sealed class Part
     {
         [JsonProperty("text")]
-        public string Text { get; set; }
+        public string? Text { get; set; }
+
+        [JsonProperty("functionCall")]
+        public FunctionCallResponse? FunctionCall { get; set; }
+    }
+
+    internal sealed class FunctionCallResponse
+    {
+        [JsonProperty("name")]
+        public string Name { get; set; } = string.Empty;
+
+        [JsonProperty("args")]
+        public Dictionary<string, object> Args { get; set; } = new();
     }
 
     internal sealed class PromptFeedback

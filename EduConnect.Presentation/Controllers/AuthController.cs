@@ -87,5 +87,72 @@ namespace EduConnect.Presentation.Controllers
             }
             return Ok(result);
         }
+
+        [HttpPost("google-token-login")]
+        public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleTokenLogin(GoogleTokenLoginRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+
+            var result = await _authService.GoogleTokenLoginAsync(request);
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            return Ok(result);
+        }
+
+        [HttpGet("user-role-id")]
+        [Authorize]
+        public async Task<ActionResult<ApiResponse<UserRoleIdResponse>>> GetUserRoleId()
+        {
+            var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            
+            if (string.IsNullOrEmpty(userId))
+            {
+                return BadRequest(ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                    new List<string> { "Invalid authentication token" },
+                    "User ID not found in token"
+                ));
+            }
+
+            var result = await _authService.GetUserRoleIdAsync(userId);
+            
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            
+            return Ok(result);
+        }
+
+        [HttpGet("verify-email")]
+        public async Task<ActionResult<ApiResponse<string>>> VerifyEmail([FromQuery] string token, [FromQuery] string email)
+        {
+            if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email))
+            {
+                return BadRequest(ApiResponse<string>.ErrorResponse(
+                    new List<string> { "Token and email are required" },
+                    "Invalid request"
+                ));
+            }
+
+            var request = new EmailVerificationRequest
+            {
+                Token = token,
+                Email = email
+            };
+
+            var result = await _authService.VerifyEmailAsync(request);
+            
+            if (!result.Success)
+            {
+                return BadRequest(result);
+            }
+            
+            return Ok(result);
+        }
     }
 }

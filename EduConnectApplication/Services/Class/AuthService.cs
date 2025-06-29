@@ -13,6 +13,7 @@ using System.Security.Claims;
 using System.Security.Cryptography;
 using System.Text;
 using System.Threading.Tasks;
+using Google.Apis.Auth;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -20,11 +21,26 @@ namespace EduConnect.Application.Services.Class
     {
         private readonly IAuthRepository _authRepository;
         private readonly IConfiguration _configuration;
+        private readonly ITeacherRepository _teacherRepository;
+        private readonly IStudentRepository _studentRepository;
+        private readonly IParentRepository _parentRepository;
+        private readonly IPrincipalRepository _principalRepository;
+        private readonly IEmailService _emailService;
+        private readonly IEmailVerificationTokenService _emailVerificationTokenService;
 
-        public AuthService(IAuthRepository authRepository, IConfiguration configuration)
+        public AuthService(IAuthRepository authRepository, IConfiguration configuration,
+            ITeacherRepository teacherRepository, IStudentRepository studentRepository,
+            IParentRepository parentRepository, IPrincipalRepository principalRepository,
+            IEmailService emailService, IEmailVerificationTokenService emailVerificationTokenService)
         {
             _authRepository = authRepository;
             _configuration = configuration;
+            _teacherRepository = teacherRepository;
+            _studentRepository = studentRepository;
+            _parentRepository = parentRepository;
+            _principalRepository = principalRepository;
+            _emailService = emailService;
+            _emailVerificationTokenService = emailVerificationTokenService;
         }
 
         public async Task<ApiResponse<LoginResponse>> LoginAsync(LoginRequest login)
@@ -128,14 +144,6 @@ namespace EduConnect.Application.Services.Class
                     );
                 }
 
-                if (!register.Role.HasValue)
-                {
-                    return ApiResponse<RegisterResponse>.ErrorResponse(
-                        new List<string> { "Role is required." },
-                        "Registration Failed"
-                    );
-                }
-
                 var existingAccount = await _authRepository.FindByEmailAsync(register.Email);
                 if (existingAccount != null)
                 {
@@ -175,18 +183,48 @@ namespace EduConnect.Application.Services.Class
                         "Registration Failed"
                     );
                 }
-
-                var roleName = register.Role.ToString();
-                if (!string.IsNullOrEmpty(roleName))
+                var roleResult = await _authRepository.AddToRoleAsync(accountRegister, "0");
+                if (!roleResult.Succeeded)
                 {
-                    var roleResult = await _authRepository.AddToRoleAsync(accountRegister, roleName);
-                    if (!roleResult.Succeeded)
+                    return ApiResponse<RegisterResponse>.ErrorResponse(
+                        roleResult.Errors.Select(e => e.Description).ToList(),
+                        "Role Assignment Failed"
+                    );
+                }
+
+                try
+                {
+                    Console.WriteLine($"DEBUG: About to generate token for user {accountRegister.Id} with email {accountRegister.Email}");
+                    var verificationToken = await _emailVerificationTokenService.GenerateAndStoreTokenAsync(accountRegister.Id, accountRegister.Email);
+                    Console.WriteLine($"DEBUG: Generated verification token: {verificationToken ?? "NULL"}");
+                    
+                    if (string.IsNullOrEmpty(verificationToken))
                     {
+                        Console.WriteLine("ERROR: Verification token is null or empty!");
                         return ApiResponse<RegisterResponse>.ErrorResponse(
-                            roleResult.Errors.Select(e => e.Description).ToList(),
-                            "Role Assignment Failed"
+                            new List<string> { "Failed to generate verification token. Please try again." },
+                            "Registration Failed"
                         );
                     }
+                    
+                    try
+                    {
+                        await _emailService.SendVerificationEmailAsync(accountRegister.Email, verificationToken, accountRegister.Id);
+                        Console.WriteLine("DEBUG: Verification email sent successfully");
+                    }
+                    catch (Exception emailEx)
+                    {
+                        Console.WriteLine($"Failed to send verification email: {emailEx.Message}");
+                    }
+                }
+                catch (Exception tokenEx)
+                {
+                    Console.WriteLine($"ERROR: Exception during token generation: {tokenEx.Message}");
+                    Console.WriteLine($"Stack trace: {tokenEx.StackTrace}");
+                    return ApiResponse<RegisterResponse>.ErrorResponse(
+                        new List<string> { "Failed to generate verification token. Please try again." },
+                        "Registration Failed"
+                    );
                 }
 
                 var responseDTO = new RegisterResponse
@@ -196,7 +234,7 @@ namespace EduConnect.Application.Services.Class
                     LastName = accountRegister.LastName,
                 };
 
-                return ApiResponse<RegisterResponse>.SuccessResponse(responseDTO, "Registration Succeeded");
+                return ApiResponse<RegisterResponse>.SuccessResponse(responseDTO, "Registration succeeded. Please check your email for verification link.");
             }
             catch (Exception ex)
             {
@@ -279,7 +317,7 @@ namespace EduConnect.Application.Services.Class
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var currentVietnamTime = TimeZoneInfo.ConvertTime(DateTime.Now, vietnamTimeZone);
-            var expireVietnamTime = currentVietnamTime.AddHours(24);
+            var expireVietnamTime = currentVietnamTime.AddSeconds(15);
             var expireUtcTime = TimeZoneInfo.ConvertTimeToUtc(expireVietnamTime, vietnamTimeZone);
 
             var tokenDescriptor = new JwtSecurityToken(
@@ -420,5 +458,290 @@ namespace EduConnect.Application.Services.Class
                 );
             }
         }
+
+        public async Task<ApiResponse<LoginResponse>> GoogleTokenLoginAsync(GoogleTokenLoginRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.GoogleToken))
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Google token is required." },
+                        "Google Token Login Failed"
+                    );
+                }
+                GoogleJsonWebSignature.Payload payload;
+                try
+                {
+                    payload = await GoogleJsonWebSignature.ValidateAsync(request.GoogleToken);
+                }
+                catch (Exception ex)
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Invalid Google token.", ex.Message },
+                        "Google Token Login Failed"
+                    );
+                }
+                var email = payload.Email;
+                var googleId = payload.Subject; 
+                var givenName = payload.GivenName ?? string.Empty;
+                var familyName = payload.FamilyName ?? string.Empty;
+                var picture = payload.Picture ?? string.Empty;
+                var emailVerified = payload.EmailVerified;
+
+                if (string.IsNullOrWhiteSpace(email) || string.IsNullOrWhiteSpace(googleId))
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Invalid token payload: missing email or user ID." },
+                        "Google Token Login Failed"
+                    );
+                }
+                var existingUser = await _authRepository.FindByEmailAsync(email);
+                
+                if (existingUser != null)
+                {
+                    if (string.IsNullOrWhiteSpace(existingUser.GoogleId))
+                    {
+                        existingUser.GoogleId = googleId;
+                        existingUser.UpdatedAt = DateTime.UtcNow;
+                        var updateResult = await _authRepository.UpdateUserAsync(existingUser);
+                        if (!updateResult.Succeeded)
+                        {
+                            return ApiResponse<LoginResponse>.ErrorResponse(
+                                new List<string> { "Failed to link Google account." },
+                                "Google Token Login Failed"
+                            );
+                        }
+                    }
+                }
+                else
+                {
+                    existingUser = new ApplicationUser
+                    {
+                        Id = Guid.NewGuid().ToString(),
+                        Email = email,
+                        UserName = email,
+                        NormalizedEmail = email.ToUpperInvariant(),
+                        NormalizedUserName = email.ToUpperInvariant(),
+                        FirstName = givenName,
+                        LastName = familyName,
+                        GoogleId = googleId,
+                        AvatarUrl = !string.IsNullOrWhiteSpace(picture) ? picture : string.Empty,
+                        EmailConfirmed = emailVerified,
+                        PhoneNumberConfirmed = false,
+                        TwoFactorEnabled = false,
+                        LockoutEnabled = false,
+                        AccessFailedCount = 0,
+                        IsActive = true,
+                        CreatedAt = DateTime.UtcNow,
+                        SecurityStamp = Guid.NewGuid().ToString(),
+                        ConcurrencyStamp = Guid.NewGuid().ToString()
+                    };
+
+                    var createResult = await _authRepository.CreateUserWithoutPasswordAsync(existingUser);
+                    if (!createResult.Succeeded)
+                    {
+                        return ApiResponse<LoginResponse>.ErrorResponse(
+                            createResult.Errors.Select(e => e.Description).ToList(),
+                            "Google Token Login Failed"
+                        );
+                    }
+                    var roleResult = await _authRepository.AddToRoleByNameAsync(existingUser, "Student");
+                    if (!roleResult.Succeeded)
+                    {
+                        return ApiResponse<LoginResponse>.ErrorResponse(
+                            new List<string> { "Failed to assign default role." },
+                            "Google Token Login Failed"
+                        );
+                    }
+
+                    existingUser = await _authRepository.GetUserByIdAsync(existingUser.Id);
+                }
+
+                if (existingUser == null)
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Failed to retrieve user information." },
+                        "Google Token Login Failed"
+                    );
+                }
+                
+                if (!existingUser.IsActive)
+                {
+                    return ApiResponse<LoginResponse>.ErrorResponse(
+                        new List<string> { "Account is not active." },
+                        "Google Token Login Failed"
+                    );
+                }
+                string token = await GenerateToken(existingUser);
+                string refreshToken = await SaveRefreshToken(existingUser);
+
+                var response = new LoginResponse
+                {
+                    Token = token,
+                    RefreshToken = refreshToken
+                };
+
+                return ApiResponse<LoginResponse>.SuccessResponse(response, "Google Token Login Succeeded");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<LoginResponse>.ErrorResponse(
+                    new List<string> { "An error occurred during Google token login.", ex.Message },
+                    "Google Token Login Failed"
+                );
+            }
+        }
+
+        public async Task<ApiResponse<UserRoleIdResponse>> GetUserRoleIdAsync(string userId)
+        {
+            try
+            {
+                var user = await _authRepository.GetUserByIdAsync(userId);
+                if (user == null)
+                {
+                    return ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                        new List<string> { "User not found." },
+                        "User Not Found"
+                    );
+                }
+
+                var roles = await _authRepository.GetRolesAsync(user);
+                if (roles == null || !roles.Any())
+                {
+                    return ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                        new List<string> { "User has no assigned roles." },
+                        "No Roles Found"
+                    );
+                }
+
+                var role = roles.First(); 
+                string roleId = string.Empty;
+                string fullName = string.Empty;
+
+                switch (role.ToLower())
+                {
+                    case "teacher":
+                        var teachers = await _teacherRepository.GetAllAsync();
+                        var teacher = teachers.FirstOrDefault(t => t.AccountID == userId);
+                        if (teacher != null)
+                        {
+                            roleId = teacher.TeacherID;
+                            fullName = teacher.FullName ?? string.Empty;
+                        }
+                        break;
+                    case "student":
+                        var students = await _studentRepository.GetAllAsync();
+                        var student = students.FirstOrDefault(s => s.AccountID == userId);
+                        if (student != null)
+                        {
+                            roleId = student.StudentID;
+                            fullName = student.FullName ?? string.Empty;
+                        }
+                        break;
+                    case "parent":
+                        var parents = await _parentRepository.GetAllAsync();
+                        var parent = parents.FirstOrDefault(p => p.AccountID == userId);
+                        if (parent != null)
+                        {
+                            roleId = parent.ParentID;
+                            fullName = parent.FullName ?? string.Empty;
+                        }
+                        break;
+                    case "principal":
+                        if (user.Principal != null)
+                        {
+                            roleId = user.Principal.PrincipalID;
+                            fullName = user.Principal.FullName ?? string.Empty;
+                        }
+                        break;
+                    default:
+                        return ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                            new List<string> { "Invalid role type." },
+                            "Invalid Role"
+                        );
+                }
+
+                if (string.IsNullOrEmpty(roleId))
+                {
+                    return ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                        new List<string> { $"No {role} profile found for this user." },
+                        "Profile Not Found"
+                    );
+                }
+
+                var response = new UserRoleIdResponse
+                {
+                    UserId = userId,
+                    Role = role,
+                    Id = roleId,
+                    FullName = fullName
+                };
+
+                return ApiResponse<UserRoleIdResponse>.SuccessResponse(response, "User role ID retrieved successfully");
+            }
+            catch (Exception)
+            {
+                return ApiResponse<UserRoleIdResponse>.ErrorResponse(
+                    new List<string> { "An error occurred while retrieving user role ID. Please try again." },
+                    "Get User Role ID Failed"
+                );
+            }
+        }
+
+        public async Task<ApiResponse<string>> VerifyEmailAsync(EmailVerificationRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Email) || string.IsNullOrWhiteSpace(request.Token))
+                {
+                    return ApiResponse<string>.ErrorResponse(
+                        new List<string> { "Email and token are required." },
+                        "Email Verification Failed"
+                    );
+                }
+                var userId = await _emailVerificationTokenService.ValidateAndConsumeTokenAsync(request.Token);
+                if (userId == null)
+                {
+                    return ApiResponse<string>.ErrorResponse(
+                        new List<string> { "Invalid or expired verification token." },
+                        "Email Verification Failed"
+                    );
+                }
+                var user = await _authRepository.FindByEmailAsync(request.Email);
+                if (user == null || user.Id != userId)
+                {
+                    return ApiResponse<string>.ErrorResponse(
+                        new List<string> { "Invalid verification request." },
+                        "Email Verification Failed"
+                    );
+                }
+                if (user.EmailConfirmed)
+                {
+                    return ApiResponse<string>.SuccessResponse("Email already verified", "Email Already Verified");
+                }
+                user.EmailConfirmed = true;
+                user.UpdatedAt = DateTime.UtcNow;
+                
+                var updateResult = await _authRepository.UpdateUserAsync(user);
+                if (!updateResult.Succeeded)
+                {
+                    return ApiResponse<string>.ErrorResponse(
+                        updateResult.Errors.Select(e => e.Description).ToList(),
+                        "Email Verification Failed"
+                    );
+                }
+
+                return ApiResponse<string>.SuccessResponse("Email verified successfully", "Email Verification Succeeded");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.ErrorResponse(
+                    new List<string> { "An error occurred during email verification.", ex.Message },
+                    "Email Verification Failed"
+                );
+            }
+        }
+
     }
 }

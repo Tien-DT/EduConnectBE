@@ -72,12 +72,30 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 });
             }
 
-            return await _userManager.AddToRoleAsync(user, role.Name);
+            return await _userManager.AddToRoleAsync(user, role.Name ?? string.Empty);
         }
 
         public async Task<IdentityResult> AddToRoleByNameAsync(ApplicationUser user, string roleName)
         {
             return await _userManager.AddToRoleAsync(user, roleName);
+        }
+
+        public async Task<IdentityResult> RemoveFromRoleByNameAsync(ApplicationUser user, string roleName)
+        {
+            return await _userManager.RemoveFromRoleAsync(user, roleName);
+        }
+
+        public async Task<IdentityResult> ReplaceRoleAsync(ApplicationUser user, string oldRoleName, string newRoleName)
+        {
+            // Remove old role first
+            var removeResult = await _userManager.RemoveFromRoleAsync(user, oldRoleName);
+            if (!removeResult.Succeeded)
+            {
+                return removeResult;
+            }
+
+            // Add new role
+            return await _userManager.AddToRoleAsync(user, newRoleName);
         }
 
         public async Task<IList<string>> GetRolesAsync(ApplicationUser user)
