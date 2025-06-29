@@ -99,10 +99,10 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<LoginResponse>.SuccessResponse(response, "Login Succeeded");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return ApiResponse<LoginResponse>.ErrorResponse(
-                    new List<string> { "An error occurred during login. Please try again." },
+                    new List<string> { ex.Message, ex.StackTrace },
                     "Login Failed"
                 );
             }
@@ -245,7 +245,7 @@ namespace EduConnect.Application.Services.Class
                 }
 
                 return ApiResponse<RegisterResponse>.ErrorResponse(
-                    new List<string> { errorMessage },
+                    new List<string> { errorMessage, ex.StackTrace },
                     "Registration Failed"
                 );
             }
@@ -285,10 +285,10 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<GetNewTokenResponse>.SuccessResponse(response, "Token refreshed successfully");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return ApiResponse<GetNewTokenResponse>.ErrorResponse(
-                    new List<string> { "An error occurred during token refresh. Please try again." },
+                    new List<string> { ex.Message, ex.StackTrace },
                     "Token Refresh Failed"
                 );
             }
@@ -296,21 +296,37 @@ namespace EduConnect.Application.Services.Class
 
         private async Task<string> GenerateToken(ApplicationUser account)
         {
-            var claims = new List<Claim>
-            {
-                new Claim(ClaimTypes.NameIdentifier, account.Id),
-                new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
-                new Claim(ClaimTypes.Email, account.Email ?? string.Empty)
-            };
-            if (!string.IsNullOrWhiteSpace(account.AvatarUrl))
-            {
-                claims.Add(new Claim("avatar_url", account.AvatarUrl));
-            }
-
             var roles = await _authRepository.GetRolesAsync(account);
-            foreach (var role in roles)
+            var role = roles.FirstOrDefault() ?? string.Empty;
+            var claims = new List<Claim>();
+
+            if (role == "Teacher")
             {
-                claims.Add(new Claim(ClaimTypes.Role, role));
+                var teacher = (await _teacherRepository.GetAllAsync()).FirstOrDefault(t => t.AccountID == account.Id);
+                if (teacher != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, teacher.TeacherID));
+                }
+                else
+                {
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, account.Id));
+                }
+            }
+            else if (role == "Student")
+            {
+                var student = (await _studentRepository.GetAllAsync()).FirstOrDefault(s => s.AccountID == account.Id);
+                if (student != null)
+                {
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, student.AccountID));
+                }
+                else
+                {
+                    claims.Add(new Claim(ClaimTypes.NameIdentifier, account.Id));
+                }
+            }
+            else
+            {
+                claims.Add(new Claim(ClaimTypes.NameIdentifier, account.Id));
             }
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!));
@@ -319,16 +335,14 @@ namespace EduConnect.Application.Services.Class
             var currentVietnamTime = TimeZoneInfo.ConvertTime(DateTime.Now, vietnamTimeZone);
             var expireVietnamTime = currentVietnamTime.AddSeconds(15);
             var expireUtcTime = TimeZoneInfo.ConvertTimeToUtc(expireVietnamTime, vietnamTimeZone);
-
-            var tokenDescriptor = new JwtSecurityToken(
+            var token = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: expireUtcTime,
+                expires: DateTime.UtcNow.AddHours(2),
                 signingCredentials: creds
             );
-
-            return new JwtSecurityTokenHandler().WriteToken(tokenDescriptor);
+            return new JwtSecurityTokenHandler().WriteToken(token);
         }
 
         private string GenerateRefreshToken()
@@ -450,11 +464,11 @@ namespace EduConnect.Application.Services.Class
 
                 return ApiResponse<LoginResponse>.SuccessResponse(response, "Google Login Succeeded");
             }
-            catch (Exception)
+            catch (Exception ex)
             {
                 return ApiResponse<LoginResponse>.ErrorResponse(
-                    new List<string> { "An error occurred during Google login. Please try again." },
-                    "Google Login Failed"
+                    new List<string> { ex.Message, ex.StackTrace },
+                    "Login Failed"
                 );
             }
         }

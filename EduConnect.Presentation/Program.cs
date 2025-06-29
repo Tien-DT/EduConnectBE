@@ -65,7 +65,6 @@ namespace EduConnect.Presentation
             builder.Services.Configure<RedisOption>(builder.Configuration.GetSection("Redis"));
             builder.Services.AddMemoryCache();
 
-            // Redis Configuration
             var redisConnectionString = builder.Configuration.GetConnectionString("Redis");
             if (!string.IsNullOrEmpty(redisConnectionString))
             {
@@ -76,7 +75,6 @@ namespace EduConnect.Presentation
             }
             else
             {
-                // Fallback to in-memory cache if Redis is not configured
                 builder.Services.AddMemoryCache();
             }
 
@@ -106,12 +104,18 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
             builder.Services.AddScoped<IClassService, ClassService>();
-
-            // Email services
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
             builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
             builder.Services.AddHostedService<EmailQueueBackgroundService>();
+            builder.Services.AddScoped<IBaseRepository<Student, string>, StudentRepository>();
+            builder.Services.AddScoped<IBaseRepository<Parent, string>, ParentRepository>();
+            builder.Services.AddScoped<IBaseRepository<EduConnect.Domain.Entities.Class, int>, BaseRepository<EduConnect.Domain.Entities.Class, int>>();
+            builder.Services.AddScoped<IGradeService, GradeService>();
+            builder.Services.AddScoped<IBaseRepository<Grade, int>, BaseRepository<Grade, int>>();
+            builder.Services.AddScoped<IBaseRepository<Subject, int>, BaseRepository<Subject, int>>();
+            builder.Services.AddScoped<IBaseRepository<Lesson, int>, BaseRepository<Lesson, int>>();
+            builder.Services.AddScoped<IBaseRepository<Teacher, string>, BaseRepository<Teacher, string>>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
