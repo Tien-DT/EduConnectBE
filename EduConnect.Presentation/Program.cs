@@ -64,7 +64,14 @@ namespace EduConnect.Presentation
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IChatBotService, ChatBotService>();
             builder.Services.AddHttpClient();
-            builder.Services.AddScoped<IAuthService, AuthService>();
+            builder.Services.AddScoped<IAuthService, AuthService>(provider =>
+            {
+                var authRepo = provider.GetRequiredService<IAuthRepository>();
+                var config = provider.GetRequiredService<IConfiguration>();
+                var teacherRepo = provider.GetRequiredService<IBaseRepository<Teacher, string>>();
+                var studentRepo = provider.GetRequiredService<IBaseRepository<Student, string>>();
+                return new AuthService(authRepo, config, teacherRepo, studentRepo);
+            });
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
             builder.Services.AddScoped<IProfileService, ProfileService>();
             builder.Services.AddScoped<IStudentService, StudentService>();
@@ -82,6 +89,15 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ITimetableSlotRepository, TimetableSlotRepository>();
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
+            builder.Services.AddScoped<IClassService, ClassService>();
+            builder.Services.AddScoped<IBaseRepository<Student, string>, StudentRepository>();
+            builder.Services.AddScoped<IBaseRepository<Parent, string>, ParentRepository>();
+            builder.Services.AddScoped<IBaseRepository<EduConnect.Domain.Entities.Class, int>, BaseRepository<EduConnect.Domain.Entities.Class, int>>();
+            builder.Services.AddScoped<IGradeService, GradeService>();
+            builder.Services.AddScoped<IBaseRepository<Grade, int>, BaseRepository<Grade, int>>();
+            builder.Services.AddScoped<IBaseRepository<Subject, int>, BaseRepository<Subject, int>>();
+            builder.Services.AddScoped<IBaseRepository<Lesson, int>, BaseRepository<Lesson, int>>();
+            builder.Services.AddScoped<IBaseRepository<Teacher, string>, BaseRepository<Teacher, string>>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
@@ -94,7 +110,7 @@ namespace EduConnect.Presentation
 
             builder.Services.AddTransient<EduConnectApplication.Services.Class.FileUploadService>();
 
-            var connectionString = builder.Configuration.GetConnectionString("EduConnectDbLocal");
+            var connectionString = builder.Configuration.GetConnectionString("EduConnectDb");
             builder.Services.AddDbContext<EduConnectDbContext>(options =>
                 options.UseSqlServer(connectionString));
 

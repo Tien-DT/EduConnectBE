@@ -1,0 +1,25 @@
+### Student Grade APIs - Học sinh xem điểm của mình
+
+### 1. Lấy tất cả điểm của học sinh đang đăng nhập
+GET {{baseUrl}}/api/studentgrade/my-grades
+Authorization: Bearer {{studentToken}}
+
+### 2. Lấy điểm theo học kỳ
+GET {{baseUrl}}/api/studentgrade/my-grades?semester=Học kỳ 1
+Authorization: Bearer {{studentToken}}
+
+### 3. Lấy tổng quan điểm theo học kỳ
+GET {{baseUrl}}/api/studentgrade/my-summary/Học kỳ 1
+Authorization: Bearer {{studentToken}}
+
+### 4. Lấy điểm cụ thể theo ID
+GET {{baseUrl}}/api/studentgrade/1
+Authorization: Bearer {{studentToken}}
+
+### 5. Lấy danh sách học kỳ có điểm
+GET {{baseUrl}}/api/studentgrade/semesters
+Authorization: Bearer {{studentToken}}
+
+### Variables
+@baseUrl = https://localhost:7001
+@studentToken = YOUR_STUDENT_JWT_TOKEN_HERE 
