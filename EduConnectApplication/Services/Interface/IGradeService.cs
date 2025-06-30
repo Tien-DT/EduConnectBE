@@ -12,10 +12,5 @@ namespace EduConnect.Application.Services.Interface
         Task<ApiResponse<string>> CreateGradeAsync(CreateGradeRequest request, string teacherId);
         Task<ApiResponse<string>> UpdateGradeAsync(UpdateGradeRequest request, string teacherId);
         Task<ApiResponse<string>> DeleteGradeAsync(int gradeId, string teacherId);
-        
-        // Methods for students to view their own grades
-        Task<ApiResponse<List<StudentGradeResponse>>> GetStudentGradesAsync(string studentId, string? semester = null);
-        Task<ApiResponse<StudentGradeSummaryResponse>> GetStudentGradeSummaryAsync(string studentId, string semester);
-        Task<ApiResponse<StudentGradeResponse>> GetStudentGradeByIdAsync(int gradeId, string studentId);
     }
 } 
