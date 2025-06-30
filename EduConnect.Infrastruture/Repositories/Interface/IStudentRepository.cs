@@ -22,5 +22,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             string sortBy = "FullName", 
             bool ascending = true);
         IQueryable<Student> GetStudentQueryable();
+        Task<Student?> GetByAccountIdAsync(string accountId);
     }
 }

@@ -220,5 +220,11 @@ namespace EduConnect.Infrastruture.Repositories.Class
                         : query.OrderByDescending(p => p.FullName);
             }
         }
+
+        public async Task<Parent?> GetByAccountIdAsync(string accountId)
+        {
+            return await _context.Parents
+                .FirstOrDefaultAsync(p => p.AccountID == accountId && (p.IsDeleted == null || p.IsDeleted == false));
+        }
     }
 }

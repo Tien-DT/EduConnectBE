@@ -622,8 +622,7 @@ namespace EduConnect.Application.Services.Class
                 switch (role.ToLower())
                 {
                     case "teacher":
-                        var teachers = await _teacherRepository.GetAllAsync();
-                        var teacher = teachers.FirstOrDefault(t => t.AccountID == userId);
+                        var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
                         if (teacher != null)
                         {
                             roleId = teacher.TeacherID;
@@ -631,8 +630,7 @@ namespace EduConnect.Application.Services.Class
                         }
                         break;
                     case "student":
-                        var students = await _studentRepository.GetAllAsync();
-                        var student = students.FirstOrDefault(s => s.AccountID == userId);
+                        var student = await _studentRepository.GetByAccountIdAsync(userId);
                         if (student != null)
                         {
                             roleId = student.StudentID;
@@ -640,8 +638,7 @@ namespace EduConnect.Application.Services.Class
                         }
                         break;
                     case "parent":
-                        var parents = await _parentRepository.GetAllAsync();
-                        var parent = parents.FirstOrDefault(p => p.AccountID == userId);
+                        var parent = await _parentRepository.GetByAccountIdAsync(userId);
                         if (parent != null)
                         {
                             roleId = parent.ParentID;
@@ -649,10 +646,11 @@ namespace EduConnect.Application.Services.Class
                         }
                         break;
                     case "principal":
-                        if (user.Principal != null)
+                        var principal = await _principalRepository.GetByAccountIdAsync(userId);
+                        if (principal != null)
                         {
-                            roleId = user.Principal.PrincipalID;
-                            fullName = user.Principal.FullName ?? string.Empty;
+                            roleId = principal.PrincipalID;
+                            fullName = principal.FullName ?? string.Empty;
                         }
                         break;
                     default:

@@ -19,5 +19,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             string sortBy = "FullName", 
             bool ascending = true);
         IQueryable<Parent> GetParentQueryable();
+        Task<Parent?> GetByAccountIdAsync(string accountId);
     }
 }
