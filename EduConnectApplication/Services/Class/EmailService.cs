@@ -69,18 +69,18 @@ namespace EduConnect.Application.Services.Class
         public async Task SendVerificationEmailAsync(string email, string verificationToken, string userId)
         {
             var verificationUrl = $"https://educonnect.tienlab.myds.me/api/auth/verify-email?token={verificationToken}&userId={userId}";
-            
-            var subject = "X�c th?c Email - EduConnect";
+
+            var subject = "Xác thực Email - EduConnect";
             var body = $@"
                 <html>
                 <body>
-                    <h2>Ch�o m?ng b?n ??n v?i h? th?ng EduConnect</h2>
-                    <p>C?m ?n b?n ?� ??ng k�. Vui l�ng nh?n v�o li�n k?t b�n d??i ?? x�c th?c ??a ch? email c?a b?n:</p>
-                    <p><a href='{verificationUrl}' style='background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>X�c th?c Email</a></p>
-                    <p>Ho?c sao ch�p v� d�n li�n k?t n�y v�o tr�nh duy?t c?a b?n:</p>
+                    <h2>Chào mừng bạn đến với hệ thống EduConnect</h2>
+                    <p>Cảm ơn bạn đã đăng ký. Vui lòng nhấn vào liên kết bên dưới để xác thực địa chỉ email của bạn:</p>
+                    <p><a href='{verificationUrl}' style='background-color: #4CAF50; color: white; padding: 10px 20px; text-decoration: none; border-radius: 5px;'>Xác thực Email</a></p>
+                    <p>Hoặc sao chép và dán liên kết này vào trình duyệt của bạn:</p>
                     <p>{verificationUrl}</p>
-                    <p><strong>Li�n k?t n�y s? h?t h?n sau 5 ph�t.</strong></p>
-                    <p>N?u b?n kh�ng t?o t�i kho?n, vui l�ng b? qua email n�y.</p>
+                    <p><strong>Liên kết này sẽ hết hạn sau 5 phút.</strong></p>
+                    <p>Nếu bạn không tạo tài khoản, vui lòng bỏ qua email này.</p>
                     <br>
                     <p>Best regards,<br>EduConnect</p>
                 </body>
