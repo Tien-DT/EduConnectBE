@@ -28,7 +28,8 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] DateTime? endDate = null,
             [FromQuery] bool ascending = true,
             [FromQuery] int? pageIndex = null,
-            [FromQuery] int? pageSize = null)
+            [FromQuery] int? pageSize = null,
+            [FromQuery] string? searchTerm = null)
         {
             DateTime today = DateTime.Today;
             DateTime defaultStartDate = startDate ?? today;
@@ -54,7 +55,8 @@ namespace EduConnect.Presentation.Controllers
                 defaultEndDate, 
                 ascending,
                 pageIndex,
-                pageSize);
+                pageSize,
+                searchTerm);
                 
             if (result.Success)
             {
@@ -71,7 +73,8 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] DateTime? endDate = null,
             [FromQuery] bool ascending = true,
             [FromQuery] int? pageIndex = null,
-            [FromQuery] int? pageSize = null)
+            [FromQuery] int? pageSize = null,
+            [FromQuery] string? searchTerm = null)
         {
             DateTime today = DateTime.Today; 
             DateTime defaultStartDate = startDate ?? today;
@@ -98,7 +101,8 @@ namespace EduConnect.Presentation.Controllers
                 defaultEndDate, 
                 ascending,
                 pageIndex,
-                pageSize);
+                pageSize,
+                searchTerm);
                 
             if (result.Success)
             {

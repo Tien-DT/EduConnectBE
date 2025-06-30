@@ -203,7 +203,8 @@ namespace EduConnect.Application.Services.Class
             DateTime? endDate = null, 
             bool ascending = false,
             int? pageIndex = null,
-            int? pageSize = null)
+            int? pageSize = null,
+            string? searchTerm = null)
         {
             try
             {
@@ -228,11 +229,15 @@ namespace EduConnect.Application.Services.Class
                         );
                     }
 
-                    var examResponses = _mapper.Map<List<ExamResponse>>(exams);
+                    var filteredExams = string.IsNullOrWhiteSpace(searchTerm)
+                        ? exams
+                        : ExamQueryHelper.ApplySearch(exams.AsQueryable(), searchTerm).ToList();
+
+                    var examResponses = _mapper.Map<List<ExamResponse>>(filteredExams);
                     return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                         examResponses,
                         "Exams retrieved successfully",
-                        totalCount,
+                        filteredExams.Count,
                         pageIndex.Value,
                         pageSize.Value
                     );
@@ -250,13 +255,17 @@ namespace EduConnect.Application.Services.Class
                     );
                 }
 
-                var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
+                var allFilteredExams = string.IsNullOrWhiteSpace(searchTerm)
+                    ? allExams
+                    : ExamQueryHelper.ApplySearch(allExams.AsQueryable(), searchTerm).ToList();
+
+                var allExamResponses = _mapper.Map<List<ExamResponse>>(allFilteredExams);
                 return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                     allExamResponses,
                     "Exams retrieved successfully",
-                    allExamResponses.Count,
+                    allFilteredExams.Count,
                     1,
-                    allExamResponses.Count
+                    allFilteredExams.Count
                 );
             }
             catch (Exception ex)
@@ -276,7 +285,8 @@ namespace EduConnect.Application.Services.Class
             DateTime? endDate = null, 
             bool ascending = false,
             int? pageIndex = null,
-            int? pageSize = null)
+            int? pageSize = null,
+            string? searchTerm = null)
         {
             try
             {
@@ -301,11 +311,15 @@ namespace EduConnect.Application.Services.Class
                         );
                     }
 
-                    var examResponses = _mapper.Map<List<ExamResponse>>(exams);
+                    var filteredExams = string.IsNullOrWhiteSpace(searchTerm)
+                        ? exams
+                        : ExamQueryHelper.ApplySearch(exams.AsQueryable(), searchTerm).ToList();
+
+                    var examResponses = _mapper.Map<List<ExamResponse>>(filteredExams);
                     return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                         examResponses,
                         "Exams retrieved successfully",
-                        totalCount,
+                        filteredExams.Count,
                         pageIndex.Value,
                         pageSize.Value
                     );
@@ -322,13 +336,17 @@ namespace EduConnect.Application.Services.Class
                     );
                 }
 
-                var allExamResponses = _mapper.Map<List<ExamResponse>>(allExams);
+                var allFilteredExams = string.IsNullOrWhiteSpace(searchTerm)
+                    ? allExams
+                    : ExamQueryHelper.ApplySearch(allExams.AsQueryable(), searchTerm).ToList();
+
+                var allExamResponses = _mapper.Map<List<ExamResponse>>(allFilteredExams);
                 return PagedApiResponse<List<ExamResponse>>.SuccessPagedResponse(
                     allExamResponses,
                     "Exams retrieved successfully",
-                    allExamResponses.Count,
+                    allFilteredExams.Count,
                     1,
-                    allExamResponses.Count
+                    allFilteredExams.Count
                 );
             }
             catch (Exception ex)

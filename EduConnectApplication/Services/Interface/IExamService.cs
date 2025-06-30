@@ -24,15 +24,17 @@ namespace EduConnect.Application.Services.Interface
             DateTime? endDate = null, 
             bool ascending = false,
             int? pageIndex = null,
-            int? pageSize = null);
-            
+            int? pageSize = null,
+            string? searchTerm = null);
+        
         Task<PagedApiResponse<List<ExamResponse>>> GetExamsByStudentIdAsync(
             string studentId, 
             DateTime? startDate = null, 
             DateTime? endDate = null, 
             bool ascending = false,
             int? pageIndex = null,
-            int? pageSize = null);
+            int? pageSize = null,
+            string? searchTerm = null);
             
         Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
             string? studentId = null,
