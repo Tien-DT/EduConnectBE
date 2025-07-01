@@ -163,7 +163,13 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
         public Task<Student?> UpdateAsync(string id, Student entity)
         {
-            throw new NotImplementedException();
+            var student = _context.Students.Find(id);
+            if (student == null)
+                return Task.FromResult<Student?>(null);
+
+            _context.Entry(student).CurrentValues.SetValues(entity);
+            _context.SaveChanges();
+            return Task.FromResult(student);
         }
 
         public async Task<List<Student>> GetStudentsByClassIdAsync(int classId)
