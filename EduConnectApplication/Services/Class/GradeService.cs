@@ -36,35 +36,37 @@ namespace EduConnect.Application.Services.Class
         }
 
         // Lấy danh sách điểm theo lesson, chỉ cho phép giáo viên bộ môn của lesson đó
-        public async Task<ApiResponse<List<GradeResponse>>> GetGradesByLessonAsync(int lessonId, string teacherId)
+        public async Task<ApiResponse<List<GradeResponse>>> GetGradesBySubjectAsync(int subjectId, string teacherId)
         {
-            var lesson = await _lessonRepository.GetByIdAsync(lessonId);
-            if (lesson == null || lesson.TeacherID != teacherId)
+            // Kiểm tra xem teacher có quyền dạy subject này không
+            var lessons = (await _lessonRepository.GetAllAsync())
+                .Where(l => l.SubjectId == subjectId && l.TeacherID == teacherId)
+                .ToList();
+                
+            if (!lessons.Any())
             {
                 return new ApiResponse<List<GradeResponse>>
                 {
                     Success = false,
-                    Message = "Bạn không có quyền xem điểm của lesson này"
+                    Message = "Bạn không có quyền xem điểm của môn học này"
                 };
             }
+
             var grades = (await _gradeRepository.GetAllAsync())
-                .Where(g => g.LessonID == lessonId && g.IsDeleted != true)
+                .Where(g => g.SubjectID == subjectId && g.IsDeleted != true)
                 .ToList();
             var students = await _studentRepository.GetAllAsync();
-            var subject = await _subjectRepository.GetByIdAsync(lesson.SubjectId);
-            var classEntity = await _classRepository.GetByIdAsync(lesson.ClassID);
-            var teacher = await _teacherRepository.GetByIdAsync(lesson.TeacherID);
+            var subject = await _subjectRepository.GetByIdAsync(subjectId);
+            var teacher = await _teacherRepository.GetByIdAsync(teacherId);
+
             var result = grades.Select(g => new GradeResponse
             {
                 GradeID = g.GradeID,
                 StudentID = g.StudentID,
                 StudentName = students.FirstOrDefault(s => s.StudentID == g.StudentID)?.FullName ?? "",
-                LessonID = lesson.LessonID,
-                ClassID = lesson.ClassID,
-                ClassName = classEntity?.ClassName ?? "",
-                SubjectId = lesson.SubjectId,
+                SubjectId = subjectId,
                 SubjectName = subject?.SubjectName ?? "",
-                TeacherID = lesson.TeacherID,
+                TeacherID = teacherId,
                 TeacherName = teacher?.FullName ?? "",
                 Score = g.Score,
                 GradeType = g.GradeType,
@@ -86,24 +88,26 @@ namespace EduConnect.Application.Services.Class
             var grade = await _gradeRepository.GetByIdAsync(gradeId);
             if (grade == null)
                 return new ApiResponse<GradeResponse> { Success = false, Message = "Không tìm thấy điểm" };
-            var lesson = await _lessonRepository.GetByIdAsync(grade.LessonID);
-            if (lesson == null || lesson.TeacherID != teacherId)
+                
+            // Kiểm tra xem teacher có quyền dạy subject này không
+            var lessons = (await _lessonRepository.GetAllAsync())
+                .Where(l => l.SubjectId == grade.SubjectID && l.TeacherID == teacherId)
+                .ToList();
+                
+            if (!lessons.Any())
                 return new ApiResponse<GradeResponse> { Success = false, Message = "Bạn không có quyền xem điểm này" };
+                
             var student = await _studentRepository.GetByIdAsync(grade.StudentID);
-            var subject = await _subjectRepository.GetByIdAsync(lesson.SubjectId);
-            var classEntity = await _classRepository.GetByIdAsync(lesson.ClassID);
-            var teacher = await _teacherRepository.GetByIdAsync(lesson.TeacherID);
+            var subject = await _subjectRepository.GetByIdAsync(grade.SubjectID);
+            var teacher = await _teacherRepository.GetByIdAsync(teacherId);
             var response = new GradeResponse
             {
                 GradeID = grade.GradeID,
                 StudentID = grade.StudentID,
                 StudentName = student?.FullName ?? "",
-                LessonID = lesson.LessonID,
-                ClassID = lesson.ClassID,
-                ClassName = classEntity?.ClassName ?? "",
-                SubjectId = lesson.SubjectId,
+                SubjectId = grade.SubjectID,
                 SubjectName = subject?.SubjectName ?? "",
-                TeacherID = lesson.TeacherID,
+                TeacherID = teacherId,
                 TeacherName = teacher?.FullName ?? "",
                 Score = grade.Score,
                 GradeType = grade.GradeType,
@@ -117,13 +121,18 @@ namespace EduConnect.Application.Services.Class
         // Thêm điểm, kiểm tra quyền
         public async Task<ApiResponse<string>> CreateGradeAsync(CreateGradeRequest request, string teacherId)
         {
-            var lesson = await _lessonRepository.GetByIdAsync(request.LessonID);
-            if (lesson == null || lesson.TeacherID != teacherId)
-                return new ApiResponse<string> { Success = false, Message = "Bạn không có quyền thêm điểm cho lesson này" };
+            // Kiểm tra xem teacher có quyền dạy subject này không
+            var lessons = (await _lessonRepository.GetAllAsync())
+                .Where(l => l.SubjectId == request.SubjectID && l.TeacherID == teacherId)
+                .ToList();
+                
+            if (!lessons.Any())
+                return new ApiResponse<string> { Success = false, Message = "Bạn không có quyền thêm điểm cho môn học này" };
+                
             var grade = new Grade
             {
                 StudentID = request.StudentID,
-                LessonID = request.LessonID,
+                SubjectID = request.SubjectID,
                 Score = request.Score,
                 GradeType = request.GradeType,
                 GradeLevel = request.GradeLevel,
@@ -140,9 +149,15 @@ namespace EduConnect.Application.Services.Class
             var grade = await _gradeRepository.GetByIdAsync(request.GradeID);
             if (grade == null)
                 return new ApiResponse<string> { Success = false, Message = "Không tìm thấy điểm" };
-            var lesson = await _lessonRepository.GetByIdAsync(grade.LessonID);
-            if (lesson == null || lesson.TeacherID != teacherId)
+                
+            // Kiểm tra xem teacher có quyền dạy subject này không
+            var lessons = (await _lessonRepository.GetAllAsync())
+                .Where(l => l.SubjectId == grade.SubjectID && l.TeacherID == teacherId)
+                .ToList();
+                
+            if (!lessons.Any())
                 return new ApiResponse<string> { Success = false, Message = "Bạn không có quyền sửa điểm này" };
+                
             grade.Score = request.Score;
             grade.GradeType = request.GradeType;
             grade.GradeLevel = request.GradeLevel;
@@ -158,9 +173,15 @@ namespace EduConnect.Application.Services.Class
             var grade = await _gradeRepository.GetByIdAsync(gradeId);
             if (grade == null)
                 return new ApiResponse<string> { Success = false, Message = "Không tìm thấy điểm" };
-            var lesson = await _lessonRepository.GetByIdAsync(grade.LessonID);
-            if (lesson == null || lesson.TeacherID != teacherId)
+                
+            // Kiểm tra xem teacher có quyền dạy subject này không
+            var lessons = (await _lessonRepository.GetAllAsync())
+                .Where(l => l.SubjectId == grade.SubjectID && l.TeacherID == teacherId)
+                .ToList();
+                
+            if (!lessons.Any())
                 return new ApiResponse<string> { Success = false, Message = "Bạn không có quyền xóa điểm này" };
+                
             await _gradeRepository.DeleteAsync(gradeId);
             return new ApiResponse<string> { Success = true, Message = "Xóa điểm thành công" };
         }

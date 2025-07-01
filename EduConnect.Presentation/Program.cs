@@ -106,8 +106,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
             builder.Services.AddScoped<IClassService, ClassService>();
-
-            // Email services
+            builder.Services.AddScoped<ILessonReportService, LessonReportService>();
+            builder.Services.AddScoped<ILessonReportRepository, LessonReportRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
             builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();

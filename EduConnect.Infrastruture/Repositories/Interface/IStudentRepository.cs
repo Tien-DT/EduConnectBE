@@ -13,6 +13,10 @@ namespace EduConnect.Infrastruture.Repositories.Interface
         Task<Student?> GetStudentWithDetailsAsync(string studentId);
         Task<List<Student>> GetStudentsByClassIdAsync(int classId);
         Task<List<Student>> GetStudentsByIdsAsync(List<string> studentIds);
+        Task<List<Student>> GetStudentsWithoutClassAsync();
+        Task<bool> AddStudentsToClassAsync(int classId, List<string> studentIds);
+        Task<bool> RemoveStudentsFromClassAsync(List<string> studentIds);
+        Task<bool> UpdateStudentClassAsync(string studentId, int? newClassId);
         Task<Timetable?> GetLatestTimetableByClassIdAsync(int classId, DateTime? startDate = null, DateTime? endDate = null);
         Task<List<Timetable>> GetAllTimetablesByClassIdAsync(int classId, DateTime? startDate = null, DateTime? endDate = null);
         Task<(IEnumerable<Student> Students, int TotalCount)> GetPagedStudentsAsync(

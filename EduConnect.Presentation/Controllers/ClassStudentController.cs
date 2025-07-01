@@ -8,7 +8,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/[controller]")]
     [ApiController]
-    [Authorize(Roles = "Principal")]
+    //[Authorize(Roles = "Principal")]
     public class ClassStudentController : ControllerBase
     {
         private readonly IClassService _classService;

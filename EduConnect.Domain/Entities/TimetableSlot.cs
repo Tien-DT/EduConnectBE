@@ -43,5 +43,7 @@ namespace EduConnect.Domain.Entities
 
         [ForeignKey("SubjectId")]
         public virtual Subject Subject { get; set; } = null!;
+
+        public virtual ICollection<LessonReport> LessonReports { get; set; } = new List<LessonReport>();
     }
 }

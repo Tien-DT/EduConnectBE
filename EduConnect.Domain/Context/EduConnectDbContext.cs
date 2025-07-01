@@ -28,6 +28,7 @@ namespace EduConnect.Data
         public DbSet<Exam> Exams { get; set; }
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<TimetableSlot> TimetableSlots { get; set; }
+        public DbSet<StudentLessonNote> StudentLessonNotes { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -49,35 +50,46 @@ namespace EduConnect.Data
             modelBuilder.Entity<RefreshToken>().ToTable("RefreshToken");
             modelBuilder.Entity<Exam>().ToTable("Exam");
             modelBuilder.Entity<Subject>().ToTable("Subject");
+            modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
-                .HasName("UQ_Subject_Code")
+                .HasDatabaseName("UQ_Subject_Code")
                 .IsUnique();
 
             modelBuilder.Entity<ClassTeacher>()
                 .HasIndex(ct => new { ct.ClassID, ct.TeacherID })
-                .HasName("UQ_ClassTeacher")
+                .HasDatabaseName("UQ_ClassTeacher")
                 .IsUnique();
 
             modelBuilder.Entity<Attendance>()
                 .HasIndex(a => new { a.LessonID, a.StudentID })
-                .HasName("UQ_Attendance")
+                .HasDatabaseName("UQ_Attendance")
                 .IsUnique();
 
             modelBuilder.Entity<Grade>()
-                .HasIndex(g => new { g.StudentID, g.LessonID, g.GradeType })
-                .HasName("UQ_Grade")
+                .HasIndex(g => new { g.StudentID, g.SubjectID, g.GradeType })
+                .HasDatabaseName("UQ_Grade")
                 .IsUnique();
 
             modelBuilder.Entity<Lesson>()
                 .HasIndex(l => new { l.ClassID, l.SubjectId, l.Date, l.TeacherID })
-                .HasName("UQ_Lesson")
+                .HasDatabaseName("UQ_Lesson")
                 .IsUnique();
 
             modelBuilder.Entity<TimetableSlot>()
                 .HasIndex(ts => new { ts.TimetableID, ts.DayOfWeek, ts.Period })
-                .HasName("UQ_TimetableSlot_Period")
+                .HasDatabaseName("UQ_TimetableSlot_Period")
+                .IsUnique();
+
+            modelBuilder.Entity<StudentLessonNote>()
+                .HasIndex(sln => new { sln.LessonReportID, sln.StudentID, sln.NoteType })
+                .HasDatabaseName("UQ_StudentLessonNote")
+                .IsUnique();
+
+            modelBuilder.Entity<LessonReport>()
+                .HasIndex(lr => new { lr.TimetableSlotID, lr.LessonDate })
+                .HasDatabaseName("UQ_LessonReport_Date")
                 .IsUnique();
 
             modelBuilder.Entity<Student>()
@@ -156,18 +168,6 @@ namespace EduConnect.Data
                 .HasForeignKey(a => a.StudentID)
                 .OnDelete(DeleteBehavior.NoAction);
 
-            modelBuilder.Entity<Grade>()
-                .HasOne(g => g.Student)
-                .WithMany(s => s.Grades)
-                .HasForeignKey(g => g.StudentID)
-                .OnDelete(DeleteBehavior.NoAction);
-
-            modelBuilder.Entity<Grade>()
-                .HasOne(g => g.Lesson)
-                .WithMany(l => l.Grades)
-                .HasForeignKey(g => g.LessonID)
-                .OnDelete(DeleteBehavior.NoAction);
-
             modelBuilder.Entity<Exam>()
                 .HasOne(e => e.Subject)
                 .WithMany(s => s.Exams)
@@ -202,6 +202,30 @@ namespace EduConnect.Data
                 .HasOne(ts => ts.Subject)
                 .WithMany() 
                 .HasForeignKey(ts => ts.SubjectId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<LessonReport>()
+                .HasOne(lr => lr.TimetableSlot)
+                .WithMany(ts => ts.LessonReports)
+                .HasForeignKey(lr => lr.TimetableSlotID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<LessonReport>()
+                .HasOne(lr => lr.Lesson)
+                .WithMany(l => l.LessonReports)
+                .HasForeignKey(lr => lr.LessonID)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<StudentLessonNote>()
+                .HasOne(sln => sln.LessonReport)
+                .WithMany(lr => lr.StudentLessonNotes)
+                .HasForeignKey(sln => sln.LessonReportID)
+                .OnDelete(DeleteBehavior.Cascade);
+
+            modelBuilder.Entity<StudentLessonNote>()
+                .HasOne(sln => sln.Student)
+                .WithMany(s => s.StudentLessonNotes)
+                .HasForeignKey(sln => sln.StudentID)
                 .OnDelete(DeleteBehavior.NoAction);
         }
     }

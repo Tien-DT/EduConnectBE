@@ -19,12 +19,12 @@ namespace EduConnect.Presentation.Controllers
             _gradeService = gradeService;
         }
 
-        // GET: api/grade/lesson/{lessonId}
-        [HttpGet("lesson/{lessonId}")]
-        public async Task<IActionResult> GetByLesson(int lessonId)
+        // GET: api/grade/subject/{subjectId}
+        [HttpGet("subject/{subjectId}")]
+        public async Task<IActionResult> GetBySubject(int subjectId)
         {
             var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.GetGradesByLessonAsync(lessonId, teacherId);
+            var result = await _gradeService.GetGradesBySubjectAsync(subjectId, teacherId);
             if (result.Success)
                 return Ok(result);
             return StatusCode(403, new { success = false, message = result.Message });

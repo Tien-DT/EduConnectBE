@@ -41,12 +41,55 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.ExamNote, opt => opt.MapFrom(src => src.ExamNote ?? string.Empty))
                 .ForMember(dest => dest.Room, opt => opt.MapFrom(src => src.Room ?? string.Empty));
 
-            CreateMap<Grade, StudentGradeResponse>()
-                .ForMember(dest => dest.LessonName, opt => opt.MapFrom(src => src.Lesson != null && src.Lesson.Subject != null ? src.Lesson.Subject.SubjectName : string.Empty))
-                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.Lesson != null ? src.Lesson.SubjectId : 0))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Lesson != null && src.Lesson.Subject != null ? src.Lesson.Subject.SubjectName : string.Empty))
-                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => src.Lesson != null ? src.Lesson.TeacherID : string.Empty))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Lesson != null && src.Lesson.Teacher != null ? src.Lesson.Teacher.FullName : string.Empty));
+            CreateMap<Grade, GradeResponse>()
+                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectID))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => ""))
+                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => ""))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => ""));
+
+            CreateMap<Student, ClassStudentResponse>()
+                .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName ?? string.Empty))
+                .ForMember(dest => dest.ParentID, opt => opt.MapFrom(src => src.ParentID))
+                .ForMember(dest => dest.ParentName, opt => opt.MapFrom(src => src.Parent != null ? src.Parent.FullName : string.Empty))
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : string.Empty));
+
+            CreateMap<LessonReport, LessonReportResponse>()
+                .ForMember(dest => dest.LessonName, opt => opt.MapFrom(src => src.Lesson != null ? $"Lesson {src.Lesson.LessonID}" : null))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.TimetableSlot.Subject.SubjectName))
+                .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.TimetableSlot.Subject.SubjectCode))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.TimetableSlot.Teacher.FullName))
+                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => src.TimetableSlot.TeacherID))
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.TimetableSlot.Timetable.Class.ClassName))
+                .ForMember(dest => dest.ClassID, opt => opt.MapFrom(src => src.TimetableSlot.Timetable.ClassID))
+                .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.TimetableSlot.DayOfWeek))
+                .ForMember(dest => dest.Period, opt => opt.MapFrom(src => src.TimetableSlot.Period))
+                .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.TimetableSlot.StartTime))
+                .ForMember(dest => dest.EndTime, opt => opt.MapFrom(src => src.TimetableSlot.EndTime))
+                .ForMember(dest => dest.Room, opt => opt.MapFrom(src => src.TimetableSlot.Room))
+                .ForMember(dest => dest.StudentNotes, opt => opt.MapFrom(src => src.StudentLessonNotes));
+
+            CreateMap<StudentLessonNote, StudentLessonNoteResponse>()
+                .ForMember(dest => dest.NoteID, opt => opt.MapFrom(src => src.StudentLessonNoteID))
+                .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.FullName))
+                .ForMember(dest => dest.NoteContent, opt => opt.MapFrom(src => src.Description));
+
+            CreateMap<CreateLessonReportRequest, LessonReport>()
+                .ForMember(dest => dest.ReportID, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.TimetableSlot, opt => opt.Ignore())
+                .ForMember(dest => dest.Lesson, opt => opt.Ignore())
+                .ForMember(dest => dest.StudentLessonNotes, opt => opt.Ignore());
+
+            CreateMap<CreateStudentLessonNoteRequest, StudentLessonNote>()
+                .ForMember(dest => dest.StudentLessonNoteID, opt => opt.Ignore())
+                .ForMember(dest => dest.LessonReportID, opt => opt.Ignore())
+                .ForMember(dest => dest.Description, opt => opt.MapFrom(src => src.NoteContent))
+                .ForMember(dest => dest.CreatedAt, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Points, opt => opt.Ignore())
+                .ForMember(dest => dest.LessonReport, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore());
         }
     }
 }

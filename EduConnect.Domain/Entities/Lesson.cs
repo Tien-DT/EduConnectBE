@@ -37,6 +37,5 @@ public partial class Lesson
     public virtual Subject Subject { get; set; } = null!;
 
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
-    public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
     public virtual ICollection<LessonReport> LessonReports { get; set; } = new List<LessonReport>();
 }

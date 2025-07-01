@@ -220,5 +220,78 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return await _context.Students
                 .FirstOrDefaultAsync(s => s.AccountID == accountId && (s.IsDeleted == null || s.IsDeleted == false));
         }
+
+        public async Task<List<Student>> GetStudentsWithoutClassAsync()
+        {
+            return await _context.Students
+                .Include(s => s.Account)
+                .Include(s => s.Parent)
+                .Where(s => s.ClassID == null && (s.IsDeleted == null || s.IsDeleted == false))
+                .ToListAsync();
+        }
+
+        public async Task<bool> AddStudentsToClassAsync(int classId, List<string> studentIds)
+        {
+            try
+            {
+                var students = await _context.Students
+                    .Where(s => studentIds.Contains(s.StudentID) && (s.IsDeleted == null || s.IsDeleted == false))
+                    .ToListAsync();
+
+                foreach (var student in students)
+                {
+                    student.ClassID = classId;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> RemoveStudentsFromClassAsync(List<string> studentIds)
+        {
+            try
+            {
+                var students = await _context.Students
+                    .Where(s => studentIds.Contains(s.StudentID) && (s.IsDeleted == null || s.IsDeleted == false))
+                    .ToListAsync();
+
+                foreach (var student in students)
+                {
+                    student.ClassID = null;
+                }
+
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        public async Task<bool> UpdateStudentClassAsync(string studentId, int? newClassId)
+        {
+            try
+            {
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(s => s.StudentID == studentId && (s.IsDeleted == null || s.IsDeleted == false));
+
+                if (student == null)
+                    return false;
+
+                student.ClassID = newClassId;
+                await _context.SaveChangesAsync();
+                return true;
+            }
+            catch
+            {
+                return false;
+            }
+        }
     }
 }
