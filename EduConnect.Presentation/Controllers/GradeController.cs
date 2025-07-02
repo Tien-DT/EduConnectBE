@@ -7,8 +7,9 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
+    
     [Route("api/[controller]")]
-    [ApiController]
+    [ApiController] 
     //[Authorize(Roles = "Teacher")]
     public class GradeController : ControllerBase
     {
@@ -19,63 +20,128 @@ namespace EduConnect.Presentation.Controllers
             _gradeService = gradeService;
         }
 
-        // GET: api/grade/subject/{subjectId}
-        [HttpGet("subject/{subjectId}")]
-        public async Task<IActionResult> GetBySubject(int subjectId)
+        private string GetCurrentAccountId()
         {
-            var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.GetGradesBySubjectAsync(subjectId, teacherId);
-            if (result.Success)
-                return Ok(result);
-            return StatusCode(403, new { success = false, message = result.Message });
+            return User.FindFirst("AccountId")?.Value ?? "";
         }
 
-        // GET: api/grade/{id}
-        [HttpGet("{id}")]
-        public async Task<IActionResult> GetById(int id)
+        private string GetCurrentTeacherId()
         {
-            var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.GetGradeByIdAsync(id, teacherId);
-            if (result.Success)
-                return Ok(result);
-            return StatusCode(403, new { success = false, message = result.Message });
+            return User.FindFirst("TeacherId")?.Value ?? "";
         }
 
-        // POST: api/grade
+       
+        [HttpGet("subjects/{subjectId}/grades")]
+        public async Task<IActionResult> GetGradesBySubject(int subjectId, [FromQuery] int? classId = null)
+        {
+            var teacherAccountId = GetCurrentAccountId();
+            var result = await _gradeService.GetGradesBySubjectForTeacherAsync(subjectId, teacherAccountId, classId);
+            
+            if (!result.Success)
+                return BadRequest(result);
+                
+            return Ok(result);
+        }
+
+        
+        [HttpGet("subjects/{subjectId}/students/{studentId}/grades")]
+        public async Task<IActionResult> GetStudentGradesBySubject(int subjectId, string studentId)
+        {
+            var teacherAccountId = GetCurrentAccountId();
+            var result = await _gradeService.GetStudentGradesBySubjectForTeacherAsync(subjectId, studentId, teacherAccountId);
+            
+            if (!result.Success)
+                return BadRequest(result);
+                
+            return Ok(result);
+        }
+
+        
+        [HttpGet("{gradeId}")]
+        public async Task<IActionResult> GetGradeById(int gradeId)
+        {
+            var teacherAccountId = GetCurrentAccountId();
+            var result = await _gradeService.GetGradeByIdForTeacherAsync(gradeId, teacherAccountId);
+            
+            if (!result.Success)
+                return BadRequest(result);
+                
+            return Ok(result);
+        }
+
+       
+        [HttpGet("subjects/{subjectId}/students")]  
+        public async Task<IActionResult> GetStudentsForGrading(int subjectId, [FromQuery] int? classId = null)
+        {
+            var teacherAccountId = GetCurrentAccountId();
+            var result = await _gradeService.GetStudentsForGradingAsync(subjectId, teacherAccountId, classId);
+            
+            if (!result.Success)
+                return BadRequest(result);
+                
+            return Ok(result);
+        }
+
+       
         [HttpPost]
-        public async Task<IActionResult> Create([FromBody] CreateGradeRequest request)
+        public async Task<IActionResult> CreateGrade([FromBody] CreateGradeRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.CreateGradeAsync(request, teacherId);
+
+            var teacherAccountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(teacherAccountId))
+                return Unauthorized("Teacher not found");
+
+            var result = await _gradeService.CreateGradeForTeacherAsync(request, teacherAccountId);
             if (result.Success)
-                return Ok(result);
-            return StatusCode(403, new { success = false, message = result.Message });
+                return CreatedAtAction(nameof(GetGradeById), new { gradeId = result.Data }, result);
+            return BadRequest(result);
         }
 
-        // PUT: api/grade
-        [HttpPut]
-        public async Task<IActionResult> Update([FromBody] UpdateGradeRequest request)
+        
+        [HttpPut("{gradeId}")]
+        public async Task<IActionResult> UpdateGrade(int gradeId, [FromBody] UpdateGradeRequest request)
         {
             if (!ModelState.IsValid)
                 return BadRequest(ModelState);
-            var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.UpdateGradeAsync(request, teacherId);
+
+            var teacherAccountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(teacherAccountId))
+                return Unauthorized("Teacher not found");
+
+            var result = await _gradeService.UpdateGradeForTeacherAsync(gradeId, request, teacherAccountId);
             if (result.Success)
                 return Ok(result);
-            return StatusCode(403, new { success = false, message = result.Message });
+            return BadRequest(result);
         }
 
-        // DELETE: api/grade/{id}
-        [HttpDelete("{id}")]
-        public async Task<IActionResult> Delete(int id)
+        
+        [HttpDelete("{gradeId}")]
+        public async Task<IActionResult> DeleteGrade(int gradeId)
         {
-            var teacherId = User.FindFirstValue(ClaimTypes.NameIdentifier);
-            var result = await _gradeService.DeleteGradeAsync(id, teacherId);
+            var teacherAccountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(teacherAccountId))
+                return Unauthorized("Teacher not found");
+
+            var result = await _gradeService.DeleteGradeForTeacherAsync(gradeId, teacherAccountId);
             if (result.Success)
                 return Ok(result);
-            return StatusCode(403, new { success = false, message = result.Message });
+            return BadRequest(result);
+        }
+
+        
+        [HttpGet("subjects/{subjectId}/classes/{classId}/students")]
+        public async Task<IActionResult> GetStudentsForGrading(int subjectId, int classId)
+        {
+            var teacherAccountId = User.FindFirstValue(ClaimTypes.NameIdentifier);
+            if (string.IsNullOrEmpty(teacherAccountId))
+                return Unauthorized("Teacher not found");
+
+            var result = await _gradeService.GetStudentsForGradingAsync(subjectId, teacherAccountId, classId);
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
         }
     }
 } 

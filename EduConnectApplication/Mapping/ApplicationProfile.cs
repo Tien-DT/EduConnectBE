@@ -41,12 +41,6 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.ExamNote, opt => opt.MapFrom(src => src.ExamNote ?? string.Empty))
                 .ForMember(dest => dest.Room, opt => opt.MapFrom(src => src.Room ?? string.Empty));
 
-            CreateMap<Grade, GradeResponse>()
-                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectID))
-                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => ""))
-                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => ""))
-                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => ""));
-
             CreateMap<Student, ClassStudentResponse>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName ?? string.Empty))
                 .ForMember(dest => dest.ParentID, opt => opt.MapFrom(src => src.ParentID))

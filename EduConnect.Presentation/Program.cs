@@ -96,7 +96,7 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IPrincipalRepository, PrincipalRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();
             builder.Services.AddScoped<IBaseRepository<Timetable, int>, BaseRepository<Timetable, int>>();
-            builder.Services.AddScoped<IBaseRepository<Class, int>, BaseRepository<Class, int>>();
+            builder.Services.AddScoped<IClassRepository, ClassRepository>();
             builder.Services.AddScoped<ITeacherService, TeacherService>();
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
             builder.Services.AddScoped<IParentService, ParentService>();
@@ -106,6 +106,13 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();
             builder.Services.AddScoped<ITimetableService, TimetableService>();
             builder.Services.AddScoped<IClassService, ClassService>();
+            // Base repositories for GradeService
+            builder.Services.AddScoped<IBaseRepository<Grade, int>, BaseRepository<Grade, int>>();
+            builder.Services.AddScoped<IBaseRepository<Student, string>, BaseRepository<Student, string>>();
+            builder.Services.AddScoped<IBaseRepository<Lesson, int>, BaseRepository<Lesson, int>>();
+            builder.Services.AddScoped<IBaseRepository<Subject, int>, BaseRepository<Subject, int>>();
+            builder.Services.AddScoped<IBaseRepository<EduConnect.Domain.Entities.Class, int>, BaseRepository<EduConnect.Domain.Entities.Class, int>>();
+            builder.Services.AddScoped<IGradeService, GradeService>();
             builder.Services.AddScoped<ILessonReportService, LessonReportService>();
             builder.Services.AddScoped<ILessonReportRepository, LessonReportRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();

@@ -1,11 +1,12 @@
 using EduConnect.Domain.Entities;
 using System.Linq;
+using ClassEntity = EduConnect.Domain.Entities.Class;
 
 namespace EduConnect.Application.QueryHelpers
 {
     public static class ClassQueryHelper
     {
-        public static IQueryable<Class> ApplySearch(IQueryable<Class> query, string? searchTerm)
+        public static IQueryable<ClassEntity> ApplySearch(IQueryable<ClassEntity> query, string? searchTerm)
         {
             if (string.IsNullOrWhiteSpace(searchTerm)) return query;
 
@@ -15,7 +16,7 @@ namespace EduConnect.Application.QueryHelpers
             );
         }
 
-        public static IQueryable<Class> ApplySort(IQueryable<Class> query, string? sortBy, bool ascending)
+        public static IQueryable<ClassEntity> ApplySort(IQueryable<ClassEntity> query, string? sortBy, bool ascending)
         {
             if (string.IsNullOrWhiteSpace(sortBy))
                 sortBy = "classname";

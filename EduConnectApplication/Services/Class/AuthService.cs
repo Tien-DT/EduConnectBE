@@ -300,7 +300,8 @@ namespace EduConnect.Application.Services.Class
             {
                 new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
-                new Claim(ClaimTypes.Email, account.Email ?? string.Empty)
+                new Claim(ClaimTypes.Email, account.Email ?? string.Empty),
+                new Claim("AccountId", account.Id)
             };
             if (!string.IsNullOrWhiteSpace(account.AvatarUrl))
             {
@@ -317,6 +318,7 @@ namespace EduConnect.Application.Services.Class
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
             var currentVietnamTime = TimeZoneInfo.ConvertTime(DateTime.Now, vietnamTimeZone);
+            // Token hết hạn sau 15 giây
             var expireVietnamTime = currentVietnamTime.AddSeconds(15);
             var expireUtcTime = TimeZoneInfo.ConvertTimeToUtc(expireVietnamTime, vietnamTimeZone);
 
