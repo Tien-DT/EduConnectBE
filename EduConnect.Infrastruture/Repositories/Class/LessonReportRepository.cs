@@ -147,7 +147,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
             DateTime? startDate = null,
             DateTime? endDate = null,
             string? teacherId = null,
-            int? classId = null)
+            int? classId = null,
+            int? timetableSlotId = null)
         {
             var query = GetQueryableWithDetails()
                 .Where(lr => lr.IsDeleted != true);
@@ -164,6 +165,9 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             if (classId.HasValue)
                 query = query.Where(lr => lr.TimetableSlot.Timetable.ClassID == classId.Value);
+
+            if (timetableSlotId.HasValue)
+                query = query.Where(lr => lr.TimetableSlotID == timetableSlotId.Value);
 
             // Apply search
             if (!string.IsNullOrEmpty(searchTerm))
@@ -240,6 +244,25 @@ namespace EduConnect.Infrastruture.Repositories.Class
                         ? query.OrderBy(lr => lr.LessonDate)
                         : query.OrderByDescending(lr => lr.LessonDate);
             }
+        }
+        
+        // Validation methods
+        public async Task<bool> CheckLessonExistsAsync(int lessonId)
+        {
+            return await _context.Lessons
+                .AnyAsync(l => l.LessonID == lessonId && l.IsDeleted != true);
+        }
+
+        public async Task<bool> CheckTimetableSlotExistsAsync(int timetableSlotId)
+        {
+            return await _context.TimetableSlots
+                .AnyAsync(ts => ts.TimetableSlotID == timetableSlotId && ts.IsDeleted != true);
+        }
+
+        public async Task<bool> CheckStudentExistsAsync(string studentId)
+        {
+            return await _context.Students
+                .AnyAsync(s => s.StudentID == studentId && s.IsDeleted != true);
         }
     }
 }

@@ -108,6 +108,9 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IClassService, ClassService>();
             builder.Services.AddScoped<ILessonReportService, LessonReportService>();
             builder.Services.AddScoped<ILessonReportRepository, LessonReportRepository>();
+            builder.Services.AddScoped<IStudentLessonNoteRepository, StudentLessonNoteRepository>();
+            builder.Services.AddScoped<IFeedbackService, FeedbackService>();
+            builder.Services.AddScoped<IFeedbackRepository, FeedbackRepository>();
             builder.Services.AddScoped<IEmailService, EmailService>();
             builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
             builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
@@ -156,7 +159,7 @@ namespace EduConnect.Presentation
                 options.UseSecurityTokenValidators = true;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.FromSeconds(5), 
+                    ClockSkew = TimeSpan.FromMinutes(5), 
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = false,
                     ValidateAudience = false,

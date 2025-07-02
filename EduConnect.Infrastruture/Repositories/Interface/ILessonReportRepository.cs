@@ -24,7 +24,13 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             DateTime? startDate = null,
             DateTime? endDate = null,
             string? teacherId = null,
-            int? classId = null);
+            int? classId = null,
+            int? timetableSlotId = null);
         IQueryable<LessonReport> GetQueryableWithDetails();
+        
+        // Validation methods
+        Task<bool> CheckLessonExistsAsync(int lessonId);
+        Task<bool> CheckTimetableSlotExistsAsync(int timetableSlotId);
+        Task<bool> CheckStudentExistsAsync(string studentId);
     }
 }

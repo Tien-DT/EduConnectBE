@@ -315,16 +315,16 @@ namespace EduConnect.Application.Services.Class
 
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
-            var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
-            var currentVietnamTime = TimeZoneInfo.ConvertTime(DateTime.Now, vietnamTimeZone);
-            var expireVietnamTime = currentVietnamTime.AddSeconds(15);
-            var expireUtcTime = TimeZoneInfo.ConvertTimeToUtc(expireVietnamTime, vietnamTimeZone);
+            
+            var now = DateTime.UtcNow;
+            var expireTime = now.AddHours(1);
 
             var tokenDescriptor = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                expires: expireUtcTime,
+                notBefore: now,
+                expires: expireTime,
                 signingCredentials: creds
             );
 
