@@ -300,7 +300,8 @@ namespace EduConnect.Application.Services.Class
             {
                 new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
-                new Claim(ClaimTypes.Email, account.Email ?? string.Empty)
+                new Claim(ClaimTypes.Email, account.Email ?? string.Empty),
+                new Claim("AccountId", account.Id)
             };
             if (!string.IsNullOrWhiteSpace(account.AvatarUrl))
             {

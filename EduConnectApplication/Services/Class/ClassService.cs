@@ -8,17 +8,18 @@ using EduConnect.Infrastruture.Repositories.Interface;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using ClassEntity = EduConnect.Domain.Entities.Class;
 
 namespace EduConnect.Application.Services.Class
 {
     public class ClassService : IClassService
     {
-        private readonly IBaseRepository<EduConnect.Domain.Entities.Class, int> _classRepository;
+        private readonly IClassRepository _classRepository;
         private readonly IStudentRepository _studentRepository;
         private readonly IMapper _mapper;
         
         public ClassService(
-            IBaseRepository<EduConnect.Domain.Entities.Class, int> classRepository,
+            IClassRepository classRepository,
             IStudentRepository studentRepository,
             IMapper mapper)
         {
@@ -26,25 +27,25 @@ namespace EduConnect.Application.Services.Class
             _studentRepository = studentRepository;
             _mapper = mapper;
         }
-        public async Task<IEnumerable<EduConnect.Domain.Entities.Class>> GetAllClassesAsync()
+        public async Task<IEnumerable<ClassEntity>> GetAllClassesAsync()
         {
             return await _classRepository.GetAllAsync();
         }
-        public async Task<IEnumerable<EduConnect.Domain.Entities.Class>> SearchClassesAsync(string? searchTerm)
+        public async Task<IEnumerable<ClassEntity>> SearchClassesAsync(string? searchTerm)
         {
             var query = (await _classRepository.GetAllAsync()).AsQueryable();
             query = ClassQueryHelper.ApplySearch(query, searchTerm);
             return query.ToList();
         }
         
-        public async Task<IEnumerable<EduConnect.Domain.Entities.Class>> SortClassesAsync(string? sortBy, bool ascending = true)
+        public async Task<IEnumerable<ClassEntity>> SortClassesAsync(string? sortBy, bool ascending = true)
         {
             var query = (await _classRepository.GetAllAsync()).AsQueryable();
             query = ClassQueryHelper.ApplySort(query, sortBy, ascending);
             return query.ToList();
         }
         
-        public async Task<PagedResponse<EduConnect.Domain.Entities.Class>> GetPagedClassesAsync(int pageIndex, int pageSize, string? searchTerm = null, string? sortBy = null, bool ascending = true)
+        public async Task<PagedResponse<ClassEntity>> GetPagedClassesAsync(int pageIndex, int pageSize, string? searchTerm = null, string? sortBy = null, bool ascending = true)
         {
             var query = (await _classRepository.GetAllAsync()).AsQueryable();
             
@@ -54,7 +55,7 @@ namespace EduConnect.Application.Services.Class
             var totalCount = query.Count();
             var items = query.Skip((pageIndex - 1) * pageSize).Take(pageSize).ToList();
             
-            return new PagedResponse<EduConnect.Domain.Entities.Class>
+            return new PagedResponse<ClassEntity>
             {
                 Items = items,
                 TotalCount = totalCount,
@@ -109,11 +110,11 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<string>> AddStudentsToClassAsync(AddStudentsToClassRequest request)
+        public async Task<ApiResponse<string>> AddStudentsToClassAsync(int classId, List<string> studentIds)
         {
             try
             {
-                var result = await _studentRepository.AddStudentsToClassAsync(request.ClassID, request.StudentIDs);
+                var result = await _studentRepository.AddStudentsToClassAsync(classId, studentIds);
                 if (result)
                 {
                     return new ApiResponse<string>
@@ -142,11 +143,11 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<string>> RemoveStudentsFromClassAsync(RemoveStudentsFromClassRequest request)
+        public async Task<ApiResponse<string>> RemoveStudentsFromClassAsync(int classId, List<string> studentIds)
         {
             try
             {
-                var result = await _studentRepository.RemoveStudentsFromClassAsync(request.StudentIDs);
+                var result = await _studentRepository.RemoveStudentsFromClassAsync(studentIds);
                 if (result)
                 {
                     return new ApiResponse<string>
@@ -175,11 +176,11 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<string>> UpdateStudentClassAsync(UpdateStudentClassRequest request)
+        public async Task<ApiResponse<string>> UpdateStudentClassAsync(string studentId, int? newClassId)
         {
             try
             {
-                var result = await _studentRepository.UpdateStudentClassAsync(request.StudentID, request.NewClassID);
+                var result = await _studentRepository.UpdateStudentClassAsync(studentId, newClassId);
                 if (result)
                 {
                     return new ApiResponse<string>
@@ -205,6 +206,74 @@ namespace EduConnect.Application.Services.Class
                     Success = false,
                     Message = ex.Message
                 };
+            }
+        }        public async Task<ApiResponse<PagedResponse<ClassResponse>>> GetClassesAsync(int pageIndex, int pageSize, string? searchTerm = null, string sortBy = "ClassName", bool ascending = true)
+        {
+            try
+            {
+                var query = (await _classRepository.GetAllActiveClassesAsync()).AsQueryable();
+                
+                // Apply search
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    query = ClassQueryHelper.ApplySearch(query, searchTerm);
+                }
+                
+                // Apply sorting
+                query = ClassQueryHelper.ApplySort(query, sortBy, ascending);
+                
+                var totalCount = query.Count();
+                
+                // Apply paging
+                var items = query.Skip(pageIndex * pageSize).Take(pageSize).ToList();
+                
+                // Map to ClassResponse - chỉ lấy field từ bảng Class
+                var classResponses = items.Select(c => new ClassResponse
+                {
+                    ClassID = c.ClassID,
+                    ClassName = c.ClassName,
+                    IsDeleted = c.IsDeleted
+                }).ToList();
+                
+                var pagedResponse = new PagedResponse<ClassResponse>
+                {
+                    Items = classResponses,
+                    TotalCount = totalCount,
+                    PageIndex = pageIndex,
+                    PageSize = pageSize
+                };
+                
+                return ApiResponse<PagedResponse<ClassResponse>>.SuccessResponse(pagedResponse, "Classes retrieved successfully");
+            }
+            catch (System.Exception ex)
+            {
+                return ApiResponse<PagedResponse<ClassResponse>>.ErrorResponse(new List<string> { ex.Message }, "Failed to retrieve classes");
+            }
+        }
+        
+        public async Task<ApiResponse<ClassResponse>> GetClassByIdAsync(int classId)
+        {
+            try
+            {
+                var classEntity = await _classRepository.GetActiveClassByIdAsync(classId);
+                
+                if (classEntity == null)
+                {
+                    return ApiResponse<ClassResponse>.ErrorResponse(new List<string> { "Class not found" }, "Class not found");
+                }
+                
+                var classResponse = new ClassResponse
+                {
+                    ClassID = classEntity.ClassID,
+                    ClassName = classEntity.ClassName,
+                    IsDeleted = classEntity.IsDeleted
+                };
+                
+                return ApiResponse<ClassResponse>.SuccessResponse(classResponse, "Class retrieved successfully");
+            }
+            catch (System.Exception ex)
+            {
+                return ApiResponse<ClassResponse>.ErrorResponse(new List<string> { ex.Message }, "Failed to retrieve class");
             }
         }
     }
