@@ -301,7 +301,7 @@ namespace EduConnect.Application.Services.Class
                 new Claim(ClaimTypes.NameIdentifier, account.Id),
                 new Claim(ClaimTypes.Name, $"{account.FirstName} {account.LastName}"),
                 new Claim(ClaimTypes.Email, account.Email ?? string.Empty),
-                new Claim("AccountId", account.Id)
+                //new Claim("AccountId", account.Id)
             };
             if (!string.IsNullOrWhiteSpace(account.AvatarUrl))
             {
@@ -317,15 +317,14 @@ namespace EduConnect.Application.Services.Class
             var key = new SymmetricSecurityKey(Encoding.UTF8.GetBytes(_configuration["JwtSettings:SecretKey"]!));
             var creds = new SigningCredentials(key, SecurityAlgorithms.HmacSha256);
             
-            var now = DateTime.UtcNow;
-            var expireTime = now.AddHours(1);
+            //var now = DateTime.UtcNow;
+            //var expireTime = now.AddHours(1);
 
             var tokenDescriptor = new JwtSecurityToken(
                 issuer: _configuration["JwtSettings:Issuer"],
                 audience: _configuration["JwtSettings:Audience"],
                 claims: claims,
-                notBefore: now,
-                expires: expireTime,
+                expires: DateTime.UtcNow.AddHours(24),
                 signingCredentials: creds
             );
 

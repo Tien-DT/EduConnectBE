@@ -166,11 +166,11 @@ namespace EduConnect.Presentation
                 options.UseSecurityTokenValidators = true;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.FromMinutes(5), 
+                    ClockSkew = TimeSpan.FromHours(24), 
                     ValidateIssuerSigningKey = true,
-                    ValidateIssuer = false,
+                    ValidateIssuer = false, 
                     ValidateAudience = false,
-                    RequireExpirationTime = true, 
+                    RequireExpirationTime = false, 
                     ValidateLifetime = true,
                     ValidAudience = config["JwtSettings:Audience"],
                     ValidIssuer = config["JwtSettings:Issuer"],

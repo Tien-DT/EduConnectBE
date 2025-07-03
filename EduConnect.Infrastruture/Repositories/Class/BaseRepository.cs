@@ -11,7 +11,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
 {
     public class BaseRepository<T, TKey> : IBaseRepository<T, TKey> where T : class
     {
-        private readonly EduConnectDbContext _context;
+        protected readonly EduConnectDbContext _context;
         public BaseRepository(EduConnectDbContext eduConnectDbContext)
         {
             _context = eduConnectDbContext;
