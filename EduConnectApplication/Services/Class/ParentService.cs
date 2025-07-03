@@ -200,10 +200,10 @@ namespace EduConnect.Application.Services.Class
         {
             return new StudentResponse
             {
-                StudentID = student.StudentID,
-                AccountID = student.AccountID,
-                ParentID = student.ParentID,
-                ClassID = student.ClassID,
+                StudentId = student.StudentID,
+                AccountId = student.AccountID,
+                ParentId = student.ParentID,
+                ClassId = student.ClassID,
                 FullName = student.FullName ?? string.Empty,
                 Email = student.Account?.Email ?? string.Empty,
                 FirstName = student.Account?.FirstName ?? string.Empty,
