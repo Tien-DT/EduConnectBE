@@ -130,6 +130,17 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
+        [HttpGet("students/{studentId}/grades")]
+        public async Task<IActionResult> GetGradesByStudentId(string studentId)
+        {
+            var result = await _gradeService.GetGradesByStudentIdAsync(studentId);
+            
+            if (!result.Success)
+                return BadRequest(result);
+                
+            return Ok(result);
+        }
+
         
         [HttpGet("subjects/{subjectId}/classes/{classId}/students")]
         public async Task<IActionResult> GetStudentsForGrading(int subjectId, int classId)

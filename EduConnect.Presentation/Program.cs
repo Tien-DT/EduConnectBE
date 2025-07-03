@@ -166,7 +166,7 @@ namespace EduConnect.Presentation
                 options.UseSecurityTokenValidators = true;
                 options.TokenValidationParameters = new Microsoft.IdentityModel.Tokens.TokenValidationParameters
                 {
-                    ClockSkew = TimeSpan.FromHours(24), 
+                    ClockSkew = TimeSpan.Zero, 
                     ValidateIssuerSigningKey = true,
                     ValidateIssuer = false, 
                     ValidateAudience = false,

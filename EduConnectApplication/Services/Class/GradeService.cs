@@ -700,6 +700,55 @@ namespace EduConnect.Application.Services.Class
             return new ApiResponse<string> { Success = true, Message = "Grade deleted successfully" };
         }
 
+        public async Task<ApiResponse<List<GradeResponse>>> GetGradesByStudentIdAsync(string studentId)
+        {
+            try
+            {
+                var student = await _studentRepository.GetByIdAsync(studentId);
+                if (student == null || student.IsDeleted == true)
+                {
+                    return ApiResponse<List<GradeResponse>>.ErrorResponse(
+                        new List<string> { "Student not found" }, "Student Not Found");
+                }
+
+                var grades = (await _gradeRepository.GetAllAsync())
+                    .Where(g => g.StudentID == studentId && g.IsDeleted != true)
+                    .ToList();
+
+                var gradeResponses = new List<GradeResponse>();
+
+                foreach (var grade in grades)
+                {
+                    var subject = await _subjectRepository.GetByIdAsync(grade.SubjectID);
+                    var studentClass = student.ClassID.HasValue ?
+                        await _classRepository.GetByIdAsync(student.ClassID.Value) : null;
+
+                    gradeResponses.Add(new GradeResponse
+                    {
+                        GradeID = grade.GradeID,
+                        StudentID = grade.StudentID,
+                        StudentName = student.FullName ?? "",
+                        SubjectID = grade.SubjectID,
+                        SubjectName = subject?.SubjectName ?? "",
+                        ClassID = studentClass?.ClassID ?? 0,
+                        ClassName = studentClass?.ClassName ?? "",
+                        Score = grade.Score,
+                        GradeType = grade.GradeType,
+                        GradeLevel = grade.GradeLevel,
+                        Semester = grade.Semester,
+                        Evaluation = grade.Evaluation
+                    });
+                }
+
+                return ApiResponse<List<GradeResponse>>.SuccessResponse(gradeResponses, "Grades retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<GradeResponse>>.ErrorResponse(
+                    new List<string> { ex.Message }, "Internal Server Error");
+            }
+        }
+
         #endregion
     }
 }
