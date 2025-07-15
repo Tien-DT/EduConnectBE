@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/timetables")]
     [ApiController]
     [Authorize]
     public class TimetableController : ControllerBase
@@ -20,7 +20,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
         [HttpPost]
-        [Authorize(Roles = "Administrator,Principal,Teacher")]
+        [Authorize]
         public async Task<IActionResult> CreateTimetable([FromBody] CreateTimetableRequest request)
         {
             var result = await _timetableService.CreateTimetableAsync(request);
@@ -42,19 +42,23 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpGet("class/{classId}")]
-        public async Task<IActionResult> GetTimetablesByClass(int classId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
+        [HttpGet("")]
+        public async Task<IActionResult> GetTimetables([FromQuery] int? classId = null, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
-            var result = await _timetableService.GetTimetablesByClassIdAsync(classId, startDate, endDate);
-            if (!result.Success)
+            if (classId.HasValue)
             {
-                return NotFound(result);
+                var result = await _timetableService.GetTimetablesByClassIdAsync(classId.Value, startDate, endDate);
+                if (!result.Success)
+                {
+                    return NotFound(result);
+                }
+                return Ok(result);
             }
-            return Ok(result);
+            return BadRequest("Missing or invalid query parameter.");
         }
 
         [HttpDelete("{timetableId}")]
-        [Authorize(Roles = "Administrator,Principal")]
+        [Authorize]
         public async Task<IActionResult> DeleteTimetable(int timetableId)
         {
             var result = await _timetableService.DeleteTimetableAsync(timetableId);

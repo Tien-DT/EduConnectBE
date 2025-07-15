@@ -8,9 +8,9 @@ using System.Threading.Tasks;
 namespace EduConnect.Presentation.Controllers
 {
     
-    [Route("api/[controller]")]
-    [ApiController] 
-    //[Authorize(Roles = "Teacher")]
+    [Route("api/v1/grades")]
+    [ApiController]
+    [Authorize]
     public class GradeController : ControllerBase
     {
         private readonly IGradeService _gradeService;
@@ -155,4 +155,4 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
     }
-} 
+}

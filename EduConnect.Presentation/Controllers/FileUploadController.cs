@@ -8,8 +8,8 @@ using System.Collections.Generic;
 
 namespace EduConnect.Presentation.Controllers
 {
+    [Route("api/v1/files")]
     [ApiController]
-    [Route("api/[controller]")]
     public class FileUploadController : ControllerBase
     {
         private readonly FileUploadService _fileUploadService;
@@ -19,8 +19,7 @@ namespace EduConnect.Presentation.Controllers
             _fileUploadService = fileUploadService;
         }
 
-        [HttpPost]
-        [Route("")]
+        [HttpPost("")]
         public async Task<IActionResult> Upload([FromForm] UploadFileRequest request)
         {
             if (request.File == null || request.File.Length == 0)
@@ -33,4 +32,4 @@ namespace EduConnect.Presentation.Controllers
             return Ok(ApiResponse<string>.SuccessResponse(url, "Upload successful"));
         }
     }
-} 
+}

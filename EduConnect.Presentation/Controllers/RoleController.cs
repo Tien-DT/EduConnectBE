@@ -5,8 +5,9 @@ using Microsoft.AspNetCore.Mvc;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/roles")]
     [ApiController]
+    [Authorize]
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
@@ -16,7 +17,7 @@ namespace EduConnect.Presentation.Controllers
             _roleService = roleService;
         }
 
-        [HttpPost("assign-student")]
+        [HttpPost("students/assignment")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignStudentRole([FromBody] AssignStudentRoleListRequest request)
         {
@@ -31,7 +32,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("assign-teacher")]
+        [HttpPost("teachers/assignment")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignTeacherRole([FromBody] AssignTeacherRoleListRequest request)
         {
@@ -46,7 +47,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("assign-parent")]
+        [HttpPost("parents/assignment")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignParentRole([FromBody] AssignParentRoleListRequest request)
         {

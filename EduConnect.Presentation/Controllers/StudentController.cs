@@ -8,7 +8,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/students")]
     [ApiController]
     public class StudentController : ControllerBase
     {
@@ -18,7 +18,7 @@ namespace EduConnect.Presentation.Controllers
             _studentService = studentService;
         }
 
-        [HttpGet("Students")]
+        [HttpGet("")]
         public async Task<IActionResult> GetStudents(
             [FromQuery] int pageIndex = 0,
             [FromQuery] int pageSize = 10,
@@ -41,8 +41,8 @@ namespace EduConnect.Presentation.Controllers
             return NotFound(result);
         }
 
-        [HttpGet("timetables/{studentId}")]
-        [Authorize(Roles = "Student")]
+        [HttpGet("{studentId}/timetables")]
+        [Authorize]
         public async Task<IActionResult> GetAllTimetablesByStudentId(string studentId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var timetables = await _studentService.GetAllTimetablesByStudentIdAsync(studentId, startDate, endDate);

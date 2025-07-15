@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/profiles")]
     [ApiController]
     public class ProfileController : ControllerBase
     {

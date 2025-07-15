@@ -9,7 +9,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/auth")]
     [ApiController]
     public class AuthController : ControllerBase
     {
@@ -56,7 +56,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(response);
         }
 
-        [HttpPost("new-token")]
+        [HttpPost("token/refresh")]
         public async Task<ActionResult<ApiResponse<GetNewTokenResponse>>> GetNewToken(GetNewTokenRequest request)
         {
             if (!ModelState.IsValid)
@@ -72,23 +72,23 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpPost("google-login")]
-        public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleLogin(GoogleLoginRequest request)
-        {
-            if (!ModelState.IsValid)
-            {
-                return BadRequest(ModelState);
-            }
+        //[HttpPost("google-login")]
+        //public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleLogin(GoogleLoginRequest request)
+        //{
+        //    if (!ModelState.IsValid)
+        //    {
+        //        return BadRequest(ModelState);
+        //    }
 
-            var result = await _authService.GoogleLoginAsync(request);
-            if (!result.Success)
-            {
-                return BadRequest(result);
-            }
-            return Ok(result);
-        }
+        //    var result = await _authService.GoogleLoginAsync(request);
+        //    if (!result.Success)
+        //    {
+        //        return BadRequest(result);
+        //    }
+        //    return Ok(result);
+        //}
 
-        [HttpPost("google-token-login")]
+        [HttpPost("login/google")]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleTokenLogin(GoogleTokenLoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -104,7 +104,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpGet("user-role-id")]
+        [HttpGet("user/role")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<UserRoleIdResponse>>> GetUserRoleId()
         {
@@ -128,7 +128,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpGet("verify-email")]
+        [HttpGet("email/verify")]
         public async Task<ActionResult<ApiResponse<string>>> VerifyEmail([FromQuery] string token, [FromQuery] string email)
         {
             if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email))

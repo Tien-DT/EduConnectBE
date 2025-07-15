@@ -7,9 +7,9 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/classmanagement")]
     [ApiController]
-    //[Authorize(Roles = "Principal")]
+    [Authorize]
     public class ClassManagementController : ControllerBase
     {
         private readonly IClassService _classService;
@@ -34,14 +34,17 @@ namespace EduConnect.Presentation.Controllers
         }
 
         
-        [HttpGet("students/unassigned")]
-        public async Task<IActionResult> GetUnassignedStudents()
+        [HttpGet("students")]
+        public async Task<IActionResult> GetUnassignedStudents([FromQuery] bool? assigned)
         {
-            var result = await _classService.GetStudentsNotInClassAsync();
-            if (result.Success)
-                return Ok(result);
-            
-            return BadRequest(result);
+            if (assigned.HasValue && assigned.Value == false)
+            {
+                var result = await _classService.GetStudentsNotInClassAsync();
+                if (result.Success)
+                    return Ok(result);
+                return BadRequest(result);
+            }
+            return BadRequest("Only assigned=false is supported in this endpoint.");
         }
 
         

@@ -6,8 +6,9 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/teachers")]
     [ApiController]
+    [Authorize]
     public class TeacherController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
@@ -16,7 +17,7 @@ namespace EduConnect.Presentation.Controllers
             _teacherService = teacherService;
         }
 
-        [HttpGet("Teachers")]
+        [HttpGet("")]
         public async Task<IActionResult> GetTeachers(
             [FromQuery] int pageIndex = 0,
             [FromQuery] int pageSize = 10,
@@ -39,7 +40,7 @@ namespace EduConnect.Presentation.Controllers
             return NotFound(result);
         }
 
-        [HttpGet("timetable/{teacherId}")]
+        [HttpGet("{teacherId}/timetable")]
         [Authorize(Roles ="Teacher")]
         public async Task<IActionResult> GetTimetableByTeacherId(string teacherId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {

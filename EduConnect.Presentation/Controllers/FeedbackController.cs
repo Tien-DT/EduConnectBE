@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/feedbacks")]
     [ApiController]
     public class FeedbackController : ControllerBase
     {
@@ -60,31 +60,29 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] string? searchTerm = null,
             [FromQuery] string sortBy = "DateTime",
             [FromQuery] bool ascending = false,
-            [FromQuery] string? targetFilter = null)
+            [FromQuery] string? targetFilter = null,
+            [FromQuery] string? parentId = null,
+            [FromQuery] string? target = null)
         {
-            var result = await _feedbackService.GetFeedbacksAsync(
+            if (!string.IsNullOrEmpty(parentId))
+            {
+                var result = await _feedbackService.GetFeedbacksByParentIdAsync(parentId);
+                if (result.Success)
+                    return Ok(result);
+                return BadRequest(result);
+            }
+            if (!string.IsNullOrEmpty(target))
+            {
+                var result = await _feedbackService.GetFeedbacksByTargetAsync(target);
+                if (result.Success)
+                    return Ok(result);
+                return BadRequest(result);
+            }
+            var resultAll = await _feedbackService.GetFeedbacksAsync(
                 pageIndex, pageSize, searchTerm, sortBy, ascending, targetFilter);
-            if (result.Success)
-                return Ok(result);
-            return BadRequest(result);
-        }
-
-        [HttpGet("parent/{parentId}")]
-        public async Task<IActionResult> GetFeedbacksByParentId(string parentId)
-        {
-            var result = await _feedbackService.GetFeedbacksByParentIdAsync(parentId);
-            if (result.Success)
-                return Ok(result);
-            return BadRequest(result);
-        }
-
-        [HttpGet("target/{target}")]
-        public async Task<IActionResult> GetFeedbacksByTarget(string target)
-        {
-            var result = await _feedbackService.GetFeedbacksByTargetAsync(target);
-            if (result.Success)
-                return Ok(result);
-            return BadRequest(result);
+            if (resultAll.Success)
+                return Ok(resultAll);
+            return BadRequest(resultAll);
         }
     }
 }

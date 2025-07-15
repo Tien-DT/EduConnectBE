@@ -7,7 +7,7 @@ using System.Security.Claims;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/chats")]
     [ApiController]
     public class ChatController : ControllerBase
     {
@@ -18,68 +18,68 @@ namespace EduConnect.Presentation.Controllers
             _chatBotService = chatBotService;
         }
 
-        [HttpPost("chat")]
-        public async Task<IActionResult> SendChatBot([FromBody] List<ChatMessageRequest> messages)
-        {
-            try
-            {
-                if (messages == null || messages.Count == 0)
-                {
-                    var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
-                        new List<string> { "Chat history is empty" },
-                        "Invalid request"
-                    );
-                    return BadRequest(errorResponse);
-                }
+        //[HttpPost("chat")]
+        //public async Task<IActionResult> SendChatBot([FromBody] List<ChatMessageRequest> messages)
+        //{
+        //    try
+        //    {
+        //        if (messages == null || messages.Count == 0)
+        //        {
+        //            var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
+        //                new List<string> { "Chat history is empty" },
+        //                "Invalid request"
+        //            );
+        //            return BadRequest(errorResponse);
+        //        }
 
-                var chatResponse = await _chatBotService.GenerateChatReplyAsync(messages);
+        //        var chatResponse = await _chatBotService.GenerateChatReplyAsync(messages);
 
-                var successResponse = ApiResponse<ChatMessageResponse>.SuccessResponse(
-                    chatResponse,
-                    "Gemini reply generated successfully"
-                );
+        //        var successResponse = ApiResponse<ChatMessageResponse>.SuccessResponse(
+        //            chatResponse,
+        //            "Gemini reply generated successfully"
+        //        );
 
-                return Ok(successResponse);
-            }
-            catch (Exception ex)
-            {
-                var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
-                    new List<string> { ex.Message },
-                    "Internal server error"
-                );
-                return StatusCode(500, errorResponse);
-            }
-        }
+        //        return Ok(successResponse);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
+        //            new List<string> { ex.Message },
+        //            "Internal server error"
+        //        );
+        //        return StatusCode(500, errorResponse);
+        //    }
+        //}
 
-        [HttpPost("chat-with-functions")]
-        public async Task<IActionResult> SendChatBotWithFunctions([FromBody] ChatPromptRequest request)
-        {
-            try
-            {
-                if (string.IsNullOrWhiteSpace(request?.Prompt))
-                {
-                    var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
-                        new List<string> { "Prompt is required" },
-                        "Invalid request"
-                    );
-                    return BadRequest(errorResponse);
-                }
+        //[HttpPost("chat-with-functions")]
+        //public async Task<IActionResult> SendChatBotWithFunctions([FromBody] ChatPromptRequest request)
+        //{
+        //    try
+        //    {
+        //        if (string.IsNullOrWhiteSpace(request?.Prompt))
+        //        {
+        //            var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
+        //                new List<string> { "Prompt is required" },
+        //                "Invalid request"
+        //            );
+        //            return BadRequest(errorResponse);
+        //        }
 
-                var chatResponse = await _chatBotService.SendPromptWithFunctionsAsync(request.Prompt);
+        //        var chatResponse = await _chatBotService.SendPromptWithFunctionsAsync(request.Prompt);
 
-                return Ok(chatResponse);
-            }
-            catch (Exception ex)
-            {
-                var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
-                    new List<string> { ex.Message },
-                    "Internal server error"
-                );
-                return StatusCode(500, errorResponse);
-            }
-        }
+        //        return Ok(chatResponse);
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        var errorResponse = ApiResponse<ChatMessageResponse>.ErrorResponse(
+        //            new List<string> { ex.Message },
+        //            "Internal server error"
+        //        );
+        //        return StatusCode(500, errorResponse);
+        //    }
+        //}
 
-        [HttpPost("chat-with-cached-history")]
+        [HttpPost("messages")]
         [Authorize]
         public async Task<IActionResult> SendChatBotWithCachedHistory([FromBody] ChatMessageOnlyRequest request)
         {
@@ -122,7 +122,7 @@ namespace EduConnect.Presentation.Controllers
             }
         }
 
-        [HttpDelete("clear-chat-history")]
+        [HttpDelete("messages")]
         [Authorize]
         public async Task<IActionResult> ClearChatHistory()
         {
@@ -159,60 +159,60 @@ namespace EduConnect.Presentation.Controllers
             }
         }
 
-        [HttpGet("test-redis-connection")]
-        public async Task<IActionResult> TestRedisConnection()
-        {
-            try
-            {
-                var chatCacheService = HttpContext.RequestServices.GetRequiredService<IChatCacheService>();
+        //[HttpGet("test-redis-connection")]
+        //public async Task<IActionResult> TestRedisConnection()
+        //{
+        //    try
+        //    {
+        //        var chatCacheService = HttpContext.RequestServices.GetRequiredService<IChatCacheService>();
                 
-                var testUserId = "test_connection_" + DateTime.Now.Ticks;
-                await chatCacheService.AddMessageToChatHistoryAsync(testUserId, "system", "Redis connection test");
+        //        var testUserId = "test_connection_" + DateTime.Now.Ticks;
+        //        await chatCacheService.AddMessageToChatHistoryAsync(testUserId, "system", "Redis connection test");
                 
-                var history = await chatCacheService.GetChatHistoryAsync(testUserId);
+        //        var history = await chatCacheService.GetChatHistoryAsync(testUserId);
                 
-                await chatCacheService.ClearChatHistoryAsync(testUserId);
+        //        await chatCacheService.ClearChatHistoryAsync(testUserId);
                 
-                if (history != null && history.Any())
-                {
-                    return Ok(new
-                    {
-                        Success = true,
-                        Message = "Redis connection successful with password authentication",
-                        Data = new
-                        {
-                            Server = "tienlab.myds.me:6363", 
-                            TestWriteRead = "PASSED",
-                            TestDelete = "PASSED",
-                            AuthenticationStatus = "PASSWORD_AUTHENTICATED",
-                            Timestamp = DateTime.UtcNow,
-                            TestMessages = history.Count
-                        }
-                    });
-                }
-                else
-                {
-                    return StatusCode(500, new
-                    {
-                        Success = false,
-                        Message = "Redis read test failed - no data returned"
-                    });
-                }
-            }
-            catch (Exception ex)
-            {
-                return StatusCode(500, new
-                {
-                    Success = false,
-                    Message = "Redis connection failed - check password and server configuration",
-                    Error = ex.Message,
-                    InnerError = ex.InnerException?.Message,
-                    Server = "tienlab.myds.me:6363"
-                });
-            }
-        }
+        //        if (history != null && history.Any())
+        //        {
+        //            return Ok(new
+        //            {
+        //                Success = true,
+        //                Message = "Redis connection successful with password authentication",
+        //                Data = new
+        //                {
+        //                    Server = "tienlab.myds.me:6363", 
+        //                    TestWriteRead = "PASSED",
+        //                    TestDelete = "PASSED",
+        //                    AuthenticationStatus = "PASSWORD_AUTHENTICATED",
+        //                    Timestamp = DateTime.UtcNow,
+        //                    TestMessages = history.Count
+        //                }
+        //            });
+        //        }
+        //        else
+        //        {
+        //            return StatusCode(500, new
+        //            {
+        //                Success = false,
+        //                Message = "Redis read test failed - no data returned"
+        //            });
+        //        }
+        //    }
+        //    catch (Exception ex)
+        //    {
+        //        return StatusCode(500, new
+        //        {
+        //            Success = false,
+        //            Message = "Redis connection failed - check password and server configuration",
+        //            Error = ex.Message,
+        //            InnerError = ex.InnerException?.Message,
+        //            Server = "tienlab.myds.me:6363"
+        //        });
+        //    }
+        //}
 
-        [HttpGet("chat-history")]
+        [HttpGet("messages")]
         [Authorize]
         public async Task<IActionResult> GetChatHistory()
         {

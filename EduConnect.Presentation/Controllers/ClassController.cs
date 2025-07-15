@@ -5,8 +5,9 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/classes")]
     [ApiController]
+    [Authorize]
     public class ClassController : ControllerBase
     {
         private readonly IClassService _classService;
@@ -17,7 +18,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
        
-        [HttpGet("Classes")]
+        [HttpGet("")]
         public async Task<IActionResult> GetClasses(
             [FromQuery] int pageIndex = 0,
             [FromQuery] int pageSize = 10,

@@ -6,7 +6,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/[controller]")]
+    [Route("api/v1/parents")]
     [ApiController]
     public class ParentController : ControllerBase
     {
@@ -17,7 +17,7 @@ namespace EduConnect.Presentation.Controllers
             _parentService = parentService;
         }
 
-        [HttpGet("Parents")]
+        [HttpGet("")]
         public async Task<IActionResult> GetParents(
             [FromQuery] int pageIndex = 0,
             [FromQuery] int pageSize = 10,
