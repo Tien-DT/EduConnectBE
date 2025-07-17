@@ -40,11 +40,11 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignStudentRoleResult
                 {
-                    AccountID = studentRequest.AccountID,
+                    AccountId = studentRequest.AccountID,
                     FullName = studentRequest.FullName,
-                    ID = studentRequest.StudentID,
+                    Id = studentRequest.StudentID,
                     RoleAssigned = "Student",
-                    ParentID = studentRequest.ParentID
+                    ParentId = studentRequest.ParentID
                 };
 
                 try
@@ -131,9 +131,9 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignRoleResult
                 {
-                    AccountID = teacherRequest.AccountID,
+                    AccountId = teacherRequest.AccountID,
                     FullName = teacherRequest.FullName,
-                    ID = teacherRequest.TeacherID,
+                    Id = teacherRequest.TeacherID,
                     RoleAssigned = "Teacher"
                 };
 
@@ -219,9 +219,9 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignRoleResult
                 {
-                    AccountID = parentRequest.AccountID,
+                    AccountId = parentRequest.AccountID,
                     FullName = parentRequest.FullName,
-                    ID = parentRequest.ParentID,
+                    Id = parentRequest.ParentID,
                     RoleAssigned = "Parent"
                 };
 

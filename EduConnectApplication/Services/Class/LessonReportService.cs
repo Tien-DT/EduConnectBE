@@ -15,12 +15,18 @@ namespace EduConnect.Application.Services.Class
     {
         private readonly ILessonReportRepository _lessonReportRepository;
         private readonly IStudentLessonNoteRepository _studentLessonNoteRepository;
+        private readonly ILessonReportComplaintService _complaintService;
         private readonly IMapper _mapper;
 
-        public LessonReportService(ILessonReportRepository lessonReportRepository, IStudentLessonNoteRepository studentLessonNoteRepository, IMapper mapper)
+        public LessonReportService(
+            ILessonReportRepository lessonReportRepository, 
+            IStudentLessonNoteRepository studentLessonNoteRepository,
+            ILessonReportComplaintService complaintService,
+            IMapper mapper)
         {
             _lessonReportRepository = lessonReportRepository;
             _studentLessonNoteRepository = studentLessonNoteRepository;
+            _complaintService = complaintService;
             _mapper = mapper;
         }
 
@@ -68,7 +74,7 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 var (reports, totalCount) = await _lessonReportRepository.GetPagedWithDetailsAsync(
-                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, null, null);
+                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, null, null, null);
                 
                 var response = _mapper.Map<List<LessonReportResponse>>(reports);
                 
@@ -108,7 +114,7 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 var (reports, totalCount) = await _lessonReportRepository.GetPagedWithDetailsAsync(
-                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, teacherId, null, null);
+                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, teacherId, null, null, null);
                 
                 var response = _mapper.Map<List<LessonReportResponse>>(reports);
                 
@@ -148,7 +154,7 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 var (reports, totalCount) = await _lessonReportRepository.GetPagedWithDetailsAsync(
-                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, classId, null);
+                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, classId, null, null);
                 
                 var response = _mapper.Map<List<LessonReportResponse>>(reports);
                 
@@ -188,7 +194,7 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 var (reports, totalCount) = await _lessonReportRepository.GetPagedWithDetailsAsync(
-                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, null, timetableSlotId);
+                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, null, timetableSlotId, null);
                 
                 var response = _mapper.Map<List<LessonReportResponse>>(reports);
                 
@@ -293,6 +299,18 @@ namespace EduConnect.Application.Services.Class
                     }
                 }
 
+                // Process complaints for parent notifications
+                try
+                {
+                    await _complaintService.ProcessLessonReportComplaintsAsync(createdReport.ReportID);
+                }
+                catch
+                {
+                    // Log error but don't fail the main operation
+                    // This ensures lesson report creation succeeds even if complaint processing fails
+                    // Could use ILogger here if available
+                }
+
                 return new ApiResponse<string>
                 {
                     Success = true,
@@ -380,6 +398,46 @@ namespace EduConnect.Application.Services.Class
             catch (Exception ex)
             {
                 return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = ex.Message
+                };
+            }
+        }
+
+        public async Task<ApiResponse<PagedResponse<LessonReportResponse>>> GetLessonReportsByStudentAsync(
+            string studentId,
+            int pageIndex, 
+            int pageSize, 
+            string? searchTerm = null, 
+            string sortBy = "LessonDate", 
+            bool ascending = false,
+            DateTime? startDate = null,
+            DateTime? endDate = null)
+        {
+            try
+            {
+                var (reports, totalCount) = await _lessonReportRepository.GetPagedWithDetailsAsync(
+                    pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate, null, null, null, studentId);
+                
+                var response = _mapper.Map<List<LessonReportResponse>>(reports);
+                
+                return new ApiResponse<PagedResponse<LessonReportResponse>>
+                {
+                    Success = true,
+                    Data = new PagedResponse<LessonReportResponse>
+                    {
+                        Items = response,
+                        TotalCount = totalCount,
+                        PageIndex = pageIndex,
+                        PageSize = pageSize
+                    },
+                    Message = "Student lesson reports retrieved successfully"
+                };
+            }
+            catch (Exception ex)
+            {
+                return new ApiResponse<PagedResponse<LessonReportResponse>>
                 {
                     Success = false,
                     Message = ex.Message

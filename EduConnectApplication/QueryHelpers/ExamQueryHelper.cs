@@ -12,13 +12,19 @@ namespace EduConnect.Application.QueryHelpers
             return query.Where(e =>
                 (e.ExamNote != null && e.ExamNote.ToLower().Contains(lowerTerm)) ||
                 (e.ExamType != null && e.ExamType.ToLower().Contains(lowerTerm)) ||
-                (e.Room != null && e.Room.ToLower().Contains(lowerTerm)) ||
                 (e.Subject != null && (
                     (e.Subject.SubjectName != null && e.Subject.SubjectName.ToLower().Contains(lowerTerm)) ||
                     (e.Subject.SubjectCode != null && e.Subject.SubjectCode.ToLower().Contains(lowerTerm))
                 )) ||
                 (e.StudentID != null && e.StudentID.ToLower().Contains(lowerTerm))
             );
+        }
+
+        public static IQueryable<Exam> ApplyRoomFilter(IQueryable<Exam> query, string? room)
+        {
+            if (string.IsNullOrWhiteSpace(room)) return query;
+            var lowerRoom = room.ToLower();
+            return query.Where(e => e.Room != null && e.Room.ToLower().Contains(lowerRoom));
         }
 
         public static IQueryable<Exam> ApplySort(IQueryable<Exam> query, string? sortBy, bool ascending)

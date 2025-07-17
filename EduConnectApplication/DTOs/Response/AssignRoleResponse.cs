@@ -2,9 +2,9 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class AssignRoleResult
     {
-        public string AccountID { get; set; } = string.Empty;
+        public string AccountId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
-        public string ID { get; set; } = string.Empty;
+        public string Id { get; set; } = string.Empty;
         public string RoleAssigned { get; set; } = string.Empty;
         public bool Success { get; set; }
         public string? ErrorMessage { get; set; }
@@ -12,7 +12,7 @@ namespace EduConnect.Application.DTOs.Response
 
     public class AssignStudentRoleResult : AssignRoleResult
     {
-        public string ParentID { get; set; } = string.Empty;
+        public string ParentId { get; set; } = string.Empty;
     }
 
     public class AssignRoleResponse

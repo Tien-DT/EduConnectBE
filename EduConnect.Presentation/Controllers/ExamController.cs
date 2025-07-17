@@ -6,7 +6,6 @@ using System;
 using System.Security.Claims;
 using System.Threading.Tasks;
 using System.Linq;
-using System.Security.Claims;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -27,6 +26,7 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] string? studentId = null,
             [FromQuery] string? accountId = null,
             [FromQuery] string? searchTerm = null,
+            [FromQuery] string? room = null,
             [FromQuery] string? sortBy = null,
             [FromQuery] bool ascending = true,
             [FromQuery] int pageIndex = 1,
@@ -68,7 +68,7 @@ namespace EduConnect.Presentation.Controllers
                     return Ok(result);
                 return BadRequest(result);
             }
-            var filterResult = await _examService.FilterSortSearchExamsAsync(studentId, searchTerm, sortBy, ascending, pageIndex, pageSize);
+            var filterResult = await _examService.FilterSortSearchExamsAsync(studentId, searchTerm, room, sortBy, ascending, pageIndex, pageSize);
             if (filterResult.Success)
                 return Ok(filterResult);
             return BadRequest(filterResult);
@@ -82,7 +82,8 @@ namespace EduConnect.Presentation.Controllers
                 return BadRequest(ModelState);
             }
             
-            var result = await _examService.CreateClassExamsAsync(request);
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _examService.CreateClassExamsAsync(request, currentUserId);
             
             if (result.Success)
             {
@@ -100,7 +101,8 @@ namespace EduConnect.Presentation.Controllers
                 return BadRequest(ModelState);
             }
             
-            var result = await _examService.CreatePrincipalExamsAsync(request);
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _examService.CreatePrincipalExamsAsync(request, currentUserId);
             
             if (result.Success)
             {

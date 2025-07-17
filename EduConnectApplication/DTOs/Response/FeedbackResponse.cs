@@ -4,8 +4,8 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class FeedbackResponse
     {
-        public int FeedbackID { get; set; }
-        public string ParentID { get; set; } = string.Empty;
+        public int FeedbackId { get; set; }
+        public string ParentId { get; set; } = string.Empty;
         public string ParentName { get; set; } = string.Empty;
         public string Content { get; set; } = string.Empty;
         public DateTime? DateTime { get; set; }

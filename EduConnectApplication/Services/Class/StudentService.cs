@@ -51,7 +51,7 @@ namespace EduConnect.Application.Services.Class
             }
             var response = new TimetableResponse
             {
-                TimetableID = timetable.TimetableID,
+                TimetableId = timetable.TimetableID,
                 Name = timetable.Name ?? string.Empty,
                 StartDate = timetable.StartDate,
                 EndDate = timetable.EndDate,
@@ -60,7 +60,7 @@ namespace EduConnect.Application.Services.Class
                     .OrderBy(slot => slot.DayOfWeek).ThenBy(slot => slot.Period)
                     .Select(slot => new TimetableSlotResponse
                     {
-                        TimetableSlotID = slot.TimetableSlotID,
+                        TimetableSlotId = slot.TimetableSlotID,
                         DayOfWeek = slot.DayOfWeek ?? string.Empty,
                         StartTime = slot.StartTime,
                         EndTime = slot.EndTime,
@@ -90,7 +90,7 @@ namespace EduConnect.Application.Services.Class
             
             var responses = timetables.Select(timetable => new TimetableResponse
             {
-                TimetableID = timetable.TimetableID,
+                TimetableId = timetable.TimetableID,
                 Name = timetable.Name ?? string.Empty,
                 StartDate = timetable.StartDate,
                 EndDate = timetable.EndDate,
@@ -99,7 +99,7 @@ namespace EduConnect.Application.Services.Class
                     .OrderBy(slot => slot.DayOfWeek).ThenBy(slot => slot.Period)
                     .Select(slot => new TimetableSlotResponse
                     {
-                        TimetableSlotID = slot.TimetableSlotID,
+                        TimetableSlotId = slot.TimetableSlotID,
                         DayOfWeek = slot.DayOfWeek ?? string.Empty,
                         StartTime = slot.StartTime,
                         EndTime = slot.EndTime,

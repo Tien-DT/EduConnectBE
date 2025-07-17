@@ -230,7 +230,7 @@ namespace EduConnect.Application.Services.Class
                 // Map to ClassResponse - chỉ lấy field từ bảng Class
                 var classResponses = items.Select(c => new ClassResponse
                 {
-                    ClassID = c.ClassID,
+                    ClassId = c.ClassID,
                     ClassName = c.ClassName,
                     IsDeleted = c.IsDeleted
                 }).ToList();
@@ -264,7 +264,7 @@ namespace EduConnect.Application.Services.Class
                 
                 var classResponse = new ClassResponse
                 {
-                    ClassID = classEntity.ClassID,
+                    ClassId = classEntity.ClassID,
                     ClassName = classEntity.ClassName,
                     IsDeleted = classEntity.IsDeleted
                 };

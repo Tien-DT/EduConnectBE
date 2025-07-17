@@ -226,5 +226,12 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return await _context.Parents
                 .FirstOrDefaultAsync(p => p.AccountID == accountId && (p.IsDeleted == null || p.IsDeleted == false));
         }
+
+        public async Task<Parent?> GetParentByIdAsync(string parentId)
+        {
+            return await _context.Parents
+                .Include(p => p.Account)
+                .FirstOrDefaultAsync(p => p.ParentID == parentId && p.IsDeleted != true);
+        }
     }
 }

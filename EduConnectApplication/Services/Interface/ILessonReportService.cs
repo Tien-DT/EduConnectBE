@@ -49,6 +49,16 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = false,
             DateTime? startDate = null,
             DateTime? endDate = null);
+
+        Task<ApiResponse<PagedResponse<LessonReportResponse>>> GetLessonReportsByStudentAsync(
+            string studentId,
+            int pageIndex, 
+            int pageSize, 
+            string? searchTerm = null, 
+            string sortBy = "LessonDate", 
+            bool ascending = false,
+            DateTime? startDate = null,
+            DateTime? endDate = null);
         
         Task<ApiResponse<string>> CreateLessonReportAsync(CreateLessonReportRequest request, string createdBy);
         Task<ApiResponse<string>> UpdateLessonReportAsync(UpdateLessonReportRequest request, string updatedBy);

@@ -31,13 +31,13 @@ namespace EduConnect.Application.Services.Class
             }
             var response = new TimetableResponse
             {
-                TimetableID = 0,
+                TimetableId = 0,
                 Name = string.Empty,
                 StartDate = startDate ?? DateTime.MinValue,
                 EndDate = endDate ?? DateTime.MaxValue,
                 Slots = slots.OrderBy(s => s.DayOfWeek).ThenBy(s => s.Period).Select(slot => new TimetableSlotResponse
                 {
-                    TimetableSlotID = slot.TimetableSlotID,
+                    TimetableSlotId = slot.TimetableSlotID,
                     DayOfWeek = slot.DayOfWeek ?? string.Empty,
                     StartTime = slot.StartTime,
                     EndTime = slot.EndTime,
@@ -98,8 +98,8 @@ namespace EduConnect.Application.Services.Class
         {
             return new TeacherResponse
             {
-                TeacherID = teacher.TeacherID,
-                AccountID = teacher.AccountID,
+                TeacherId = teacher.TeacherID,
+                AccountId = teacher.AccountID,
                 FullName = teacher.FullName ?? string.Empty,
                 Email = teacher.Account?.Email ?? string.Empty,
                 FirstName = teacher.Account?.FirstName ?? string.Empty,

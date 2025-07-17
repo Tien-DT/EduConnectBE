@@ -10,13 +10,13 @@ namespace EduConnect.Application.Services.Interface
 {
     public interface IExamService
     {
-        Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request);
+        Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request, string? createdBy = null);
         
-        Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests);
+        Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests, string? createdBy = null);
         
-        Task<ApiResponse<List<ExamResponse>>> CreateClassExamsAsync(CreateClassExamRequest request);
+        Task<ApiResponse<List<ExamResponse>>> CreateClassExamsAsync(CreateClassExamRequest request, string? createdBy = null);
         
-        Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request);
+        Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request, string? createdBy = null);
         
         Task<PagedApiResponse<List<ExamResponse>>> GetExamsByAccountIdAsync(
             string accountId, 
@@ -39,6 +39,7 @@ namespace EduConnect.Application.Services.Interface
         Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
             string? studentId = null,
             string? searchTerm = null,
+            string? room = null,
             string? sortBy = null,
             bool ascending = true,
             int pageIndex = 1,

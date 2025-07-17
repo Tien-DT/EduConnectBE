@@ -20,5 +20,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             bool ascending = true);
         IQueryable<Parent> GetParentQueryable();
         Task<Parent?> GetByAccountIdAsync(string accountId);
+        Task<Parent?> GetParentByIdAsync(string parentId);
     }
 }

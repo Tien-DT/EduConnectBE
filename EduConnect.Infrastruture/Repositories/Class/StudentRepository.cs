@@ -293,5 +293,14 @@ namespace EduConnect.Infrastruture.Repositories.Class
                 return false;
             }
         }
+
+        public async Task<Student?> GetStudentWithParentAsync(string studentId)
+        {
+            return await _context.Students
+                .Include(s => s.Parent)
+                    .ThenInclude(p => p.Account)
+                .Include(s => s.Class)
+                .FirstOrDefaultAsync(s => s.StudentID == studentId && s.IsDeleted != true);
+        }
     }
 }

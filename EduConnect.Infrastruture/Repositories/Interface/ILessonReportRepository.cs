@@ -14,6 +14,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
         Task<IEnumerable<LessonReport>> GetByTeacherIdAsync(string teacherId, DateTime? startDate = null, DateTime? endDate = null);
         Task<IEnumerable<LessonReport>> GetByClassIdAsync(int classId, DateTime? startDate = null, DateTime? endDate = null);
         Task<IEnumerable<LessonReport>> GetByTimetableSlotIdAsync(int timetableSlotId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<IEnumerable<LessonReport>> GetByStudentIdAsync(string studentId, DateTime? startDate = null, DateTime? endDate = null);
         Task<bool> ExistsForTimetableSlotAndDateAsync(int timetableSlotId, DateTime lessonDate);
         Task<(IEnumerable<LessonReport> Reports, int TotalCount)> GetPagedWithDetailsAsync(
             int pageIndex, 
@@ -25,12 +26,14 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             DateTime? endDate = null,
             string? teacherId = null,
             int? classId = null,
-            int? timetableSlotId = null);
+            int? timetableSlotId = null,
+            string? studentId = null);
         IQueryable<LessonReport> GetQueryableWithDetails();
         
         // Validation methods
         Task<bool> CheckLessonExistsAsync(int lessonId);
         Task<bool> CheckTimetableSlotExistsAsync(int timetableSlotId);
         Task<bool> CheckStudentExistsAsync(string studentId);
+        Task<LessonReport?> GetLessonReportWithDetailsAsync(int reportId);
     }
 }

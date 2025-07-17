@@ -4,12 +4,12 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class GradeResponse
     {
-        public int GradeID { get; set; }
-        public string StudentID { get; set; } = string.Empty;
+        public int GradeId { get; set; }
+        public string StudentId { get; set; } = string.Empty;
         public string StudentName { get; set; } = string.Empty;
         public int SubjectID { get; set; }
         public string SubjectName { get; set; } = string.Empty;
-        public int ClassID { get; set; }
+        public int ClassId { get; set; }
         public string ClassName { get; set; } = string.Empty;
         public double? Score { get; set; }
         public string? GradeType { get; set; }

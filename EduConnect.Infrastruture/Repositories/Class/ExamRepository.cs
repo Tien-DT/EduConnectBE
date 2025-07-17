@@ -12,7 +12,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
 {
     public class ExamRepository : BaseRepository<Exam, int>, IExamRepository
     {
-        private readonly EduConnectDbContext _context;
+        private new readonly EduConnectDbContext _context;
         public ExamRepository(EduConnectDbContext context) : base(context)
         {
             _context = context;

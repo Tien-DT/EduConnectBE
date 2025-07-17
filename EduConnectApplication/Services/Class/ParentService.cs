@@ -68,8 +68,8 @@ namespace EduConnect.Application.Services.Class
         {
             return new ParentResponse
             {
-                ParentID = parent.ParentID,
-                AccountID = parent.AccountID,
+                ParentId = parent.ParentID,
+                AccountId = parent.AccountID,
                 FullName = parent.FullName ?? string.Empty,
                 Email = parent.Account?.Email ?? string.Empty,
                 FirstName = parent.Account?.FirstName ?? string.Empty,

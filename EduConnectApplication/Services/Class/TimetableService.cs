@@ -87,13 +87,13 @@ namespace EduConnect.Application.Services.Class
                     var createdTimetable = await _timetableRepository.CreateTimetableAsync(timetable);
                     var response = new TimetableResponse
                     {
-                        TimetableID = createdTimetable.TimetableID,
+                        TimetableId = createdTimetable.TimetableID,
                         Name = createdTimetable.Name,
                         StartDate = createdTimetable.StartDate,
                         EndDate = createdTimetable.EndDate,
                         Slots = createdTimetable.TimetableSlots.Select(slot => new TimetableSlotResponse
                         {
-                            TimetableSlotID = slot.TimetableSlotID,
+                            TimetableSlotId = slot.TimetableSlotID,
                             DayOfWeek = slot.DayOfWeek,
                             StartTime = slot.StartTime,
                             EndTime = slot.EndTime,
@@ -162,7 +162,7 @@ namespace EduConnect.Application.Services.Class
 
                 var response = new TimetableResponse
                 {
-                    TimetableID = timetable.TimetableID,
+                    TimetableId = timetable.TimetableID,
                     Name = timetable.Name,
                     StartDate = timetable.StartDate,
                     EndDate = timetable.EndDate,
@@ -172,7 +172,7 @@ namespace EduConnect.Application.Services.Class
                         .ThenBy(slot => slot.Period)
                         .Select(slot => new TimetableSlotResponse
                         {
-                            TimetableSlotID = slot.TimetableSlotID,
+                            TimetableSlotId = slot.TimetableSlotID,
                             DayOfWeek = slot.DayOfWeek,
                             StartTime = slot.StartTime,
                             EndTime = slot.EndTime,
@@ -209,7 +209,7 @@ namespace EduConnect.Application.Services.Class
 
                 var responses = timetables.Select(timetable => new TimetableResponse
                 {
-                    TimetableID = timetable.TimetableID,
+                    TimetableId = timetable.TimetableID,
                     Name = timetable.Name,
                     StartDate = timetable.StartDate,
                     EndDate = timetable.EndDate,
@@ -219,7 +219,7 @@ namespace EduConnect.Application.Services.Class
                         .ThenBy(slot => slot.Period)
                         .Select(slot => new TimetableSlotResponse
                         {
-                            TimetableSlotID = slot.TimetableSlotID,
+                            TimetableSlotId = slot.TimetableSlotID,
                             DayOfWeek = slot.DayOfWeek,
                             StartTime = slot.StartTime,
                             EndTime = slot.EndTime,

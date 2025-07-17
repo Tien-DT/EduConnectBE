@@ -32,7 +32,8 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] DateTime? endDate = null,
             [FromQuery] string? teacherId = null,
             [FromQuery] int? classId = null,
-            [FromQuery] int? timetableSlotId = null
+            [FromQuery] int? timetableSlotId = null,
+            [FromQuery] string? studentId = null
         )
         {
             if (pageIndex < 1)
@@ -59,6 +60,14 @@ namespace EduConnect.Presentation.Controllers
             {
                 var result = await _lessonReportService.GetLessonReportsByTimetableSlotAsync(
                     timetableSlotId.Value, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+                if (result.Success)
+                    return Ok(result);
+                return BadRequest(result);
+            }
+            if (!string.IsNullOrEmpty(studentId))
+            {
+                var result = await _lessonReportService.GetLessonReportsByStudentAsync(
+                    studentId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
                 if (result.Success)
                     return Ok(result);
                 return BadRequest(result);
@@ -155,6 +164,135 @@ namespace EduConnect.Presentation.Controllers
 
             var result = await _lessonReportService.GetLessonReportsByTeacherAsync(
                 currentUserId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+            
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("student/{studentId}")]
+        public async Task<IActionResult> GetLessonReportsByStudent(
+            string studentId,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "LessonDate",
+            [FromQuery] bool ascending = false,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            if (pageIndex < 1)
+                return BadRequest("Page index must be greater than or equal to 1");
+
+            if (pageSize < 1)
+                return BadRequest("Page size must be greater than or equal to 1");
+
+            var result = await _lessonReportService.GetLessonReportsByStudentAsync(
+                studentId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+            
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("my-student-reports")]
+        public async Task<IActionResult> GetMyStudentReports(
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "LessonDate",
+            [FromQuery] bool ascending = false,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            if (string.IsNullOrEmpty(currentUserId))
+                return Unauthorized("User not found");
+
+            if (pageIndex < 1)
+                return BadRequest("Page index must be greater than or equal to 1");
+
+            if (pageSize < 1)
+                return BadRequest("Page size must be greater than or equal to 1");
+
+            var result = await _lessonReportService.GetLessonReportsByStudentAsync(
+                currentUserId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+            
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        // GET: api/lessonreports/teacher/{teacherId}
+        [HttpGet("teacher/{teacherId}")]
+        public async Task<IActionResult> GetLessonReportsByTeacher(
+            string teacherId,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "LessonDate",
+            [FromQuery] bool ascending = false,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            if (pageIndex < 1)
+                return BadRequest("Page index must be greater than or equal to 1");
+
+            if (pageSize < 1)
+                return BadRequest("Page size must be greater than or equal to 1");
+
+            var result = await _lessonReportService.GetLessonReportsByTeacherAsync(
+                teacherId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+            
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("class/{classId}")]
+        public async Task<IActionResult> GetLessonReportsByClass(
+            int classId,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "LessonDate",
+            [FromQuery] bool ascending = false,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            if (pageIndex < 1)
+                return BadRequest("Page index must be greater than or equal to 1");
+
+            if (pageSize < 1)
+                return BadRequest("Page size must be greater than or equal to 1");
+
+            var result = await _lessonReportService.GetLessonReportsByClassAsync(
+                classId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
+            
+            if (result.Success)
+                return Ok(result);
+            return BadRequest(result);
+        }
+
+        [HttpGet("timetableslot/{timetableSlotId}")]
+        public async Task<IActionResult> GetLessonReportsByTimetableSlot(
+            int timetableSlotId,
+            [FromQuery] int pageIndex = 1,
+            [FromQuery] int pageSize = 10,
+            [FromQuery] string? searchTerm = null,
+            [FromQuery] string sortBy = "LessonDate",
+            [FromQuery] bool ascending = false,
+            [FromQuery] DateTime? startDate = null,
+            [FromQuery] DateTime? endDate = null)
+        {
+            if (pageIndex < 1)
+                return BadRequest("Page index must be greater than or equal to 1");
+
+            if (pageSize < 1)
+                return BadRequest("Page size must be greater than or equal to 1");
+
+            var result = await _lessonReportService.GetLessonReportsByTimetableSlotAsync(
+                timetableSlotId, pageIndex, pageSize, searchTerm, sortBy, ascending, startDate, endDate);
             
             if (result.Success)
                 return Ok(result);

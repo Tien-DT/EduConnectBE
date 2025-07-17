@@ -100,12 +100,12 @@ namespace EduConnect.Application.Services.Class
 
                     gradeResponses.Add(new GradeResponse
                     {
-                        GradeID = grade.GradeID,
-                        StudentID = grade.StudentID,
+                        GradeId = grade.GradeID,
+                        StudentId = grade.StudentID,
                         StudentName = student?.FullName ?? "Unknown",
                         SubjectID = grade.SubjectID,
                         SubjectName = subject?.SubjectName ?? "Unknown",
-                        ClassID = student?.ClassID ?? 0,
+                        ClassId = student?.ClassID ?? 0,
                         ClassName = studentClass?.ClassName ?? "No Class",
                         Score = grade.Score,
                         GradeType = grade.GradeType,
@@ -169,12 +169,12 @@ namespace EduConnect.Application.Services.Class
 
                 var gradeResponses = grades.Select(g => new GradeResponse
                 {
-                    GradeID = g.GradeID,
-                    StudentID = g.StudentID,
+                    GradeId = g.GradeID,
+                    StudentId = g.StudentID,
                     StudentName = student.FullName ?? "Unknown",
                     SubjectID = g.SubjectID,
                     SubjectName = subject?.SubjectName ?? "Unknown",
-                    ClassID = student.ClassID ?? 0,
+                    ClassId = student.ClassID ?? 0,
                     ClassName = studentClass?.ClassName ?? "No Class",
                     Score = g.Score,
                     GradeType = g.GradeType,
@@ -237,12 +237,12 @@ namespace EduConnect.Application.Services.Class
 
                 var gradeResponse = new GradeResponse
                 {
-                    GradeID = grade.GradeID,
-                    StudentID = grade.StudentID,
+                    GradeId = grade.GradeID,
+                    StudentId = grade.StudentID,
                     StudentName = student.FullName ?? "Unknown",
                     SubjectID = grade.SubjectID,
                     SubjectName = subject?.SubjectName ?? "Unknown",
-                    ClassID = student.ClassID ?? 0,
+                    ClassId = student.ClassID ?? 0,
                     ClassName = studentClass?.ClassName ?? "No Class",
                     Score = grade.Score,
                     GradeType = grade.GradeType,
@@ -311,20 +311,20 @@ namespace EduConnect.Application.Services.Class
 
                     response.Add(new StudentGradingResponse
                     {
-                        StudentID = student.StudentID,
+                        StudentId = student.StudentID,
                         FullName = student.FullName ?? "Unknown",
-                        ClassID = student.ClassID ?? 0,
+                        ClassId = student.ClassID ?? 0,
                         ClassName = studentClass?.ClassName ?? "No Class",
                         DateOfBirth = student.DateOfBirth,
                         Gender = student.Gender,
                         ExistingGrades = studentGrades.Select(g => new GradeResponse
                         {
-                            GradeID = g.GradeID,
-                            StudentID = g.StudentID,
+                            GradeId = g.GradeID,
+                            StudentId = g.StudentID,
                             StudentName = student.FullName ?? "Unknown",
                             SubjectID = g.SubjectID,
                             SubjectName = subject?.SubjectName ?? "Unknown",
-                            ClassID = student.ClassID ?? 0,
+                            ClassId = student.ClassID ?? 0,
                             ClassName = studentClass?.ClassName ?? "No Class",
                             Score = g.Score,
                             GradeType = g.GradeType,
@@ -397,12 +397,12 @@ namespace EduConnect.Application.Services.Class
 
                 var gradeResponse = new GradeResponse
                 {
-                    GradeID = grade.GradeID,
-                    StudentID = grade.StudentID,
+                    GradeId = grade.GradeID,
+                    StudentId = grade.StudentID,
                     StudentName = student.FullName ?? "Unknown",
                     SubjectID = grade.SubjectID,
                     SubjectName = subject?.SubjectName ?? "Unknown",
-                    ClassID = student.ClassID ?? 0,
+                    ClassId = student.ClassID ?? 0,
                     ClassName = studentClass?.ClassName ?? "No Class",
                     Score = grade.Score,
                     GradeType = grade.GradeType,
@@ -472,12 +472,12 @@ namespace EduConnect.Application.Services.Class
 
                 var gradeResponse = new GradeResponse
                 {
-                    GradeID = grade.GradeID,
-                    StudentID = grade.StudentID,
+                    GradeId = grade.GradeID,
+                    StudentId = grade.StudentID,
                     StudentName = student.FullName ?? "Unknown",
                     SubjectID = grade.SubjectID,
                     SubjectName = subject?.SubjectName ?? "Unknown",
-                    ClassID = student.ClassID ?? 0,
+                    ClassId = student.ClassID ?? 0,
                     ClassName = studentClass?.ClassName ?? "No Class",
                     Score = grade.Score,
                     GradeType = grade.GradeType,
@@ -582,8 +582,8 @@ namespace EduConnect.Application.Services.Class
 
             var result = grades.Select(g => new GradeResponse
             {
-                GradeID = g.GradeID,
-                StudentID = g.StudentID,
+                GradeId = g.GradeID,
+                StudentId = g.StudentID,
                 StudentName = students.FirstOrDefault(s => s.StudentID == g.StudentID)?.FullName ?? "",
                 SubjectID = subjectId,
                 SubjectName = subject?.SubjectName ?? "",
@@ -620,8 +620,8 @@ namespace EduConnect.Application.Services.Class
 
             var response = new GradeResponse
             {
-                GradeID = grade.GradeID,
-                StudentID = grade.StudentID,
+                GradeId = grade.GradeID,
+                StudentId = grade.StudentID,
                 StudentName = student?.FullName ?? "",
                 SubjectID = grade.SubjectID,
                 SubjectName = subject?.SubjectName ?? "",
@@ -725,12 +725,12 @@ namespace EduConnect.Application.Services.Class
 
                     gradeResponses.Add(new GradeResponse
                     {
-                        GradeID = grade.GradeID,
-                        StudentID = grade.StudentID,
+                        GradeId = grade.GradeID,
+                        StudentId = grade.StudentID,
                         StudentName = student.FullName ?? "",
                         SubjectID = grade.SubjectID,
                         SubjectName = subject?.SubjectName ?? "",
-                        ClassID = studentClass?.ClassID ?? 0,
+                        ClassId = studentClass?.ClassID ?? 0,
                         ClassName = studentClass?.ClassName ?? "",
                         Score = grade.Score,
                         GradeType = grade.GradeType,

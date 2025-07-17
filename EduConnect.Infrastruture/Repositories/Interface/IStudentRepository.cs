@@ -27,5 +27,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             bool ascending = true);
         IQueryable<Student> GetStudentQueryable();
         Task<Student?> GetByAccountIdAsync(string accountId);
+        Task<Student?> GetStudentWithParentAsync(string studentId);
     }
 }

@@ -5,8 +5,8 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class TeacherResponse
     {
-        public string TeacherID { get; set; } = string.Empty;
-        public string AccountID { get; set; } = string.Empty;
+        public string TeacherId { get; set; } = string.Empty;
+        public string AccountId { get; set; } = string.Empty;
         public string FullName { get; set; } = string.Empty;
         public string Email { get; set; } = string.Empty;
         public string FirstName { get; set; } = string.Empty;

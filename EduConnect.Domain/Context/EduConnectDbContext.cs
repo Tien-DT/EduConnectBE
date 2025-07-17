@@ -29,6 +29,7 @@ namespace EduConnect.Data
         public DbSet<Subject> Subjects { get; set; }
         public DbSet<TimetableSlot> TimetableSlots { get; set; }
         public DbSet<StudentLessonNote> StudentLessonNotes { get; set; }
+        public DbSet<FirebaseToken> FirebaseTokens { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -51,6 +52,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<Exam>().ToTable("Exam");
             modelBuilder.Entity<Subject>().ToTable("Subject");
             modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
+            modelBuilder.Entity<FirebaseToken>().ToTable("FirebaseToken");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
@@ -179,6 +181,12 @@ namespace EduConnect.Data
                 .WithMany(s => s.Exams)
                 .HasForeignKey(e => e.StudentID)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Exam>()
+                .HasOne(e => e.CreatedByUser)
+                .WithMany()
+                .HasForeignKey(e => e.CreatedBy)
+                .OnDelete(DeleteBehavior.SetNull);
 
             modelBuilder.Entity<Lesson>()
                 .HasOne(l => l.Subject)

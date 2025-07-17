@@ -34,7 +34,7 @@ namespace EduConnect.Application.Services.Class
             _studentRepository = studentRepository;
         }
 
-        public async Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request)
+        public async Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request, string? createdBy = null)
         {
             try
             {
@@ -47,7 +47,9 @@ namespace EduConnect.Application.Services.Class
                     GradeDate = request.GradeDate,
                     Room = request.Room,
                     StudentID = request.StudentID,
-                    IsDeleted = false
+                    IsDeleted = false,
+                    CreatedBy = createdBy,
+                    CreatedDate = DateTime.UtcNow
                 };
 
                 await _examRepository.CreateExamAsync(exam);
@@ -66,7 +68,7 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests)
+        public async Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests, string? createdBy = null)
         {
             try
             {
@@ -75,7 +77,7 @@ namespace EduConnect.Application.Services.Class
 
                 foreach (var request in requests)
                 {
-                    var result = await CreateExamAsync(request);
+                    var result = await CreateExamAsync(request, createdBy);
                     
                     if (result.Success)
                     {
@@ -106,7 +108,7 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<ExamResponse>>> CreateClassExamsAsync(CreateClassExamRequest request)
+        public async Task<ApiResponse<List<ExamResponse>>> CreateClassExamsAsync(CreateClassExamRequest request, string? createdBy = null)
         {
             try
             {
@@ -137,7 +139,7 @@ namespace EduConnect.Application.Services.Class
                     Room = request.Room,
                     StudentID = s.StudentID
                 }).ToList();
-                return await CreateBulkExamsAsync(examRequests);
+                return await CreateBulkExamsAsync(examRequests, createdBy);
             }
             catch (Exception ex)
             {
@@ -147,7 +149,7 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request)
+        public async Task<ApiResponse<List<ExamResponse>>> CreatePrincipalExamsAsync(CreatePrincipalExamRequest request, string? createdBy = null)
         {
             try
             {
@@ -187,7 +189,7 @@ namespace EduConnect.Application.Services.Class
                     Room = request.Room,
                     StudentID = s.StudentID
                 }).ToList();
-                return await CreateBulkExamsAsync(examRequests);
+                return await CreateBulkExamsAsync(examRequests, createdBy);
             }
             catch (Exception ex)
             {
@@ -363,6 +365,7 @@ namespace EduConnect.Application.Services.Class
         public async Task<PagedApiResponse<List<ExamResponse>>> FilterSortSearchExamsAsync(
             string? studentId = null,
             string? searchTerm = null,
+            string? room = null,
             string? sortBy = null,
             bool ascending = true,
             int pageIndex = 1,
@@ -380,6 +383,7 @@ namespace EduConnect.Application.Services.Class
             }
 
             query = ExamQueryHelper.ApplySearch(query, searchTerm);
+            query = ExamQueryHelper.ApplyRoomFilter(query, room);
             query = ExamQueryHelper.ApplySort(query, sortBy, ascending);
 
             var totalCount = await System.Threading.Tasks.Task.FromResult(query.Count());

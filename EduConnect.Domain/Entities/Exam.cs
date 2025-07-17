@@ -40,5 +40,13 @@ namespace EduConnect.Domain.Entities
 
         [ForeignKey("StudentID")]
         public virtual Student Student { get; set; } = null!;
+
+        [StringLength(450)]
+        public string? CreatedBy { get; set; }
+
+        [ForeignKey("CreatedBy")]
+        public virtual ApplicationUser? CreatedByUser { get; set; }
+
+        public DateTime CreatedDate { get; set; } = DateTime.UtcNow;
     }
 }

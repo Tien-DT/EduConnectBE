@@ -22,7 +22,7 @@ namespace EduConnect.Presentation.Controllers
         {
             var result = await _feedbackService.CreateFeedbackAsync(request);
             if (result.Success)
-                return CreatedAtAction(nameof(GetFeedbackById), new { id = result.Data?.FeedbackID }, result);
+                return CreatedAtAction(nameof(GetFeedbackById), new { id = result.Data?.FeedbackId }, result);
             return BadRequest(result);
         }
 

@@ -5,9 +5,9 @@ namespace EduConnect.Application.DTOs.Response
 {
     public class LessonReportResponse
     {
-        public int ReportID { get; set; }
-        public int? LessonID { get; set; }
-        public int TimetableSlotID { get; set; }
+        public int ReportId { get; set; }
+        public int? LessonId { get; set; }
+        public int TimetableSlotId { get; set; }
         public DateTime LessonDate { get; set; }
         public int? TotalStudents { get; set; }
         public int? AbsentStudents { get; set; }
@@ -19,9 +19,9 @@ namespace EduConnect.Application.DTOs.Response
         public string SubjectName { get; set; } = string.Empty;
         public string SubjectCode { get; set; } = string.Empty;
         public string TeacherName { get; set; } = string.Empty;
-        public string TeacherID { get; set; } = string.Empty;
+        public string TeacherId { get; set; } = string.Empty;
         public string ClassName { get; set; } = string.Empty;
-        public int ClassID { get; set; }
+        public int ClassId { get; set; }
         public string DayOfWeek { get; set; } = string.Empty;
         public int Period { get; set; }
         public TimeSpan StartTime { get; set; }
@@ -33,8 +33,8 @@ namespace EduConnect.Application.DTOs.Response
 
     public class StudentLessonNoteResponse
     {
-        public int NoteID { get; set; }
-        public string StudentID { get; set; } = string.Empty;
+        public int NoteId { get; set; }
+        public string StudentId { get; set; } = string.Empty;
         public string StudentName { get; set; } = string.Empty;
         public string NoteType { get; set; } = string.Empty;
         public string? NoteContent { get; set; }

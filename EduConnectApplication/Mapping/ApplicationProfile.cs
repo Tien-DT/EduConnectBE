@@ -39,11 +39,14 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectName : string.Empty))
                 .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectCode : string.Empty))
                 .ForMember(dest => dest.ExamNote, opt => opt.MapFrom(src => src.ExamNote ?? string.Empty))
-                .ForMember(dest => dest.Room, opt => opt.MapFrom(src => src.Room ?? string.Empty));
+                .ForMember(dest => dest.Room, opt => opt.MapFrom(src => src.Room ?? string.Empty))
+                .ForMember(dest => dest.StudentId, opt => opt.MapFrom(src => src.StudentID ?? string.Empty))
+                .ForMember(dest => dest.CreatedBy, opt => opt.MapFrom(src => src.CreatedBy))
+                .ForMember(dest => dest.CreatedDate, opt => opt.MapFrom(src => src.CreatedDate));
 
             CreateMap<Student, ClassStudentResponse>()
                 .ForMember(dest => dest.FullName, opt => opt.MapFrom(src => src.FullName ?? string.Empty))
-                .ForMember(dest => dest.ParentID, opt => opt.MapFrom(src => src.ParentID))
+                .ForMember(dest => dest.ParentId, opt => opt.MapFrom(src => src.ParentID))
                 .ForMember(dest => dest.ParentName, opt => opt.MapFrom(src => src.Parent != null ? src.Parent.FullName : string.Empty))
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : string.Empty));
 
@@ -52,9 +55,9 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.TimetableSlot.Subject.SubjectName))
                 .ForMember(dest => dest.SubjectCode, opt => opt.MapFrom(src => src.TimetableSlot.Subject.SubjectCode))
                 .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.TimetableSlot.Teacher.FullName))
-                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => src.TimetableSlot.TeacherID))
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TimetableSlot.TeacherID))
                 .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.TimetableSlot.Timetable.Class.ClassName))
-                .ForMember(dest => dest.ClassID, opt => opt.MapFrom(src => src.TimetableSlot.Timetable.ClassID))
+                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.TimetableSlot.Timetable.ClassID))
                 .ForMember(dest => dest.DayOfWeek, opt => opt.MapFrom(src => src.TimetableSlot.DayOfWeek))
                 .ForMember(dest => dest.Period, opt => opt.MapFrom(src => src.TimetableSlot.Period))
                 .ForMember(dest => dest.StartTime, opt => opt.MapFrom(src => src.TimetableSlot.StartTime))
@@ -63,7 +66,7 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.StudentNotes, opt => opt.MapFrom(src => src.StudentLessonNotes));
 
             CreateMap<StudentLessonNote, StudentLessonNoteResponse>()
-                .ForMember(dest => dest.NoteID, opt => opt.MapFrom(src => src.StudentLessonNoteID))
+                .ForMember(dest => dest.NoteId, opt => opt.MapFrom(src => src.StudentLessonNoteID))
                 .ForMember(dest => dest.StudentName, opt => opt.MapFrom(src => src.Student.FullName))
                 .ForMember(dest => dest.NoteContent, opt => opt.MapFrom(src => src.Description));
 

@@ -130,6 +130,20 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return await query.ToListAsync();
         }
 
+        public async Task<IEnumerable<LessonReport>> GetByStudentIdAsync(string studentId, DateTime? startDate = null, DateTime? endDate = null)
+        {
+            var query = GetQueryableWithDetails()
+                .Where(lr => lr.IsDeleted != true && lr.StudentLessonNotes.Any(sln => sln.StudentID == studentId));
+
+            if (startDate.HasValue)
+                query = query.Where(lr => lr.LessonDate.Date >= startDate.Value.Date);
+
+            if (endDate.HasValue)
+                query = query.Where(lr => lr.LessonDate.Date <= endDate.Value.Date);
+
+            return await query.ToListAsync();
+        }
+
         public async Task<bool> ExistsForTimetableSlotAndDateAsync(int timetableSlotId, DateTime lessonDate)
         {
             return await _context.LessonReports
@@ -148,7 +162,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
             DateTime? endDate = null,
             string? teacherId = null,
             int? classId = null,
-            int? timetableSlotId = null)
+            int? timetableSlotId = null,
+            string? studentId = null)
         {
             var query = GetQueryableWithDetails()
                 .Where(lr => lr.IsDeleted != true);
@@ -168,6 +183,9 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             if (timetableSlotId.HasValue)
                 query = query.Where(lr => lr.TimetableSlotID == timetableSlotId.Value);
+
+            if (!string.IsNullOrEmpty(studentId))
+                query = query.Where(lr => lr.StudentLessonNotes.Any(sln => sln.StudentID == studentId));
 
             // Apply search
             if (!string.IsNullOrEmpty(searchTerm))
@@ -263,6 +281,12 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             return await _context.Students
                 .AnyAsync(s => s.StudentID == studentId && s.IsDeleted != true);
+        }
+
+        public async Task<LessonReport?> GetLessonReportWithDetailsAsync(int reportId)
+        {
+            return await GetQueryableWithDetails()
+                .FirstOrDefaultAsync(lr => lr.ReportID == reportId && lr.IsDeleted != true);
         }
     }
 }

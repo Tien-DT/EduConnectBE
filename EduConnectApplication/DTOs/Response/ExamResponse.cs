@@ -16,5 +16,8 @@ namespace EduConnect.Application.DTOs.Response
         public DateTime ExamDate { get; set; }
         public DateTime? GradeDate { get; set; }
         public string Room { get; set; } = string.Empty;
+        public string StudentId { get; set; } = string.Empty;
+        public string? CreatedBy { get; set; }
+        public DateTime CreatedDate { get; set; }
     }
 }

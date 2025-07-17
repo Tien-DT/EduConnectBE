@@ -63,6 +63,7 @@ namespace EduConnect.Presentation
             });
             builder.Services.Configure<GeminiOption>(builder.Configuration.GetSection("GeminiApi"));
             builder.Services.Configure<RedisOption>(builder.Configuration.GetSection("Redis"));
+            builder.Services.Configure<FirebaseOption>(builder.Configuration.GetSection("Firebase"));
             builder.Services.AddMemoryCache();
 
             // Redis Configuration
@@ -84,6 +85,13 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IChatBotService, ChatBotService>();
             builder.Services.AddScoped<IGeminiFunctionService, GeminiFunctionService>();
             builder.Services.AddScoped<IChatCacheService, ChatCacheService>();
+            builder.Services.AddScoped<IStudentComplaintCacheService, StudentComplaintCacheService>();
+            builder.Services.AddScoped<IParentNotificationService, ParentNotificationService>();
+            builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
+            builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
+            builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
+            builder.Services.AddScoped<IFirebaseCustomTokenService, FirebaseCustomTokenService>();
+            builder.Services.AddHostedService<DailyComplaintNotificationService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();

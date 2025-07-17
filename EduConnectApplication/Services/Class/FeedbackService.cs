@@ -231,8 +231,8 @@ namespace EduConnect.Application.Services.Class
         {
             return new FeedbackResponse
             {
-                FeedbackID = feedback.FeedbackID,
-                ParentID = feedback.ParentID,
+                FeedbackId = feedback.FeedbackID,
+                ParentId = feedback.ParentID,
                 ParentName = feedback.Parent != null && feedback.Parent.Account != null 
                     ? $"{feedback.Parent.Account.FirstName} {feedback.Parent.Account.LastName}".Trim()
                     : "Unknown",
