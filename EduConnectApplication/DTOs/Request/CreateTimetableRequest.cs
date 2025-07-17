@@ -8,7 +8,7 @@ namespace EduConnect.Application.DTOs.Request
     public class CreateTimetableSlotRequest
     {
         [Required]
-        public string TeacherID { get; set; } = string.Empty;
+        public string TeacherId { get; set; } = string.Empty;
 
         [Required]
         public int SubjectId { get; set; }

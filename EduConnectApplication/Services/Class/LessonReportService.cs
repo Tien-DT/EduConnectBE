@@ -226,31 +226,31 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 // Validate LessonID if provided
-                if (request.LessonID.HasValue)
+                if (request.LessonId.HasValue)
                 {
-                    var lessonExists = await _lessonReportRepository.CheckLessonExistsAsync(request.LessonID.Value);
+                    var lessonExists = await _lessonReportRepository.CheckLessonExistsAsync(request.LessonId.Value);
                     if (!lessonExists)
                     {
                         return new ApiResponse<string>
                         {
                             Success = false,
-                            Message = $"Lesson with ID {request.LessonID} does not exist"
+                            Message = $"Lesson with ID {request.LessonId} does not exist"
                         };
                     }
                 }
 
                 // Validate TimetableSlotID
-                var timetableSlotExists = await _lessonReportRepository.CheckTimetableSlotExistsAsync(request.TimetableSlotID);
+                var timetableSlotExists = await _lessonReportRepository.CheckTimetableSlotExistsAsync(request.TimetableSlotId);
                 if (!timetableSlotExists)
                 {
                     return new ApiResponse<string>
                     {
                         Success = false,
-                        Message = $"Timetable slot with ID {request.TimetableSlotID} does not exist"
+                        Message = $"Timetable slot with ID {request.TimetableSlotId} does not exist"
                     };
                 }
 
-                var exists = await _lessonReportRepository.ExistsForTimetableSlotAndDateAsync(request.TimetableSlotID, request.LessonDate);
+                var exists = await _lessonReportRepository.ExistsForTimetableSlotAndDateAsync(request.TimetableSlotId, request.LessonDate);
                 if (exists)
                 {
                     return new ApiResponse<string>
@@ -272,13 +272,13 @@ namespace EduConnect.Application.Services.Class
                     // Validate StudentIDs
                     foreach (var studentNote in request.StudentNotes)
                     {
-                        var studentExists = await _lessonReportRepository.CheckStudentExistsAsync(studentNote.StudentID);
+                        var studentExists = await _lessonReportRepository.CheckStudentExistsAsync(studentNote.StudentId);
                         if (!studentExists)
                         {
                             return new ApiResponse<string>
                             {
                                 Success = false,
-                                Message = $"Student with ID {studentNote.StudentID} does not exist"
+                                Message = $"Student with ID {studentNote.StudentId} does not exist"
                             };
                         }
                     }
@@ -292,23 +292,19 @@ namespace EduConnect.Application.Services.Class
                         return note;
                     }).ToList();
 
-                    // Lưu StudentLessonNotes vào database
                     foreach (var note in studentNotes)
                     {
                         await _studentLessonNoteRepository.CreateAsync(note);
                     }
                 }
 
-                // Process complaints for parent notifications
                 try
                 {
                     await _complaintService.ProcessLessonReportComplaintsAsync(createdReport.ReportID);
                 }
                 catch
                 {
-                    // Log error but don't fail the main operation
-                    // This ensures lesson report creation succeeds even if complaint processing fails
-                    // Could use ILogger here if available
+
                 }
 
                 return new ApiResponse<string>
@@ -332,7 +328,7 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                var existingReport = await _lessonReportRepository.GetByIdAsync(request.ReportID);
+                var existingReport = await _lessonReportRepository.GetByIdAsync(request.ReportId);
                 if (existingReport == null)
                 {
                     return new ApiResponse<string>
@@ -348,14 +344,14 @@ namespace EduConnect.Application.Services.Class
                     TimetableSlotID = existingReport.TimetableSlotID,
                     LessonDate = existingReport.LessonDate,
                     CreatedAt = existingReport.CreatedAt,
-                    LessonID = request.LessonID,
+                    LessonID = request.LessonId,
                     TotalStudents = request.TotalStudents,
                     AbsentStudents = request.AbsentStudents,
                     Remarks = request.Remarks,
                     IsDeleted = false
                 };
 
-                await _lessonReportRepository.UpdateAsync(request.ReportID, updatedReport);
+                await _lessonReportRepository.UpdateAsync(request.ReportId, updatedReport);
 
                 return new ApiResponse<string>
                 {

@@ -6,7 +6,7 @@ namespace EduConnect.Application.DTOs.Request
     public class CreateFeedbackRequest
     {
         [Required]
-        public string ParentID { get; set; } = string.Empty;
+        public string ParentId { get; set; } = string.Empty;
 
         [Required]
         [StringLength(1000, MinimumLength = 10)]

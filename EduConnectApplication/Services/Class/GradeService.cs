@@ -358,7 +358,7 @@ namespace EduConnect.Application.Services.Class
                         new List<string> { "Teacher not found" }, "Teacher Not Found");
                 }
 
-                var student = await _studentRepository.GetByIdAsync(request.StudentID);
+                var student = await _studentRepository.GetByIdAsync(request.StudentId);
                 if (student == null)
                 {
                     return ApiResponse<GradeResponse>.ErrorResponse(
@@ -367,7 +367,7 @@ namespace EduConnect.Application.Services.Class
 
                 var hasPermission = (await _lessonRepository.GetAllAsync())
                     .Any(l => l.TeacherID == teacher.TeacherID &&
-                             l.SubjectId == request.SubjectID &&
+                             l.SubjectId == request.SubjectId &&
                              l.ClassID == student.ClassID);
 
                 if (!hasPermission)
@@ -379,8 +379,8 @@ namespace EduConnect.Application.Services.Class
 
                 var grade = new Grade
                 {
-                    StudentID = request.StudentID,
-                    SubjectID = request.SubjectID,
+                    StudentID = request.StudentId,
+                    SubjectID = request.SubjectId,
                     Score = request.Score,
                     GradeType = request.GradeType,
                     GradeLevel = request.GradeLevel,
@@ -391,7 +391,7 @@ namespace EduConnect.Application.Services.Class
 
                 await _gradeRepository.CreateAsync(grade);
 
-                var subject = await _subjectRepository.GetByIdAsync(request.SubjectID);
+                var subject = await _subjectRepository.GetByIdAsync(request.SubjectId);
                 var studentClass = student.ClassID.HasValue ?
                     await _classRepository.GetByIdAsync(student.ClassID.Value) : null;
 
@@ -638,7 +638,7 @@ namespace EduConnect.Application.Services.Class
         public async Task<ApiResponse<string>> CreateGradeAsync(CreateGradeRequest request, string teacherId)
         {
             var lessons = (await _lessonRepository.GetAllAsync())
-                .Where(l => l.SubjectId == request.SubjectID && l.TeacherID == teacherId)
+                .Where(l => l.SubjectId == request.SubjectId && l.TeacherID == teacherId)
                 .ToList();
 
             if (!lessons.Any())
@@ -646,8 +646,8 @@ namespace EduConnect.Application.Services.Class
 
             var grade = new Grade
             {
-                StudentID = request.StudentID,
-                SubjectID = request.SubjectID,
+                StudentID = request.StudentId,
+                SubjectID = request.SubjectId,
                 Score = request.Score,
                 GradeType = request.GradeType,
                 GradeLevel = request.GradeLevel,

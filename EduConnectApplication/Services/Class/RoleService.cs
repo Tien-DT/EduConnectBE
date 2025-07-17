@@ -40,16 +40,16 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignStudentRoleResult
                 {
-                    AccountId = studentRequest.AccountID,
+                    AccountId = studentRequest.AccountId,
                     FullName = studentRequest.FullName,
-                    Id = studentRequest.StudentID,
+                    Id = studentRequest.StudentId,
                     RoleAssigned = "Student",
-                    ParentId = studentRequest.ParentID
+                    ParentId = studentRequest.ParentId
                 };
 
                 try
                 {
-                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(studentRequest.AccountID);
+                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(studentRequest.AccountId);
                     if (user == null)
                     {
                         result.Success = false;
@@ -58,7 +58,7 @@ namespace EduConnect.Application.Services.Class
                         continue;
                     }
                     var existingStudent = (await _studentRepository.GetAllAsync())
-                        .FirstOrDefault(s => s.StudentID == studentRequest.StudentID);
+                        .FirstOrDefault(s => s.StudentID == studentRequest.StudentId);
                     
                     if (existingStudent != null)
                     {
@@ -90,9 +90,9 @@ namespace EduConnect.Application.Services.Class
 
                     var student = new Student
                     {
-                        StudentID = studentRequest.StudentID,
-                        AccountID = studentRequest.AccountID,
-                        ParentID = studentRequest.ParentID,
+                        StudentID = studentRequest.StudentId,
+                        AccountID = studentRequest.AccountId,
+                        ParentID = studentRequest.ParentId,
                         FullName = studentRequest.FullName,
                         IsDeleted = false
                     };
@@ -102,14 +102,14 @@ namespace EduConnect.Application.Services.Class
 
                     result.Success = true;
                     results.Add(result);
-                    _logger.LogInformation($"Successfully assigned Student role to {studentRequest.AccountID}");
+                    _logger.LogInformation($"Successfully assigned Student role to {studentRequest.AccountId}");
                 }
                 catch (Exception ex)
                 {
                     result.Success = false;
                     result.ErrorMessage = ex.Message;
                     results.Add(result);
-                    _logger.LogError(ex, $"Error assigning Student role to {studentRequest.AccountID}");
+                    _logger.LogError(ex, $"Error assigning Student role to {studentRequest.AccountId}");
                 }
             }
 
@@ -131,15 +131,15 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignRoleResult
                 {
-                    AccountId = teacherRequest.AccountID,
+                    AccountId = teacherRequest.AccountId,
                     FullName = teacherRequest.FullName,
-                    Id = teacherRequest.TeacherID,
+                    Id = teacherRequest.TeacherId,
                     RoleAssigned = "Teacher"
                 };
 
                 try
                 {
-                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(teacherRequest.AccountID);
+                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(teacherRequest.AccountId);
                     if (user == null)
                     {
                         result.Success = false;
@@ -148,7 +148,7 @@ namespace EduConnect.Application.Services.Class
                         continue;
                     }
                     var existingTeacher = (await _teacherRepository.GetAllAsync())
-                        .FirstOrDefault(t => t.TeacherID == teacherRequest.TeacherID);
+                        .FirstOrDefault(t => t.TeacherID == teacherRequest.TeacherId);
                     
                     if (existingTeacher != null)
                     {
@@ -179,8 +179,8 @@ namespace EduConnect.Application.Services.Class
                     }
                     var teacher = new Teacher
                     {
-                        TeacherID = teacherRequest.TeacherID,
-                        AccountID = teacherRequest.AccountID,
+                        TeacherID = teacherRequest.TeacherId,
+                        AccountID = teacherRequest.AccountId,
                         FullName = teacherRequest.FullName,
                         IsDeleted = false
                     };
@@ -190,14 +190,14 @@ namespace EduConnect.Application.Services.Class
 
                     result.Success = true;
                     results.Add(result);
-                    _logger.LogInformation($"Successfully assigned Teacher role to {teacherRequest.AccountID}");
+                    _logger.LogInformation($"Successfully assigned Teacher role to {teacherRequest.AccountId}");
                 }
                 catch (Exception ex)
                 {
                     result.Success = false;
                     result.ErrorMessage = ex.Message;
                     results.Add(result);
-                    _logger.LogError(ex, $"Error assigning Teacher role to {teacherRequest.AccountID}");
+                    _logger.LogError(ex, $"Error assigning Teacher role to {teacherRequest.AccountId}");
                 }
             }
 
@@ -219,15 +219,15 @@ namespace EduConnect.Application.Services.Class
             {
                 var result = new AssignRoleResult
                 {
-                    AccountId = parentRequest.AccountID,
+                    AccountId = parentRequest.AccountId,
                     FullName = parentRequest.FullName,
-                    Id = parentRequest.ParentID,
+                    Id = parentRequest.ParentId,
                     RoleAssigned = "Parent"
                 };
 
                 try
                 {
-                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(parentRequest.AccountID);
+                    var user = await _unitOfWork.AuthRepository.GetUserByIdAsync(parentRequest.AccountId);
                     if (user == null)
                     {
                         result.Success = false;
@@ -236,7 +236,7 @@ namespace EduConnect.Application.Services.Class
                         continue;
                     }
                     var existingParent = (await _parentRepository.GetAllAsync())
-                        .FirstOrDefault(p => p.ParentID == parentRequest.ParentID);
+                        .FirstOrDefault(p => p.ParentID == parentRequest.ParentId);
                     
                     if (existingParent != null)
                     {
@@ -266,8 +266,8 @@ namespace EduConnect.Application.Services.Class
 
                     var parent = new Parent
                     {
-                        ParentID = parentRequest.ParentID,
-                        AccountID = parentRequest.AccountID,
+                        ParentID = parentRequest.ParentId,
+                        AccountID = parentRequest.AccountId,
                         FullName = parentRequest.FullName,
                         IsDeleted = false
                     };
@@ -277,14 +277,14 @@ namespace EduConnect.Application.Services.Class
 
                     result.Success = true;
                     results.Add(result);
-                    _logger.LogInformation($"Successfully assigned Parent role to {parentRequest.AccountID}");
+                    _logger.LogInformation($"Successfully assigned Parent role to {parentRequest.AccountId}");
                 }
                 catch (Exception ex)
                 {
                     result.Success = false;
                     result.ErrorMessage = ex.Message;
                     results.Add(result);
-                    _logger.LogError(ex, $"Error assigning Parent role to {parentRequest.AccountID}");
+                    _logger.LogError(ex, $"Error assigning Parent role to {parentRequest.AccountId}");
                 }
             }
 

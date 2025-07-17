@@ -59,10 +59,10 @@ namespace EduConnect.Presentation.Controllers
             if (classId <= 0)
                 return BadRequest("Class ID must be greater than 0");
 
-            if (request.StudentIDs == null || request.StudentIDs.Count == 0)
+            if (request.StudentIds == null || request.StudentIds.Count == 0)
                 return BadRequest("Student IDs list cannot be empty");
 
-            var result = await _classService.AddStudentsToClassAsync(classId, request.StudentIDs);
+            var result = await _classService.AddStudentsToClassAsync(classId, request.StudentIds);
             if (result.Success)
                 return CreatedAtAction(nameof(GetStudentsInClass), new { classId }, result);
             
@@ -81,10 +81,10 @@ namespace EduConnect.Presentation.Controllers
             if (classId <= 0)
                 return BadRequest("Class ID must be greater than 0");
 
-            if (request.StudentIDs == null || request.StudentIDs.Count == 0)
+            if (request.StudentIds == null || request.StudentIds.Count == 0)
                 return BadRequest("Student IDs list cannot be empty");
 
-            var result = await _classService.RemoveStudentsFromClassAsync(classId, request.StudentIDs);
+            var result = await _classService.RemoveStudentsFromClassAsync(classId, request.StudentIds);
             if (result.Success)
                 return Ok(result);
             
@@ -103,7 +103,7 @@ namespace EduConnect.Presentation.Controllers
             if (string.IsNullOrWhiteSpace(studentId))
                 return BadRequest("Student ID cannot be empty");
 
-            var result = await _classService.UpdateStudentClassAsync(studentId, request.NewClassID);
+            var result = await _classService.UpdateStudentClassAsync(studentId, request.NewClassId);
             if (result.Success)
                 return Ok(result);
             

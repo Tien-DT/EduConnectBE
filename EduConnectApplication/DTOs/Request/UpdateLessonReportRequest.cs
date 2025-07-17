@@ -7,9 +7,9 @@ namespace EduConnect.Application.DTOs.Request
     public class UpdateLessonReportRequest
     {
         [Required]
-        public int ReportID { get; set; }
+        public int ReportId { get; set; }
 
-        public int? LessonID { get; set; }
+        public int? LessonId { get; set; }
 
         public int? TotalStudents { get; set; }
 
@@ -22,10 +22,10 @@ namespace EduConnect.Application.DTOs.Request
 
     public class UpdateStudentLessonNoteRequest
     {
-        public int? NoteID { get; set; } // null for new notes
+        public int? NoteId { get; set; } 
 
         [Required]
-        public string StudentID { get; set; } = string.Empty;
+        public string StudentId { get; set; } = string.Empty;
 
         [Required]
         public string NoteType { get; set; } = string.Empty;

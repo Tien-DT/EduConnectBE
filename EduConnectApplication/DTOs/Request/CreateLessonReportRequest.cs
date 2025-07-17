@@ -6,10 +6,10 @@ namespace EduConnect.Application.DTOs.Request
 {
     public class CreateLessonReportRequest
     {
-        public int? LessonID { get; set; }
+        public int? LessonId { get; set; }
 
         [Required]
-        public int TimetableSlotID { get; set; }
+        public int TimetableSlotId { get; set; }
 
         [Required]
         public DateTime LessonDate { get; set; }
@@ -26,7 +26,7 @@ namespace EduConnect.Application.DTOs.Request
     public class CreateStudentLessonNoteRequest
     {
         [Required]
-        public string StudentID { get; set; } = string.Empty;
+        public string StudentId { get; set; } = string.Empty;
 
         [Required]
         public string NoteType { get; set; } = string.Empty;

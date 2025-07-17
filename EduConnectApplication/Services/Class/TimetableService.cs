@@ -69,7 +69,7 @@ namespace EduConnect.Application.Services.Class
                 {
                     var timetableSlot = new TimetableSlot
                     {
-                        TeacherID = slotRequest.TeacherID,
+                        TeacherID = slotRequest.TeacherId,
                         SubjectId = slotRequest.SubjectId,
                         DayOfWeek = slotRequest.DayOfWeek,
                         StartTime = slotRequest.StartTime,

@@ -28,7 +28,7 @@ namespace EduConnect.Application.DTOs.Request
         public string? Room { get; set; }
 
         [Required]
-        public string StudentID { get; set; }
+        public string StudentId { get; set; }
     }
 
     public class CreateClassExamRequest

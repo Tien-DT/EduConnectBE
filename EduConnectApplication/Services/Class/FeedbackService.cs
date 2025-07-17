@@ -26,7 +26,7 @@ namespace EduConnect.Application.Services.Class
             try
             {
                 // Validate parent exists
-                var parent = await _parentRepository.GetByIdAsync(request.ParentID);
+                var parent = await _parentRepository.GetByIdAsync(request.ParentId);
                 if (parent == null)
                 {
                     return ApiResponse<FeedbackResponse>.ErrorResponse(
@@ -36,7 +36,7 @@ namespace EduConnect.Application.Services.Class
 
                 var feedback = new Feedback
                 {
-                    ParentID = request.ParentID,
+                    ParentID = request.ParentId,
                     Content = request.Content,
                     Target = request.Target,
                     DateTime = DateTime.UtcNow,
@@ -45,7 +45,6 @@ namespace EduConnect.Application.Services.Class
 
                 var createdFeedback = await _feedbackRepository.CreateAsync(feedback);
                 
-                // Get feedback with parent details
                 var feedbackWithParent = await _feedbackRepository.GetByIdAsync(createdFeedback.FeedbackID);
                 
                 var response = MapToFeedbackResponse(feedbackWithParent);

@@ -46,7 +46,7 @@ namespace EduConnect.Application.Services.Class
                     ExamDate = request.ExamDate,
                     GradeDate = request.GradeDate,
                     Room = request.Room,
-                    StudentID = request.StudentID,
+                    StudentID = request.StudentId,
                     IsDeleted = false,
                     CreatedBy = createdBy,
                     CreatedDate = DateTime.UtcNow
@@ -137,7 +137,7 @@ namespace EduConnect.Application.Services.Class
                     ExamDate = request.ExamDate,
                     GradeDate = request.GradeDate,
                     Room = request.Room,
-                    StudentID = s.StudentID
+                    StudentId = s.StudentID
                 }).ToList();
                 return await CreateBulkExamsAsync(examRequests, createdBy);
             }
@@ -187,7 +187,7 @@ namespace EduConnect.Application.Services.Class
                     ExamDate = request.ExamDate,
                     GradeDate = request.GradeDate,
                     Room = request.Room,
-                    StudentID = s.StudentID
+                    StudentId = s.StudentID
                 }).ToList();
                 return await CreateBulkExamsAsync(examRequests, createdBy);
             }
