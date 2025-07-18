@@ -7,7 +7,7 @@ using System.Threading.Tasks;
 
 namespace EduConnect.Presentation.Controllers
 {
-    [Route("api/v1/classmanagement")]
+    [Route("api/v1/class-management")]
     [ApiController]
     [Authorize]
     public class ClassManagementController : ControllerBase

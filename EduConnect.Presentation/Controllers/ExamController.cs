@@ -74,7 +74,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(filterResult);
         }
 
-        [HttpPost("class")]
+        [HttpPost("class-schedules")]
         public async Task<IActionResult> CreateExamsForClass([FromBody] CreateClassExamRequest request)
         {
             if (!ModelState.IsValid)
@@ -93,7 +93,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("principal")]
+        [HttpPost("principal-schedules")]
         public async Task<IActionResult> CreateExamsForStudents([FromBody] CreatePrincipalExamRequest request)
         {
             if (!ModelState.IsValid)

@@ -17,7 +17,7 @@ namespace EduConnect.Presentation.Controllers
             _roleService = roleService;
         }
 
-        [HttpPost("students/assignment")]
+        [HttpPost("student-assignments")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignStudentRole([FromBody] AssignStudentRoleListRequest request)
         {
@@ -32,7 +32,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("teachers/assignment")]
+        [HttpPost("teacher-assignments")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignTeacherRole([FromBody] AssignTeacherRoleListRequest request)
         {
@@ -47,7 +47,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpPost("parents/assignment")]
+        [HttpPost("parent-assignments")]
         //[Authorize(Roles = "Principal")]
         public async Task<IActionResult> AssignParentRole([FromBody] AssignParentRoleListRequest request)
         {
