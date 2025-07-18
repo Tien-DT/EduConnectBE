@@ -55,7 +55,7 @@ namespace EduConnect.Application.DTOs.Request
         public int ClassId { get; set; }
 
         [Required]
-        public string TeacherAccountId { get; set; }
+        public string TeacherId { get; set; }
     }
 
     public class CreatePrincipalExamRequest
@@ -79,7 +79,7 @@ namespace EduConnect.Application.DTOs.Request
         public string? Room { get; set; }
 
         [Required]
-        public string PrincipalAccountId { get; set; }
+        public string PrincipalId { get; set; }
 
         [Required]
         public List<string> StudentIds { get; set; } = new List<string>();

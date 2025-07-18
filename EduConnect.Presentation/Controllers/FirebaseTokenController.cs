@@ -9,7 +9,7 @@ namespace EduConnect.Presentation.Controllers.v1
 {
     [ApiController]
     [Route("api/v1/firebase-tokens")]
-    [Authorize]
+    //[Authorize]
     public class FirebaseTokenController : ControllerBase
     {
         private readonly IFirebaseTokenService _firebaseTokenService;

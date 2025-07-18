@@ -10,7 +10,7 @@ namespace EduConnect.Presentation.Controllers
     
     [Route("api/v1/grades")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class GradeController : ControllerBase
     {
         private readonly IGradeService _gradeService;

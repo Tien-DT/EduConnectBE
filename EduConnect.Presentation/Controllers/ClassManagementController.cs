@@ -9,7 +9,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/class-management")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class ClassManagementController : ControllerBase
     {
         private readonly IClassService _classService;

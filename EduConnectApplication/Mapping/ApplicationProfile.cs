@@ -94,6 +94,23 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
                 .ForMember(dest => dest.TimetableSlot, opt => opt.Ignore())
                 .ForMember(dest => dest.Student, opt => opt.Ignore());
+
+            // Subject mappings
+            CreateMap<Subject, SubjectResponse>()
+                .ForMember(dest => dest.LessonCount, opt => opt.MapFrom(src => src.Lessons.Count))
+                .ForMember(dest => dest.ExamCount, opt => opt.MapFrom(src => src.Exams.Count));
+
+            CreateMap<CreateSubjectRequest, Subject>()
+                .ForMember(dest => dest.SubjectId, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Lessons, opt => opt.Ignore())
+                .ForMember(dest => dest.Exams, opt => opt.Ignore());
+
+            CreateMap<UpdateSubjectRequest, Subject>()
+                .ForMember(dest => dest.SubjectId, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Lessons, opt => opt.Ignore())
+                .ForMember(dest => dest.Exams, opt => opt.Ignore());
         }
     }
 }

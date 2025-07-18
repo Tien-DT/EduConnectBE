@@ -21,6 +21,19 @@ namespace EduConnect.Presentation.Controllers
             _examService = examService;
         }
 
+        [HttpGet("{examId}")]
+        public async Task<IActionResult> GetExamById(int examId)
+        {
+            var result = await _examService.GetExamByIdAsync(examId);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            
+            return NotFound(result);
+        }
+
         [HttpGet("")]
         public async Task<IActionResult> FilterSortSearchExams(
             [FromQuery] string? studentId = null,

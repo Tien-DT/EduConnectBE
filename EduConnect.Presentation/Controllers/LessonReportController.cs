@@ -10,7 +10,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/lesson-reports")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class LessonReportController : ControllerBase
     {
         private readonly ILessonReportService _lessonReportService;

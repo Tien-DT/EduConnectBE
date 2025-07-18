@@ -9,7 +9,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/timetables")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class TimetableController : ControllerBase
     {
         private readonly ITimetableService _timetableService;

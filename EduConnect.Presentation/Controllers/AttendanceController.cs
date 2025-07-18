@@ -7,7 +7,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/attendances")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class AttendanceController : ControllerBase
     {
         private readonly IAttendanceService _attendanceService;

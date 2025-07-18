@@ -7,7 +7,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/roles")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class RoleController : ControllerBase
     {
         private readonly IRoleService _roleService;
