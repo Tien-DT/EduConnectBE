@@ -11,12 +11,18 @@ namespace EduConnect.Application.DTOs.Request
     {
         [Required]
         [EmailAddress(ErrorMessage = "Please input Email!")]
-        public string? Email { get; set; }
+        public string? Email { get; set; } = null!;
 
-        [Required(ErrorMessage = "Please input Full Name!")]
-        public string? FullName { get; set; }
+        [Required(ErrorMessage = "Please input First Name!")]
+        public string? FirstName { get; set; }= null!;
+
+        [Required(ErrorMessage = "Please input Last Name!")]
+        public string? LastName { get; set; } = null!;
 
         [Required(ErrorMessage = "Please input Password!")]
-        public string? Password { get; set; }
+        public string? Password { get; set; } = null!;
+
+        [Required(ErrorMessage = "Please confirm Password!")]
+        public string? ConfirmPassword { get; set; } = null!;
     }
 }

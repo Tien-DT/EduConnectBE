@@ -1,4 +1,4 @@
-﻿using EduConnect.Domain.Context;
+﻿using EduConnect.Data;
 using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using System;
@@ -11,7 +11,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
 {
     public class BaseRepository<T, TKey> : IBaseRepository<T, TKey> where T : class
     {
-        private readonly EduConnectDbContext _context;
+        protected readonly EduConnectDbContext _context;
         public BaseRepository(EduConnectDbContext eduConnectDbContext)
         {
             _context = eduConnectDbContext;
@@ -23,7 +23,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return entity;
         }
 
-        public async Task<bool> Delete(TKey id)
+        public async Task<bool> DeleteAsync(TKey id)
         {
             var entity = await _context.Set<T>().FindAsync(id);
             if (entity == null)
@@ -41,18 +41,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return await _context.Set<T>().ToListAsync();
         }
 
-        public async Task<bool> UpdateAsync(TKey id, T entity)
-        {
-            var existing = await _context.Set<T>().FindAsync(id);
-            if (existing == null)
-            {
-                return false;
-            }
-            _context.Entry(existing).CurrentValues.SetValues(entity);
-            await _context.SaveChangesAsync();
-            return true;
-        }
-        public async Task<T> UpdateTAsync(TKey id, T entity)
+        public async Task<T?> UpdateAsync(TKey id, T entity)
         {
             var existing = await _context.Set<T>().FindAsync(id);
             if (existing == null)

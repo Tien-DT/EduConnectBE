@@ -11,9 +11,9 @@ namespace EduConnect.Application.DTOs.Request
     {
             [Required]
             [EmailAddress(ErrorMessage = "Please input email!")]
-            public string? Email { get; set; }
+            public string? Email { get; set; } = null!;
 
             [Required(ErrorMessage = "Please input password!")]
-            public string? Password { get; set; }
+            public string? Password { get; set; } = null!;
     }
 }

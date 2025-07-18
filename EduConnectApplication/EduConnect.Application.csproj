@@ -7,26 +7,34 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="AutoMapper" Version="12.0.1" />
+    <PackageReference Include="CloudinaryDotNet" Version="1.27.6" />
+    <PackageReference Include="FirebaseAdmin" Version="3.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.16" />
     <PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="8.0.16" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="9.0.5">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.16">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="9.0.5" />
-    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="9.0.5">
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.16" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="8.0.16">
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Microsoft.Extensions.Configuration" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="9.0.5" />
-    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="9.0.5" />
-    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.11.0" />
+    <PackageReference Include="Microsoft.Extensions.Configuration" Version="8.0.16" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Abstractions" Version="8.0.16" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.16" />
+    <PackageReference Include="Microsoft.IdentityModel.Tokens" Version="8.0.16" />
     <PackageReference Include="Newtonsoft.Json" Version="13.0.3" />
+    <PackageReference Include="Google.Apis.Auth" Version="1.68.0" />
+    <PackageReference Include="MailKit" Version="4.8.0" />
+    <PackageReference Include="MimeKit" Version="4.8.0" />
+    <PackageReference Include="StackExchange.Redis" Version="2.7.4" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\EduConnect.Infrastruture\EduConnect.Infrastruture.csproj" />
+    <ProjectReference Include="..\EduConnect.Domain\EduConnect.Domain.csproj" />
   </ItemGroup>
 
 </Project>

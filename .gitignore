@@ -481,3 +481,6 @@ appsettings.json
 EduConnect.Presentation/appsettings.json
 EduConnect.Presentation/appsettings.json
 EduConnect.Presentation/appsettings.Development.json
+/EduConnect.Domain/Migrations
+EduConnect.Presentation/Properties/ServiceDependencies/educonnectbe - Web Deploy/profile.arm.json
+EduConnect.Presentation/Properties/ServiceDependencies/educonnectswd - Web Deploy/profile.arm.json
