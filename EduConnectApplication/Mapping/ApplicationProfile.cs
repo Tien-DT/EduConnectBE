@@ -87,6 +87,13 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.Points, opt => opt.Ignore())
                 .ForMember(dest => dest.LessonReport, opt => opt.Ignore())
                 .ForMember(dest => dest.Student, opt => opt.Ignore());
+
+            CreateMap<Attendance, AttendanceResponse>();
+            CreateMap<AttendanceRequest, Attendance>()
+                .ForMember(dest => dest.AttendanceID, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.TimetableSlot, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore());
         }
     }
 }

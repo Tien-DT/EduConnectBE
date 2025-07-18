@@ -36,6 +36,5 @@ public partial class Lesson
     [ForeignKey("SubjectId")]
     public virtual Subject Subject { get; set; } = null!;
 
-    public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public virtual ICollection<LessonReport> LessonReports { get; set; } = new List<LessonReport>();
 }

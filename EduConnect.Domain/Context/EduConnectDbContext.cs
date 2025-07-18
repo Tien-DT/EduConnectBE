@@ -65,7 +65,7 @@ namespace EduConnect.Data
                 .IsUnique();
 
             modelBuilder.Entity<Attendance>()
-                .HasIndex(a => new { a.LessonID, a.StudentID })
+                .HasIndex(a => new { a.TimetableSlotID, a.StudentID })
                 .HasDatabaseName("UQ_Attendance")
                 .IsUnique();
 
@@ -159,9 +159,9 @@ namespace EduConnect.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Attendance>()
-                .HasOne(a => a.Lesson)
-                .WithMany(l => l.Attendances)
-                .HasForeignKey(a => a.LessonID)
+                .HasOne(a => a.TimetableSlot)
+                .WithMany(ts => ts.Attendances)
+                .HasForeignKey(a => a.TimetableSlotID)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Attendance>()

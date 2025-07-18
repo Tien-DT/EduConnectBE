@@ -9,10 +9,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
     {
         public AttendanceRepository(EduConnectDbContext context) : base(context) { }
 
-        public async Task<IEnumerable<Attendance>> GetByLessonIdAsync(int lessonId)
+        public async Task<IEnumerable<Attendance>> GetByTimetableSlotIdAsync(int timetableSlotId)
         {
             return await _context.Attendances
-                .Where(a => a.LessonID == lessonId && a.IsDeleted != true)
+                .Where(a => a.TimetableSlotID == timetableSlotId && a.IsDeleted != true)
                 .ToListAsync();
         }
 
@@ -26,35 +26,35 @@ namespace EduConnect.Infrastruture.Repositories.Class
         public async Task<IEnumerable<Attendance>> GetByTimetableIdAsync(int timetableId)
         {
             return await _context.Attendances
-                .Include(a => a.Lesson)
-                .Where(a => a.Lesson.TimetableID == timetableId && a.IsDeleted != true)
+                .Include(a => a.TimetableSlot)
+                .Where(a => a.TimetableSlot.TimetableID == timetableId && a.IsDeleted != true)
                 .ToListAsync();
         }
 
         public async Task<(IEnumerable<Attendance> attendances, int totalCount)> FilterSortSearchAsync(
-            int? lessonId, string? studentId, bool? isPresent, string? searchTerm,
+            int? timetableSlotId, string? studentId, int? status, string? searchTerm,
             string? sortBy, bool ascending, int pageIndex, int pageSize)
         {
             var query = _context.Attendances
-                .Include(a => a.Lesson)
+                .Include(a => a.TimetableSlot)
                 .Include(a => a.Student)
                 .Where(a => a.IsDeleted != true);
 
-            if (lessonId.HasValue)
-                query = query.Where(a => a.LessonID == lessonId);
+            if (timetableSlotId.HasValue)
+                query = query.Where(a => a.TimetableSlotID == timetableSlotId);
             if (!string.IsNullOrEmpty(studentId))
                 query = query.Where(a => a.StudentID == studentId);
-            if (isPresent.HasValue)
-                query = query.Where(a => a.IsPresent == isPresent);
+            if (status.HasValue)
+                query = query.Where(a => a.Status == status);
             if (!string.IsNullOrEmpty(searchTerm))
                 query = query.Where(a => a.Note.Contains(searchTerm) || a.Student.StudentID.Contains(searchTerm));
 
             // Sorting
             query = sortBy switch
             {
-                "LessonID" => ascending ? query.OrderBy(a => a.LessonID) : query.OrderByDescending(a => a.LessonID),
+                "TimetableSlotID" => ascending ? query.OrderBy(a => a.TimetableSlotID) : query.OrderByDescending(a => a.TimetableSlotID),
                 "StudentID" => ascending ? query.OrderBy(a => a.StudentID) : query.OrderByDescending(a => a.StudentID),
-                "IsPresent" => ascending ? query.OrderBy(a => a.IsPresent) : query.OrderByDescending(a => a.IsPresent),
+                "Status" => ascending ? query.OrderBy(a => a.Status) : query.OrderByDescending(a => a.Status),
                 _ => ascending ? query.OrderBy(a => a.AttendanceID) : query.OrderByDescending(a => a.AttendanceID)
             };
 

@@ -19,21 +19,21 @@ namespace EduConnect.Application.Services.Class
         }
 
         public async Task<PagedApiResponse<IEnumerable<AttendanceResponse>>> FilterSortSearchAttendancesAsync(
-            int? lessonId, string? studentId, bool? isPresent, string? searchTerm,
+            int? timetableSlotId, string? studentId, int? status, string? searchTerm,
             string? sortBy, bool ascending, int pageIndex, int pageSize)
         {
             var (attendances, totalCount) = await _repo.FilterSortSearchAsync(
-                lessonId, studentId, isPresent, searchTerm, sortBy, ascending, pageIndex, pageSize);
+                timetableSlotId, studentId, status, searchTerm, sortBy, ascending, pageIndex, pageSize);
             var mapped = _mapper.Map<IEnumerable<AttendanceResponse>>(attendances);
             return PagedApiResponse<IEnumerable<AttendanceResponse>>.SuccessPagedResponse(
                 mapped, "Lấy danh sách attendance thành công", totalCount, pageIndex, pageSize);
         }
 
-        public async Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByLessonIdAsync(int lessonId)
+        public async Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByTimetableSlotIdAsync(int timetableSlotId)
         {
-            var data = await _repo.GetByLessonIdAsync(lessonId);
+            var data = await _repo.GetByTimetableSlotIdAsync(timetableSlotId);
             var mapped = _mapper.Map<IEnumerable<AttendanceResponse>>(data);
-            return ApiResponse<IEnumerable<AttendanceResponse>>.SuccessResponse(mapped, "Lấy attendance theo lesson thành công");
+            return ApiResponse<IEnumerable<AttendanceResponse>>.SuccessResponse(mapped, "Lấy attendance theo timetable slot thành công");
         }
 
         public async Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByStudentIdAsync(string studentId)
@@ -55,7 +55,7 @@ namespace EduConnect.Application.Services.Class
             var entity = await _repo.GetByIdAsync(id);
             if (entity == null || entity.IsDeleted == true)
                 return ApiResponse<AttendanceResponse>.ErrorResponse(new List<string> { "Attendance không tồn tại" }, "Không tìm thấy attendance");
-            entity.IsPresent = request.IsPresent;
+            entity.Status = request.Status;
             entity.Note = request.Note;
             var updated = await _repo.UpdateAsync(id, entity);
             var mapped = _mapper.Map<AttendanceResponse>(updated);

@@ -45,5 +45,6 @@ namespace EduConnect.Domain.Entities
         public virtual Subject Subject { get; set; } = null!;
 
         public virtual ICollection<LessonReport> LessonReports { get; set; } = new List<LessonReport>();
+        public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     }
 }
