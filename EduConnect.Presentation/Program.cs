@@ -130,6 +130,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
             builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
             builder.Services.AddHostedService<EmailQueueBackgroundService>();
+            builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
+            builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
