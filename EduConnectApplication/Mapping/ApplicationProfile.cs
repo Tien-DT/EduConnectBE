@@ -115,7 +115,7 @@ namespace EduConnect.Application.Mapping
             // Exam mappings
             CreateMap<UpdateExamRequest, Exam>()
                 .ForMember(dest => dest.ExamId, opt => opt.Ignore())
-                .ForMember(dest => dest.StudentID, opt => opt.Ignore())
+                .ForMember(dest => dest.StudentID, opt => opt.MapFrom(src => src.StudentId))
                 .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
                 .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())

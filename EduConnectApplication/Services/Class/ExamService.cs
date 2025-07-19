@@ -448,6 +448,7 @@ namespace EduConnect.Application.Services.Class
                 existingExam.ExamDate = request.ExamDate;
                 existingExam.GradeDate = request.GradeDate;
                 existingExam.Room = request.Room;
+                existingExam.StudentID = request.StudentId;
 
                 await _examRepository.UpdateExamAsync(existingExam);
 
