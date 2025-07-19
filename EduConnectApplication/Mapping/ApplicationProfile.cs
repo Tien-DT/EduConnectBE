@@ -111,6 +111,17 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
                 .ForMember(dest => dest.Lessons, opt => opt.Ignore())
                 .ForMember(dest => dest.Exams, opt => opt.Ignore());
+
+            // Exam mappings
+            CreateMap<UpdateExamRequest, Exam>()
+                .ForMember(dest => dest.ExamId, opt => opt.Ignore())
+                .ForMember(dest => dest.StudentID, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Subject, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore());
         }
     }
 }

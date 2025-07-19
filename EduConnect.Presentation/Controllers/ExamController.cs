@@ -87,6 +87,25 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(filterResult);
         }
 
+        [HttpPost("")]
+        public async Task<IActionResult> CreateExam([FromBody] CreateExamRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _examService.CreateExamAsync(request, currentUserId);
+            
+            if (result.Success)
+            {
+                return CreatedAtAction(nameof(GetExamById), new { examId = result.Data?.ExamId }, result);
+            }
+            
+            return BadRequest(result);
+        }
+
         [HttpPost("class-schedules")]
         public async Task<IActionResult> CreateExamsForClass([FromBody] CreateClassExamRequest request)
         {
@@ -116,6 +135,38 @@ namespace EduConnect.Presentation.Controllers
             
             var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
             var result = await _examService.CreatePrincipalExamsAsync(request, currentUserId);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            
+            return BadRequest(result);
+        }
+
+        [HttpPut("{examId}")]
+        public async Task<IActionResult> UpdateExam(int examId, [FromBody] UpdateExamRequest request)
+        {
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
+            
+            var currentUserId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+            var result = await _examService.UpdateExamAsync(examId, request, currentUserId);
+            
+            if (result.Success)
+            {
+                return Ok(result);
+            }
+            
+            return BadRequest(result);
+        }
+
+        [HttpDelete("{examId}")]
+        public async Task<IActionResult> DeleteExam(int examId)
+        {
+            var result = await _examService.DeleteExamAsync(examId);
             
             if (result.Success)
             {

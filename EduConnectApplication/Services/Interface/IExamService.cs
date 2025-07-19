@@ -46,5 +46,9 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = true,
             int pageIndex = 1,
             int pageSize = 10);
+
+        Task<ApiResponse<ExamResponse>> UpdateExamAsync(int examId, UpdateExamRequest request, string? updatedBy = null);
+        
+        Task<ApiResponse<string>> DeleteExamAsync(int examId);
     }
 }
