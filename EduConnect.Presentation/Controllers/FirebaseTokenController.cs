@@ -9,17 +9,20 @@ namespace EduConnect.Presentation.Controllers.v1
 {
     [ApiController]
     [Route("api/v1/firebase-tokens")]
-    [Authorize]
+    //[Authorize]
     public class FirebaseTokenController : ControllerBase
     {
         private readonly IFirebaseTokenService _firebaseTokenService;
+        private readonly INotificationService _notificationService;
         private readonly ILogger<FirebaseTokenController> _logger;
 
         public FirebaseTokenController(
             IFirebaseTokenService firebaseTokenService,
+            INotificationService notificationService,
             ILogger<FirebaseTokenController> logger)
         {
             _firebaseTokenService = firebaseTokenService;
+            _notificationService = notificationService;
             _logger = logger;
         }
         [HttpPost]
@@ -188,6 +191,52 @@ namespace EduConnect.Presentation.Controllers.v1
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error in DeactivateAllFirebaseTokens endpoint");
+                return StatusCode(500, new ApiResponse<object>
+                {
+                    Success = false,
+                    Message = "Internal server error"
+                });
+            }
+        }
+
+        [HttpPost("test-notification")]
+        [ProducesResponseType(typeof(ApiResponse<string>), 200)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 401)]
+        [ProducesResponseType(typeof(ApiResponse<object>), 500)]
+        public async Task<IActionResult> SendTestNotificationToUserTokens()
+        {
+            try
+            {
+                var userId = User.FindFirst(ClaimTypes.NameIdentifier)?.Value;
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return Unauthorized(new ApiResponse<object>
+                    {
+                        Success = false,
+                        Message = "User not authenticated"
+                    });
+                }
+
+                var result = await _notificationService.SendNotificationToAllDevicesAsync(
+                    userId,
+                    "Test từ EduConnect",
+                    $"Thông báo test gửi lúc {DateTime.Now:HH:mm:ss dd/MM/yyyy}",
+                    new Dictionary<string, string>
+                    {
+                        ["type"] = "firebase_token_test",
+                        ["timestamp"] = DateTime.UtcNow.ToString("o")
+                    });
+                
+                if (result.Success)
+                {
+                    return Ok(result);
+                }
+
+                return BadRequest(result);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error in SendTestNotificationToUserTokens endpoint");
                 return StatusCode(500, new ApiResponse<object>
                 {
                     Success = false,

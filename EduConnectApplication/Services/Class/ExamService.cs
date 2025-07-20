@@ -34,6 +34,33 @@ namespace EduConnect.Application.Services.Class
             _studentRepository = studentRepository;
         }
 
+        public async Task<ApiResponse<ExamResponse>> GetExamByIdAsync(int examId)
+        {
+            try
+            {
+                var exam = await _examRepository.GetExamWithSubjectByIdAsync(examId);
+                
+                if (exam == null)
+                {
+                    return ApiResponse<ExamResponse>.ErrorResponse(
+                        new List<string> { "Exam not found." },
+                        "Exam not found");
+                }
+
+                var response = _mapper.Map<ExamResponse>(exam);
+                
+                return ApiResponse<ExamResponse>.SuccessResponse(
+                    response,
+                    "Exam retrieved successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<ExamResponse>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error retrieving exam");
+            }
+        }
+
         public async Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request, string? createdBy = null)
         {
             try
@@ -54,7 +81,10 @@ namespace EduConnect.Application.Services.Class
 
                 await _examRepository.CreateExamAsync(exam);
                 
-                var response = _mapper.Map<ExamResponse>(exam);
+                // Get the exam with Subject information to populate SubjectName and SubjectCode
+                var examWithSubject = await _examRepository.GetExamWithSubjectByIdAsync(exam.ExamId);
+                
+                var response = _mapper.Map<ExamResponse>(examWithSubject);
                 
                 return ApiResponse<ExamResponse>.SuccessResponse(
                     response,
@@ -112,7 +142,7 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                var isValidTeacher = await _classTeacherRepository.IsTeacherAssignedToClassAsync(request.ClassId, request.TeacherAccountId);
+                var isValidTeacher = await _classTeacherRepository.IsTeacherAssignedToClassAsync(request.ClassId, request.TeacherId);
 
                 if (!isValidTeacher)
                 {
@@ -153,7 +183,7 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
-                var isPrincipal = await _principalRepository.IsValidPrincipalAsync(request.PrincipalAccountId);
+                var isPrincipal = await _principalRepository.IsValidPrincipalAsync(request.PrincipalId);
 
                 if (!isPrincipal)
                 {
@@ -397,6 +427,67 @@ namespace EduConnect.Application.Services.Class
                 pageIndex,
                 pageSize
             );
+        }
+
+        public async Task<ApiResponse<ExamResponse>> UpdateExamAsync(int examId, UpdateExamRequest request, string? updatedBy = null)
+        {
+            try
+            {
+                var existingExam = await _examRepository.GetExamWithSubjectByIdAsync(examId);
+                if (existingExam == null)
+                {
+                    return ApiResponse<ExamResponse>.ErrorResponse(
+                        new List<string> { "Exam not found." },
+                        "Exam not found");
+                }
+
+                // Update exam properties
+                existingExam.SubjectId = request.SubjectId;
+                existingExam.ExamType = request.ExamType;
+                existingExam.ExamNote = request.ExamNote;
+                existingExam.ExamDate = request.ExamDate;
+                existingExam.GradeDate = request.GradeDate;
+                existingExam.Room = request.Room;
+                existingExam.StudentID = request.StudentId;
+
+                await _examRepository.UpdateExamAsync(existingExam);
+
+                // Get updated exam with subject for response
+                var updatedExam = await _examRepository.GetExamWithSubjectByIdAsync(examId);
+                var response = _mapper.Map<ExamResponse>(updatedExam);
+
+                return ApiResponse<ExamResponse>.SuccessResponse(response, "Exam updated successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<ExamResponse>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error updating exam");
+            }
+        }
+
+        public async Task<ApiResponse<string>> DeleteExamAsync(int examId)
+        {
+            try
+            {
+                var exam = await _examRepository.GetExamWithSubjectByIdAsync(examId);
+                if (exam == null)
+                {
+                    return ApiResponse<string>.ErrorResponse(
+                        new List<string> { "Exam not found." },
+                        "Exam not found");
+                }
+
+                await _examRepository.DeleteExamAsync(examId);
+                
+                return ApiResponse<string>.SuccessResponse("Exam deleted successfully", "Exam deleted successfully");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<string>.ErrorResponse(
+                    new List<string> { ex.Message },
+                    "Error deleting exam");
+            }
         }
     }
 }

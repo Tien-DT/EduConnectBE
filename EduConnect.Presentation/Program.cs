@@ -29,6 +29,7 @@ namespace EduConnect.Presentation
         public static void Main(string[] args)
         {
             var builder = WebApplication.CreateBuilder(args);
+            builder.Configuration.AddEnvironmentVariables();
 
             builder.Services.AddControllers();
             builder.Services.AddEndpointsApiExplorer();
@@ -87,6 +88,7 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IChatCacheService, ChatCacheService>();
             builder.Services.AddScoped<IStudentComplaintCacheService, StudentComplaintCacheService>();
             builder.Services.AddScoped<IParentNotificationService, ParentNotificationService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
             builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
             builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
@@ -100,6 +102,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IStudentRepository, StudentRepository>();
             builder.Services.AddScoped<IExamService, ExamService>();
             builder.Services.AddScoped<IExamRepository, ExamRepository>();
+            builder.Services.AddScoped<ISubjectService, SubjectService>();
+            builder.Services.AddScoped<ISubjectRepository, SubjectRepository>();
             builder.Services.AddScoped<IClassTeacherRepository, ClassTeacherRepository>();
             builder.Services.AddScoped<IPrincipalRepository, PrincipalRepository>();
             builder.Services.AddScoped<IUnitOfWork, UnitOfWork>();

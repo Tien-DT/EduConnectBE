@@ -14,7 +14,7 @@ namespace EduConnect.Application.DTOs.Request
 
         [Required]
         [StringLength(50)]
-        public string ExamType { get; set; }
+        public string ExamType { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? ExamNote { get; set; }
@@ -28,7 +28,7 @@ namespace EduConnect.Application.DTOs.Request
         public string? Room { get; set; }
 
         [Required]
-        public string StudentId { get; set; }
+        public string StudentId { get; set; } = string.Empty;
     }
 
     public class CreateClassExamRequest
@@ -38,7 +38,7 @@ namespace EduConnect.Application.DTOs.Request
 
         [Required]
         [StringLength(50)]
-        public string ExamType { get; set; }
+        public string ExamType { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? ExamNote { get; set; }
@@ -55,7 +55,7 @@ namespace EduConnect.Application.DTOs.Request
         public int ClassId { get; set; }
 
         [Required]
-        public string TeacherAccountId { get; set; }
+        public string TeacherId { get; set; } = string.Empty;
     }
 
     public class CreatePrincipalExamRequest
@@ -65,7 +65,7 @@ namespace EduConnect.Application.DTOs.Request
 
         [Required]
         [StringLength(50)]
-        public string ExamType { get; set; }
+        public string ExamType { get; set; } = string.Empty;
 
         [StringLength(500)]
         public string? ExamNote { get; set; }
@@ -79,9 +79,33 @@ namespace EduConnect.Application.DTOs.Request
         public string? Room { get; set; }
 
         [Required]
-        public string PrincipalAccountId { get; set; }
+        public string PrincipalId { get; set; } = string.Empty;
 
         [Required]
         public List<string> StudentIds { get; set; } = new List<string>();
+    }
+
+    public class UpdateExamRequest
+    {
+        [Required]
+        public int SubjectId { get; set; }
+
+        [Required]
+        [StringLength(50)]
+        public string ExamType { get; set; } = string.Empty;
+
+        [StringLength(500)]
+        public string? ExamNote { get; set; }
+
+        [Required]
+        public DateTime ExamDate { get; set; }
+
+        public DateTime? GradeDate { get; set; }
+
+        [StringLength(50)]
+        public string? Room { get; set; }
+
+        [Required]
+        public string StudentId { get; set; } = string.Empty;
     }
 }

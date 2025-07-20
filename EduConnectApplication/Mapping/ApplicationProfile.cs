@@ -87,6 +87,41 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.Points, opt => opt.Ignore())
                 .ForMember(dest => dest.LessonReport, opt => opt.Ignore())
                 .ForMember(dest => dest.Student, opt => opt.Ignore());
+
+            CreateMap<Attendance, AttendanceResponse>();
+            CreateMap<AttendanceRequest, Attendance>()
+                .ForMember(dest => dest.AttendanceID, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.TimetableSlot, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore());
+
+            // Subject mappings
+            CreateMap<Subject, SubjectResponse>()
+                .ForMember(dest => dest.LessonCount, opt => opt.MapFrom(src => src.Lessons.Count))
+                .ForMember(dest => dest.ExamCount, opt => opt.MapFrom(src => src.Exams.Count));
+
+            CreateMap<CreateSubjectRequest, Subject>()
+                .ForMember(dest => dest.SubjectId, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Lessons, opt => opt.Ignore())
+                .ForMember(dest => dest.Exams, opt => opt.Ignore());
+
+            CreateMap<UpdateSubjectRequest, Subject>()
+                .ForMember(dest => dest.SubjectId, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Lessons, opt => opt.Ignore())
+                .ForMember(dest => dest.Exams, opt => opt.Ignore());
+
+            // Exam mappings
+            CreateMap<UpdateExamRequest, Exam>()
+                .ForMember(dest => dest.ExamId, opt => opt.Ignore())
+                .ForMember(dest => dest.StudentID, opt => opt.MapFrom(src => src.StudentId))
+                .ForMember(dest => dest.CreatedBy, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedDate, opt => opt.Ignore())
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Subject, opt => opt.Ignore())
+                .ForMember(dest => dest.Student, opt => opt.Ignore())
+                .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore());
         }
     }
 }

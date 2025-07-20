@@ -13,10 +13,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             _context = context;
         }
-        public async Task<bool> IsValidPrincipalAsync(string principalAccountId)
+        public async Task<bool> IsValidPrincipalAsync(string principalId)
         {
             return await _context.Principals
-                .AnyAsync(p => p.AccountID == principalAccountId && (p.IsDeleted == null || p.IsDeleted == false));
+                .AnyAsync(p => p.PrincipalID == principalId && (p.IsDeleted == null || p.IsDeleted == false));
         }
 
         public async Task<Principal?> GetByAccountIdAsync(string accountId)

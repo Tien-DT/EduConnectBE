@@ -24,6 +24,13 @@ namespace EduConnect.Infrastruture.Repositories.Class
             await _context.SaveChangesAsync();
         }
 
+        public async Task<Exam?> GetExamWithSubjectByIdAsync(int examId)
+        {
+            return await _context.Exams
+                .Include(e => e.Subject)
+                .FirstOrDefaultAsync(e => e.ExamId == examId && e.IsDeleted != true);
+        }
+
         public async Task DeleteExamAsync(int id)
         {
             var exam = await _context.Exams.FindAsync(id);
@@ -127,7 +134,7 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
         public IQueryable<Exam> GetExamQueryable()
         {
-            return _context.Exams.AsQueryable();
+            return _context.Exams.Include(e => e.Subject).AsQueryable();
         }
 
         // Private helper methods for consistent query filtering

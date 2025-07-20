@@ -15,10 +15,10 @@ namespace EduConnect.Infrastruture.Repositories.Class
         {
             _context = context;
         }
-        public async Task<bool> IsTeacherAssignedToClassAsync(int classId, string teacherAccountId)
+        public async Task<bool> IsTeacherAssignedToClassAsync(int classId, string teacherId)
         {
             return await _context.ClassTeachers
-                .AnyAsync(ct => ct.ClassID == classId && ct.Teacher.AccountID == teacherAccountId);
+                .AnyAsync(ct => ct.ClassID == classId && ct.Teacher.TeacherID == teacherId);
         }
 
         public async Task<List<ClassTeacher>> GetTeachersByClassIdAsync(int classId)

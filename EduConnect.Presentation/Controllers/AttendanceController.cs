@@ -7,7 +7,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/attendances")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class AttendanceController : ControllerBase
     {
         private readonly IAttendanceService _attendanceService;
@@ -17,12 +17,12 @@ namespace EduConnect.Presentation.Controllers
             _attendanceService = attendanceService;
         }
 
-        // GET /api/v1/attendances?lessonId=&studentId=&isPresent=&searchTerm=&sortBy=&ascending=&pageIndex=&pageSize=
+        // GET /api/v1/attendances?timetableSlotId=&studentId=&status=&searchTerm=&sortBy=&ascending=&pageIndex=&pageSize=
         [HttpGet("")]
         public async Task<IActionResult> FilterSortSearchAttendances(
-            [FromQuery] int? lessonId = null,
+            [FromQuery] int? timetableSlotId = null,
             [FromQuery] string? studentId = null,
-            [FromQuery] bool? isPresent = null,
+            [FromQuery] int? status = null,
             [FromQuery] string? searchTerm = null,
             [FromQuery] string? sortBy = null,
             [FromQuery] bool ascending = true,
@@ -30,17 +30,17 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] int pageSize = 10)
         {
             var result = await _attendanceService.FilterSortSearchAttendancesAsync(
-                lessonId, studentId, isPresent, searchTerm, sortBy, ascending, pageIndex, pageSize);
+                timetableSlotId, studentId, status, searchTerm, sortBy, ascending, pageIndex, pageSize);
             if (result.Success)
                 return Ok(result);
             return BadRequest(result);
         }
 
-        // GET /api/v1/attendances/lesson/{lessonId}
-        [HttpGet("lesson/{lessonId}")]
-        public async Task<IActionResult> GetByLessonId(int lessonId)
+        // GET /api/v1/attendances/timetable-slot/{timetableSlotId}
+        [HttpGet("timetable-slot/{timetableSlotId}")]
+        public async Task<IActionResult> GetByTimetableSlotId(int timetableSlotId)
         {
-            var result = await _attendanceService.GetByLessonIdAsync(lessonId);
+            var result = await _attendanceService.GetByTimetableSlotIdAsync(timetableSlotId);
             if (result.Success)
                 return Ok(result);
             return NotFound(result);

@@ -28,6 +28,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             bool ascending = false);
             
         Task CreateExamAsync(Exam exam);
+        Task<Exam?> GetExamWithSubjectByIdAsync(int examId);
         Task UpdateExamAsync(Exam exam);
         Task DeleteExamAsync(int id);
         IQueryable<Exam> GetExamQueryable(); 

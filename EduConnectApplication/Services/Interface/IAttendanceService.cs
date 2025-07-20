@@ -6,9 +6,9 @@ namespace EduConnect.Application.Services.Interface
     public interface IAttendanceService
     {
         Task<PagedApiResponse<IEnumerable<AttendanceResponse>>> FilterSortSearchAttendancesAsync(
-            int? lessonId, string? studentId, bool? isPresent, string? searchTerm,
+            int? timetableSlotId, string? studentId, int? status, string? searchTerm,
             string? sortBy, bool ascending, int pageIndex, int pageSize);
-        Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByLessonIdAsync(int lessonId);
+        Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByTimetableSlotIdAsync(int timetableSlotId);
         Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByStudentIdAsync(string studentId);
         Task<ApiResponse<IEnumerable<AttendanceResponse>>> GetByTimetableIdAsync(int timetableId);
         Task<ApiResponse<AttendanceResponse>> UpdateAsync(int id, AttendanceRequest request);

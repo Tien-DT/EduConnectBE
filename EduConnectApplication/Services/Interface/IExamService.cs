@@ -10,6 +10,8 @@ namespace EduConnect.Application.Services.Interface
 {
     public interface IExamService
     {
+        Task<ApiResponse<ExamResponse>> GetExamByIdAsync(int examId);
+        
         Task<ApiResponse<ExamResponse>> CreateExamAsync(CreateExamRequest request, string? createdBy = null);
         
         Task<ApiResponse<List<ExamResponse>>> CreateBulkExamsAsync(List<CreateExamRequest> requests, string? createdBy = null);
@@ -44,5 +46,9 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = true,
             int pageIndex = 1,
             int pageSize = 10);
+
+        Task<ApiResponse<ExamResponse>> UpdateExamAsync(int examId, UpdateExamRequest request, string? updatedBy = null);
+        
+        Task<ApiResponse<string>> DeleteExamAsync(int examId);
     }
 }
