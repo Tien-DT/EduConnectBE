@@ -29,21 +29,38 @@ namespace EduConnect.Application.Services.Class
             {
                 if (_firebaseApp == null && !string.IsNullOrEmpty(_firebaseOptions.ServiceAccountKeyPath))
                 {
-                    _firebaseApp = FirebaseApp.Create(new AppOptions()
+                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
+                    var serviceAccountPath = Path.IsPathRooted(_firebaseOptions.ServiceAccountKeyPath) 
+                        ? _firebaseOptions.ServiceAccountKeyPath 
+                        : Path.Combine(basePath, _firebaseOptions.ServiceAccountKeyPath);
+
+                    if (File.Exists(serviceAccountPath))
                     {
-                        Credential = GoogleCredential.FromFile(_firebaseOptions.ServiceAccountKeyPath),
-                        ProjectId = _firebaseOptions.ProjectId
-                    });
+                        _firebaseApp = FirebaseApp.Create(new AppOptions()
+                        {
+                            Credential = GoogleCredential.FromFile(serviceAccountPath),
+                            ProjectId = _firebaseOptions.ProjectId
+                        });
+                        _logger.LogInformation($"Firebase app initialized with service account key from: {serviceAccountPath}");
+                    }
+                    else
+                    {
+                        _logger.LogError($"Service account key file not found at: {serviceAccountPath}");
+                    }
                 }
                 else if (_firebaseApp == null && !string.IsNullOrEmpty(_firebaseOptions.ServiceAccountJson))
                 {
-                    // For production, use service account JSON from environment or config
                     var credential = GoogleCredential.FromJson(_firebaseOptions.ServiceAccountJson);
                     _firebaseApp = FirebaseApp.Create(new AppOptions()
                     {
                         Credential = credential,
                         ProjectId = _firebaseOptions.ProjectId
                     });
+                    _logger.LogInformation("Firebase app initialized with service account JSON from configuration");
+                }
+                else
+                {
+                    _logger.LogWarning("No Firebase service account configuration found");
                 }
             }
             catch (Exception ex)

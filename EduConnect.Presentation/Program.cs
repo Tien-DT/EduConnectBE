@@ -88,6 +88,7 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IChatCacheService, ChatCacheService>();
             builder.Services.AddScoped<IStudentComplaintCacheService, StudentComplaintCacheService>();
             builder.Services.AddScoped<IParentNotificationService, ParentNotificationService>();
+            builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
             builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
             builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
