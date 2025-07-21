@@ -1,4 +1,4 @@
-using EduConnect.Application.Models;
+using EduConnect.Application.DTOs;
 
 namespace EduConnect.Application.Services.Interface
 {

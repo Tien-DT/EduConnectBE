@@ -1,7 +1,7 @@
 using System;
 using System.Collections.Generic;
 
-namespace EduConnect.Application.Models
+namespace EduConnect.Application.DTOs
 {
     public class StudentComplaintData
     {

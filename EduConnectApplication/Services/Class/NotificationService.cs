@@ -8,8 +8,6 @@ using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
 using Google.Apis.Auth.OAuth2;
-using FirebaseAdmin;
-using FirebaseAdmin.Messaging;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -18,62 +16,204 @@ namespace EduConnect.Application.Services.Class
         private readonly IFirebaseTokenRepository _firebaseTokenRepository;
         private readonly ILogger<NotificationService> _logger;
         private readonly FirebaseOption _firebaseOptions;
-        private FirebaseApp? _firebaseApp;
+        private readonly HttpClient _httpClient;
 
         public NotificationService(
             IFirebaseTokenRepository firebaseTokenRepository,
             ILogger<NotificationService> logger,
-            IOptions<FirebaseOption> firebaseOptions)
+            IOptions<FirebaseOption> firebaseOptions,
+            HttpClient httpClient)
         {
             _firebaseTokenRepository = firebaseTokenRepository;
             _logger = logger;
             _firebaseOptions = firebaseOptions.Value;
-            InitializeFirebaseApp();
+            _httpClient = httpClient;
         }
 
-        private void InitializeFirebaseApp()
+        public async Task<ApiResponse<string>> SendNotificationToTokenAsync(string firebaseToken, string title, string body, Dictionary<string, string>? data = null)
         {
             try
             {
-                if (_firebaseApp == null && !string.IsNullOrEmpty(_firebaseOptions.ServiceAccountKeyPath))
+                // Validate input parameters
+                if (string.IsNullOrWhiteSpace(firebaseToken))
                 {
-                    var basePath = AppDomain.CurrentDomain.BaseDirectory;
-                    var serviceAccountPath = Path.IsPathRooted(_firebaseOptions.ServiceAccountKeyPath) 
-                        ? _firebaseOptions.ServiceAccountKeyPath 
-                        : Path.Combine(basePath, _firebaseOptions.ServiceAccountKeyPath);
+                    return new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "Firebase token is required"
+                    };
+                }
 
-                    if (File.Exists(serviceAccountPath))
+                if (string.IsNullOrWhiteSpace(title) || string.IsNullOrWhiteSpace(body))
+                {
+                    return new ApiResponse<string>
                     {
-                        _firebaseApp = FirebaseApp.Create(new AppOptions()
+                        Success = false,
+                        Message = "Title and body are required"
+                    };
+                }
+
+                // Get OAuth2 access token for FCM API V1
+                var accessToken = await GetAccessTokenAsync();
+                
+                // Ensure data is not null and has proper string values
+                var notificationData = data ?? new Dictionary<string, string>();
+                if (!notificationData.ContainsKey("type"))
+                {
+                    notificationData["type"] = "test_notification";
+                }
+                if (!notificationData.ContainsKey("timestamp"))
+                {
+                    notificationData["timestamp"] = DateTime.UtcNow.ToString("o");
+                }
+
+                // Sanitize strings to ensure they're valid
+                var sanitizedTitle = SanitizeNotificationString(title);
+                var sanitizedBody = SanitizeNotificationString(body);
+                
+                var notification = new
+                {
+                    message = new
+                    {
+                        token = firebaseToken.Trim(),
+                        notification = new
                         {
-                            Credential = GoogleCredential.FromFile(serviceAccountPath),
-                            ProjectId = _firebaseOptions.ProjectId
-                        }, "NotificationService");
-                        _logger.LogInformation($"Firebase app initialized for NotificationService with service account key from: {serviceAccountPath}");
+                            title = sanitizedTitle,
+                            body = sanitizedBody
+                        },
+                        data = notificationData.ToDictionary(kvp => kvp.Key, kvp => kvp.Value ?? ""),
+                        android = new
+                        {
+                            notification = new
+                            {
+                                icon = "notification_icon",
+                                click_action = "FLUTTER_NOTIFICATION_CLICK",
+                                channel_id = "default"
+                            },
+                            priority = "high"
+                        },
+                        apns = new
+                        {
+                            headers = new Dictionary<string, string>
+                            {
+                                ["apns-priority"] = "10"
+                            },
+                            payload = new
+                            {
+                                aps = new
+                                {
+                                    alert = new
+                                    {
+                                        title = sanitizedTitle,
+                                        body = sanitizedBody
+                                    },
+                                    category = "FLUTTER_NOTIFICATION_CLICK",
+                                    sound = "default"
+                                }
+                            }
+                        }
                     }
-                    else
+                };
+
+                var json = JsonConvert.SerializeObject(notification, new JsonSerializerSettings
+                {
+                    NullValueHandling = NullValueHandling.Ignore
+                });
+                
+                _logger.LogDebug($"Sending FCM payload: {json}");
+
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+                var response = await _httpClient.PostAsync(_firebaseOptions.Url, content);
+                var responseContent = await response.Content.ReadAsStringAsync();
+                
+                if (!response.IsSuccessStatusCode)
+                {
+                    _logger.LogError($"Firebase notification failed: {response.StatusCode} - {responseContent}");
+                    
+                    // Parse error response to get more specific error info
+                    var errorDetails = ParseFirebaseError(responseContent);
+                    
+                    // If token is invalid, mark it for cleanup
+                    if (IsTokenInvalidError(errorDetails))
                     {
-                        _logger.LogError($"Service account key file not found at: {serviceAccountPath}");
+                        _logger.LogWarning($"Invalid token detected: {firebaseToken[..Math.Min(10, firebaseToken.Length)]}...");
+                        await HandleInvalidTokenAsync(firebaseToken);
                     }
-                }
-                else if (_firebaseApp == null && !string.IsNullOrEmpty(_firebaseOptions.ServiceAccountJson))
-                {
-                    var credential = GoogleCredential.FromJson(_firebaseOptions.ServiceAccountJson);
-                    _firebaseApp = FirebaseApp.Create(new AppOptions()
+                    
+                    return new ApiResponse<string>
                     {
-                        Credential = credential,
-                        ProjectId = _firebaseOptions.ProjectId
-                    }, "NotificationService");
-                    _logger.LogInformation("Firebase app initialized for NotificationService with service account JSON from configuration");
+                        Success = false,
+                        Message = $"Firebase notification failed: {response.StatusCode} - {errorDetails}",
+                        Data = responseContent
+                    };
                 }
-                else
+
+                _logger.LogInformation($"Firebase notification sent successfully to token: {firebaseToken[..Math.Min(10, firebaseToken.Length)]}...");
+                
+                return new ApiResponse<string>
                 {
-                    _logger.LogWarning("No Firebase service account configuration found for NotificationService");
-                }
+                    Success = true,
+                    Message = "Notification sent successfully",
+                    Data = responseContent
+                };
             }
             catch (Exception ex)
             {
-                _logger.LogError(ex, "Failed to initialize Firebase app for NotificationService");
+                _logger.LogError(ex, $"Error sending notification to token {firebaseToken[..Math.Min(10, firebaseToken.Length)]}...");
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Failed to send notification: " + ex.Message
+                };
+            }
+        }
+
+        private async Task<string> GetAccessTokenAsync()
+        {
+            try
+            {
+                GoogleCredential credential;
+                
+                if (!string.IsNullOrEmpty(_firebaseOptions.ServiceAccountJson))
+                {
+                    // Use JSON content directly
+                    credential = GoogleCredential.FromJson(_firebaseOptions.ServiceAccountJson);
+                }
+                else if (!string.IsNullOrEmpty(_firebaseOptions.ServiceAccountKeyPath))
+                {
+                    // Use file path
+                    var serviceAccountPath = Path.IsPathRooted(_firebaseOptions.ServiceAccountKeyPath)
+                        ? _firebaseOptions.ServiceAccountKeyPath
+                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _firebaseOptions.ServiceAccountKeyPath);
+                        
+                    if (!File.Exists(serviceAccountPath))
+                    {
+                        throw new FileNotFoundException($"Firebase service account file not found at: {serviceAccountPath}");
+                    }
+                    
+                    credential = GoogleCredential.FromFile(serviceAccountPath);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Either ServiceAccountJson or ServiceAccountKeyPath must be provided");
+                }
+
+                // Create scoped credential for FCM
+                var scopedCredential = credential.CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
+                
+                // Get access token
+                var accessToken = await scopedCredential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+                
+                return accessToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Firebase access token");
+                throw;
             }
         }
 
@@ -164,88 +304,6 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<string>> SendNotificationToTokenAsync(string firebaseToken, string title, string body, Dictionary<string, string>? data = null)
-        {
-            try
-            {
-                if (_firebaseApp == null)
-                {
-                    return new ApiResponse<string>
-                    {
-                        Success = false,
-                        Message = "Firebase app is not initialized"
-                    };
-                }
-
-                var messaging = FirebaseMessaging.GetMessaging(_firebaseApp);
-
-                var message = new Message()
-                {
-                    Token = firebaseToken,
-                    Notification = new Notification()
-                    {
-                        Title = title,
-                        Body = body
-                    },
-                    Data = data ?? new Dictionary<string, string>
-                    {
-                        ["type"] = "test_notification",
-                        ["timestamp"] = DateTime.UtcNow.ToString("o")
-                    },
-                    Android = new AndroidConfig()
-                    {
-                        Priority = Priority.High,
-                        Notification = new AndroidNotification()
-                        {
-                            Icon = "notification_icon",
-                            ClickAction = "FLUTTER_NOTIFICATION_CLICK"
-                        }
-                    },
-                    Apns = new ApnsConfig()
-                    {
-                        Aps = new Aps()
-                        {
-                            Alert = new ApsAlert()
-                            {
-                                Title = title,
-                                Body = body
-                            }
-                        }
-                    }
-                };
-
-                var response = await messaging.SendAsync(message);
-                
-                _logger.LogInformation($"Firebase notification sent successfully. Message ID: {response}");
-                
-                return new ApiResponse<string>
-                {
-                    Success = true,
-                    Message = "Notification sent successfully",
-                    Data = response
-                };
-            }
-            catch (FirebaseMessagingException ex)
-            {
-                _logger.LogError(ex, $"Firebase messaging error for token {firebaseToken[..Math.Min(10, firebaseToken.Length)]}...: {ex.MessagingErrorCode}");
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = $"Firebase messaging error: {ex.MessagingErrorCode}",
-                    Data = ex.Message
-                };
-            }
-            catch (Exception ex)
-            {
-                _logger.LogError(ex, $"Error sending notification to token {firebaseToken[..Math.Min(10, firebaseToken.Length)]}...");
-                return new ApiResponse<string>
-                {
-                    Success = false,
-                    Message = "Failed to send notification"
-                };
-            }
-        }
-
         public async Task<ApiResponse<List<string>>> GetActiveTokensAsync(string userId)
         {
             try
@@ -275,6 +333,73 @@ namespace EduConnect.Application.Services.Class
                     Success = false,
                     Message = "Failed to get active tokens"
                 };
+            }
+        }
+
+        private string SanitizeNotificationString(string input)
+        {
+            if (string.IsNullOrWhiteSpace(input))
+                return "";
+
+            // Remove control characters and limit length
+            var sanitized = new string(input.Where(c => !char.IsControl(c) || c == '\n' || c == '\r' || c == '\t').ToArray());
+            
+            // Limit length to prevent payload size issues
+            if (sanitized.Length > 1000)
+            {
+                sanitized = sanitized.Substring(0, 997) + "...";
+            }
+            
+            return sanitized.Trim();
+        }
+
+        private string ParseFirebaseError(string errorResponse)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(errorResponse))
+                    return "Unknown error";
+
+                dynamic? errorObj = JsonConvert.DeserializeObject(errorResponse);
+                if (errorObj?.error?.message != null)
+                {
+                    return errorObj.error.message.ToString();
+                }
+                return errorResponse;
+            }
+            catch
+            {
+                return errorResponse;
+            }
+        }
+
+        private bool IsTokenInvalidError(string errorMessage)
+        {
+            var invalidTokenErrors = new[]
+            {
+                "registration-token-not-registered",
+                "invalid-registration-token",
+                "mismatched-credential"
+            };
+
+            return invalidTokenErrors.Any(error => errorMessage.Contains(error, StringComparison.OrdinalIgnoreCase));
+        }
+
+        private Task HandleInvalidTokenAsync(string firebaseToken)
+        {
+            try
+            {
+                // Log the invalid token for manual cleanup
+                _logger.LogWarning($"Invalid Firebase token detected: {firebaseToken[..Math.Min(10, firebaseToken.Length)]}... - Manual cleanup may be needed");
+                
+                // TODO: Implement token cleanup mechanism 
+                // For now, just log the issue - admin can clean up via database queries
+                return Task.CompletedTask;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error handling invalid token");
+                return Task.CompletedTask;
             }
         }
     }

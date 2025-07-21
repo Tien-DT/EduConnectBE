@@ -1,4 +1,4 @@
-namespace EduConnect.Application.Models
+namespace EduConnect.Application.DTOs
 {
     public class EmailMessage
     {

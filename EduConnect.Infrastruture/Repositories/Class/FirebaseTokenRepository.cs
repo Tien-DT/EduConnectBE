@@ -142,5 +142,49 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             return await _context.SaveChangesAsync() > 0;
         }
+
+        public async Task<List<FirebaseToken>> GetAllActiveTokensAsync()
+        {
+            return await _context.FirebaseTokens
+                .Where(ft => ft.IsActive)
+                .ToListAsync();
+        }
+
+        public async Task<int> RemoveExpiredTokensAsync()
+        {
+            var expiredTokens = await _context.FirebaseTokens
+                .Where(ft => ft.ExpiresAt.HasValue && ft.ExpiresAt < DateTime.Now)
+                .ToListAsync();
+
+            if (!expiredTokens.Any()) return 0;
+
+            foreach (var token in expiredTokens)
+            {
+                token.IsActive = false;
+                token.UpdatedAt = DateTime.Now;
+            }
+
+            await _context.SaveChangesAsync();
+            return expiredTokens.Count;
+        }
+
+        public async Task<bool> DeactivateTokensAsync(List<string> tokenIds)
+        {
+            if (!tokenIds.Any()) return true;
+
+            var tokens = await _context.FirebaseTokens
+                .Where(ft => tokenIds.Contains(ft.Id.ToString()) && ft.IsActive)
+                .ToListAsync();
+
+            if (!tokens.Any()) return true;
+
+            foreach (var token in tokens)
+            {
+                token.IsActive = false;
+                token.UpdatedAt = DateTime.Now;
+            }
+
+            return await _context.SaveChangesAsync() > 0;
+        }
     }
 }

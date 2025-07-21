@@ -1,6 +1,7 @@
 using EduConnect.Application.Services.Class;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Application.Services.Background;
+using EduConnect.Application.Services.BackgroundServices;
 using EduConnect.Application.Services.Cache;
 using EduConnect.Application.Services.Queue;
 using EduConnect.Data;
@@ -88,12 +89,17 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IChatCacheService, ChatCacheService>();
             builder.Services.AddScoped<IStudentComplaintCacheService, StudentComplaintCacheService>();
             builder.Services.AddScoped<IParentNotificationService, ParentNotificationService>();
+            builder.Services.AddScoped<IParentReportNotificationService, ParentReportNotificationService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
             builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
             builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
             builder.Services.AddScoped<IFirebaseCustomTokenService, FirebaseCustomTokenService>();
+            builder.Services.AddScoped<IFirebaseTokenCleanupService, FirebaseTokenCleanupService>();
             builder.Services.AddHostedService<DailyComplaintNotificationService>();
+            builder.Services.AddHostedService<DailyParentNotificationBackgroundService>();
+            builder.Services.AddHostedService<WeeklyParentNotificationBackgroundService>();
+            builder.Services.AddHostedService<MonthlyParentNotificationBackgroundService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
             builder.Services.AddScoped<IAuthRepository, AuthRepository>();
