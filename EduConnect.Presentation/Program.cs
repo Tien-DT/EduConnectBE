@@ -91,14 +91,16 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IParentNotificationService, ParentNotificationService>();
             builder.Services.AddScoped<IParentReportNotificationService, ParentReportNotificationService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
+            builder.Services.AddScoped<IEnhancedNotificationService, EnhancedNotificationService>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
             builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
             builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
             builder.Services.AddScoped<IFirebaseCustomTokenService, FirebaseCustomTokenService>();
-            builder.Services.AddScoped<IFirebaseTokenCleanupService, FirebaseTokenCleanupService>();
             builder.Services.AddHostedService<DailyComplaintNotificationService>();
             builder.Services.AddHostedService<DailyParentNotificationBackgroundService>();
             builder.Services.AddHostedService<WeeklyParentNotificationBackgroundService>();
+            builder.Services.AddHostedService<NotificationBackgroundService>();
             builder.Services.AddHostedService<MonthlyParentNotificationBackgroundService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();

@@ -30,6 +30,7 @@ namespace EduConnect.Data
         public DbSet<TimetableSlot> TimetableSlots { get; set; }
         public DbSet<StudentLessonNote> StudentLessonNotes { get; set; }
         public DbSet<FirebaseToken> FirebaseTokens { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +54,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<Subject>().ToTable("Subject");
             modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
             modelBuilder.Entity<FirebaseToken>().ToTable("FirebaseToken");
+            modelBuilder.Entity<Notification>().ToTable("Notification");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
