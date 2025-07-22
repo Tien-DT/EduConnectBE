@@ -30,6 +30,7 @@ namespace EduConnect.Data
         public DbSet<TimetableSlot> TimetableSlots { get; set; }
         public DbSet<StudentLessonNote> StudentLessonNotes { get; set; }
         public DbSet<FirebaseToken> FirebaseTokens { get; set; }
+        public DbSet<Notification> Notifications { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -53,6 +54,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<Subject>().ToTable("Subject");
             modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
             modelBuilder.Entity<FirebaseToken>().ToTable("FirebaseToken");
+            modelBuilder.Entity<Notification>().ToTable("Notification");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
@@ -65,7 +67,7 @@ namespace EduConnect.Data
                 .IsUnique();
 
             modelBuilder.Entity<Attendance>()
-                .HasIndex(a => new { a.LessonID, a.StudentID })
+                .HasIndex(a => new { a.TimetableSlotID, a.StudentID })
                 .HasDatabaseName("UQ_Attendance")
                 .IsUnique();
 
@@ -159,9 +161,9 @@ namespace EduConnect.Data
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Attendance>()
-                .HasOne(a => a.Lesson)
-                .WithMany(l => l.Attendances)
-                .HasForeignKey(a => a.LessonID)
+                .HasOne(a => a.TimetableSlot)
+                .WithMany(ts => ts.Attendances)
+                .HasForeignKey(a => a.TimetableSlotID)
                 .OnDelete(DeleteBehavior.NoAction);
 
             modelBuilder.Entity<Attendance>()

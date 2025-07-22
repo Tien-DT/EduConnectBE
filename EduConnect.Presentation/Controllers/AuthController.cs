@@ -56,7 +56,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(response);
         }
 
-        [HttpPost("token/refresh")]
+        [HttpPost("tokens/refresh")]
         public async Task<ActionResult<ApiResponse<GetNewTokenResponse>>> GetNewToken(GetNewTokenRequest request)
         {
             if (!ModelState.IsValid)
@@ -88,7 +88,7 @@ namespace EduConnect.Presentation.Controllers
         //    return Ok(result);
         //}
 
-        [HttpPost("login/google")]
+        [HttpPost("logins/google")]
         public async Task<ActionResult<ApiResponse<LoginResponse>>> GoogleTokenLogin(GoogleTokenLoginRequest request)
         {
             if (!ModelState.IsValid)
@@ -104,7 +104,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpGet("user/role")]
+        [HttpGet("users/role")]
         [Authorize]
         public async Task<ActionResult<ApiResponse<UserRoleIdResponse>>> GetUserRoleId()
         {
@@ -128,7 +128,7 @@ namespace EduConnect.Presentation.Controllers
             return Ok(result);
         }
 
-        [HttpGet("email/verify")]
+        [HttpGet("emails/verification")]
         public async Task<ActionResult<ApiResponse<string>>> VerifyEmail([FromQuery] string token, [FromQuery] string email)
         {
             if (string.IsNullOrWhiteSpace(token) || string.IsNullOrWhiteSpace(email))

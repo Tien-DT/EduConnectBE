@@ -8,7 +8,7 @@ namespace EduConnect.Presentation.Controllers
 {
     [Route("api/v1/teachers")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class TeacherController : ControllerBase
     {
         private readonly ITeacherService _teacherService;
@@ -41,7 +41,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
         [HttpGet("{teacherId}/timetable")]
-        [Authorize(Roles ="Teacher")]
+        [Authorize]
         public async Task<IActionResult> GetTimetableByTeacherId(string teacherId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var result = await _teacherService.GetTimetableByTeacherIdAsync(teacherId, startDate, endDate);

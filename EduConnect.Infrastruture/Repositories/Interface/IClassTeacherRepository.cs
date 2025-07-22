@@ -6,7 +6,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
 {
     public interface IClassTeacherRepository
     {
-        Task<bool> IsTeacherAssignedToClassAsync(int classId, string teacherAccountId);
+        Task<bool> IsTeacherAssignedToClassAsync(int classId, string teacherId);
         Task<List<ClassTeacher>> GetTeachersByClassIdAsync(int classId);
         Task<List<ClassTeacher>> GetClassesByTeacherAccountIdAsync(string teacherAccountId);
     }

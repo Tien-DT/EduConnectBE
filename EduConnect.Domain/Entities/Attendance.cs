@@ -10,19 +10,19 @@ public partial class Attendance
     [Key]
     public int AttendanceID { get; set; }
 
-    public int LessonID { get; set; }
+    public int TimetableSlotID { get; set; }
 
     public string StudentID { get; set; } = string.Empty;
 
-    public bool? IsPresent { get; set; }
+    public int Status { get; set; }
 
     public bool? IsDeleted { get; set; } 
 
     [Column(TypeName = "text")]
     public string? Note { get; set; }
 
-    [ForeignKey("LessonID")]
-    public virtual Lesson Lesson { get; set; } = null!;
+    [ForeignKey("TimetableSlotID")]
+    public virtual TimetableSlot TimetableSlot { get; set; } = null!;
 
     [ForeignKey("StudentID")]
     public virtual Student Student { get; set; } = null!;

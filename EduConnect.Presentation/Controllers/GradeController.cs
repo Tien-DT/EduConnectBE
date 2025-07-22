@@ -10,7 +10,7 @@ namespace EduConnect.Presentation.Controllers
     
     [Route("api/v1/grades")]
     [ApiController]
-    [Authorize]
+    //[Authorize]
     public class GradeController : ControllerBase
     {
         private readonly IGradeService _gradeService;
@@ -30,8 +30,8 @@ namespace EduConnect.Presentation.Controllers
             return User.FindFirst("TeacherId")?.Value ?? "";
         }
 
-       
-        [HttpGet("subjects/{subjectId}/grades")]
+        
+        [HttpGet("by-subject/{subjectId}")]
         public async Task<IActionResult> GetGradesBySubject(int subjectId, [FromQuery] int? classId = null)
         {
             var teacherAccountId = GetCurrentAccountId();
@@ -44,7 +44,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
         
-        [HttpGet("subjects/{subjectId}/students/{studentId}/grades")]
+        [HttpGet("by-subject/{subjectId}/students/{studentId}")]
         public async Task<IActionResult> GetStudentGradesBySubject(int subjectId, string studentId)
         {
             var teacherAccountId = GetCurrentAccountId();
@@ -70,7 +70,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
        
-        [HttpGet("subjects/{subjectId}/students")]  
+        [HttpGet("subject/{subjectId}/students")]  
         public async Task<IActionResult> GetStudentsForGrading(int subjectId, [FromQuery] int? classId = null)
         {
             var teacherAccountId = GetCurrentAccountId();
@@ -130,7 +130,7 @@ namespace EduConnect.Presentation.Controllers
             return BadRequest(result);
         }
 
-        [HttpGet("students/{studentId}/grades")]
+        [HttpGet("by-student/{studentId}")]
         public async Task<IActionResult> GetGradesByStudentId(string studentId)
         {
             var result = await _gradeService.GetGradesByStudentIdAsync(studentId);
@@ -142,7 +142,7 @@ namespace EduConnect.Presentation.Controllers
         }
 
         
-        [HttpGet("subjects/{subjectId}/classes/{classId}/students")]
+        [HttpGet("by-subject/{subjectId}/classes/{classId}/students")]
         public async Task<IActionResult> GetStudentsForGrading(int subjectId, int classId)
         {
             var teacherAccountId = User.FindFirstValue(ClaimTypes.NameIdentifier);

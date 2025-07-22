@@ -1,4 +1,4 @@
-using EduConnect.Application.Models;
+using EduConnect.Application.DTOs;
 using EduConnect.Application.Services.Interface;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Logging;

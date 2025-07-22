@@ -2,7 +2,9 @@
 using EduConnect.Application.DTOs.Response;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Infrastruture.Options;
+using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.Extensions.Options;
+using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
 using System.Net.Http;
 using System.Text;
@@ -17,7 +19,11 @@ namespace EduConnect.Application.Services.Class
         private readonly IGeminiFunctionService _functionService;
         private readonly IChatCacheService _chatCacheService;
 
-        public ChatBotService(HttpClient httpClient, IOptions<GeminiOption> geminiOptions, IGeminiFunctionService functionService, IChatCacheService chatCacheService)
+        public ChatBotService(
+            HttpClient httpClient, 
+            IOptions<GeminiOption> geminiOptions, 
+            IGeminiFunctionService functionService, 
+            IChatCacheService chatCacheService)
         {
             _httpClient = httpClient;
             _geminiOptions = geminiOptions.Value;
@@ -169,7 +175,7 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        private async Task<ApiResponse<ChatMessageResponse>> ProcessGeminiRequestWithFunctionsAsync(GeminiRequest request)
+        private async Task<ApiResponse<ChatMessageResponse>> ProcessGeminiRequestWithFunctionsAsync(GeminiRequest request, string? userId = null)
         {
             var jsonRequest = JsonConvert.SerializeObject(request, new JsonSerializerSettings
             {
@@ -213,9 +219,12 @@ namespace EduConnect.Application.Services.Class
             var functionCallPart = parts.FirstOrDefault(p => p.FunctionCall != null);
             if (functionCallPart?.FunctionCall != null)
             {
+                var args = functionCallPart.FunctionCall.Args ?? new Dictionary<string, object>();
+                
                 var functionResult = await _functionService.ExecuteFunctionAsync(
                     functionCallPart.FunctionCall.Name, 
-                    functionCallPart.FunctionCall.Args);
+                    args,
+                    userId);
                 try
                 {
                     var functionData = JsonConvert.DeserializeObject<dynamic>(functionResult);
@@ -419,7 +428,7 @@ namespace EduConnect.Application.Services.Class
                     Message = request.Message
                 });
 
-                var response = await SendPromptWithFunctionsAndHistoryAsync(conversationMessages);
+                var response = await SendPromptWithFunctionsAndHistoryAsync(conversationMessages, request.UserId);
                 
                 if (response.Success && response.Data != null)
                 {
@@ -439,11 +448,41 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<ChatMessageResponse>> SendPromptWithFunctionsAndHistoryAsync(List<ChatMessageRequest> conversationHistory)
+        public async Task<ApiResponse<ChatMessageResponse>> SendPromptWithFunctionsAndHistoryAsync(List<ChatMessageRequest> conversationHistory, string? userId = null)
         {
             try
             {
                 var contents = new List<GeminiContent>();
+                
+                contents.Add(new GeminiContent
+                {
+                    Role = "user",
+                    Parts = new[] { new GeminiPart { 
+                        Text = @"BẠN LÀ TRỢ LÝ AI CHO HỆ THỐNG GIÁO DỤC EDUCONNECT.
+
+QUAN TRỌNG - PHÁT HIỆN PHẢN HỒI/KHIẾU NẠI:
+Khi phụ huynh phản ánh, khiếu nại, hoặc đề xuất vấn đề gì đó cho nhà trường, bạn PHẢI gọi function 'create_parent_feedback' để tự động tạo phản hồi chính thức.
+
+ĐIỀU KIỆN GỌI FUNCTION create_parent_feedback:
+✅ Phụ huynh phản ánh vấn đề cơ sở vật chất (máy lạnh, bàn ghế, v.v.) → target='Principal'
+✅ Phụ huynh phản ánh về giảng dạy, điểm số, thái độ giáo viên → target='Teacher' 
+✅ Phụ huynh khiếu nại dịch vụ của nhà trường → target='Principal'
+✅ Phụ huynh đề xuất cải thiện cho nhà trường → target='Principal'
+✅ Phụ huynh yêu cầu thay đổi gì đó → Xác định target phù hợp
+
+KHÔNG GỌI FUNCTION khi:
+❌ Phụ huynh chỉ hỏi thông tin (lịch học, điểm số, v.v.)
+❌ Câu hỏi thông thường về con em
+❌ Chào hỏi, cảm ơn
+
+Sau khi gọi function thành công, hãy thông báo cho phụ huynh rằng phản hồi đã được gửi đến đúng bộ phận." } }
+                });
+
+                contents.Add(new GeminiContent
+                {
+                    Role = "model",
+                    Parts = new[] { new GeminiPart { Text = "Tôi hiểu. Tôi sẽ tự động tạo phản hồi chính thức khi phụ huynh có khiếu nại hoặc đề xuất cho nhà trường, và phân biệt đúng target (Principal cho vấn đề nhà trường, Teacher cho vấn đề giảng dạy)." } }
+                });
                 
                 Console.WriteLine($"[DEBUG] Sending {conversationHistory.Count} messages to Gemini:");
                 foreach (var message in conversationHistory)
@@ -490,7 +529,7 @@ namespace EduConnect.Application.Services.Class
                     }
                 };
 
-                return await ProcessGeminiRequestWithFunctionsAsync(request);
+                return await ProcessGeminiRequestWithFunctionsAsync(request, userId);
             }
             catch (Exception ex)
             {

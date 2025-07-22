@@ -5,7 +5,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
 {
     public interface IPrincipalRepository
     {
-        Task<bool> IsValidPrincipalAsync(string principalAccountId);
+        Task<bool> IsValidPrincipalAsync(string principalId);
         Task<Principal?> GetByAccountIdAsync(string accountId);
     }
 }

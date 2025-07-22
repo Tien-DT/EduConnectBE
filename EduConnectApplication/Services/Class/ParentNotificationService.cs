@@ -1,4 +1,4 @@
-using EduConnect.Application.Models;
+using EduConnect.Application.DTOs;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Infrastruture.Options;
 using EduConnect.Infrastruture.Repositories.Interface;
@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
 using System.Text;
+using Google.Apis.Auth.OAuth2;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -132,42 +133,117 @@ Tin nhắn:";
 
         private async Task SendFirebaseNotificationAsync(string firebaseToken, string message, StudentComplaintData studentComplaint)
         {
-            var notification = new
+            try
             {
-                to = firebaseToken,
-                notification = new
+                // Get OAuth2 access token for FCM API V1
+                var accessToken = await GetAccessTokenAsync();
+                
+                var notification = new
                 {
-                    title = $"Thông báo về học sinh {studentComplaint.StudentName}",
-                    body = message,
-                    icon = "school_notification",
-                    click_action = "FLUTTER_NOTIFICATION_CLICK"
-                },
-                data = new
+                    message = new
+                    {
+                        token = firebaseToken,
+                        notification = new
+                        {
+                            title = $"Thông báo về học sinh {studentComplaint.StudentName}",
+                            body = message
+                        },
+                        data = new Dictionary<string, string>
+                        {
+                            ["type"] = "student_complaint",
+                            ["student_id"] = studentComplaint.StudentId,
+                            ["student_name"] = studentComplaint.StudentName,
+                            ["date"] = studentComplaint.Date.ToString("yyyy-MM-dd"),
+                            ["complaint_count"] = studentComplaint.Complaints.Count.ToString()
+                        },
+                        android = new
+                        {
+                            notification = new
+                            {
+                                icon = "school_notification",
+                                click_action = "FLUTTER_NOTIFICATION_CLICK"
+                            }
+                        },
+                        apns = new
+                        {
+                            payload = new
+                            {
+                                aps = new
+                                {
+                                    category = "FLUTTER_NOTIFICATION_CLICK"
+                                }
+                            }
+                        }
+                    }
+                };
+
+                var json = JsonConvert.SerializeObject(notification);
+                var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                _httpClient.DefaultRequestHeaders.Clear();
+                _httpClient.DefaultRequestHeaders.Add("Authorization", $"Bearer {accessToken}");
+
+                var response = await _httpClient.PostAsync(_firebaseOptions.Url, content);
+                
+                if (!response.IsSuccessStatusCode)
                 {
-                    type = "student_complaint",
-                    student_id = studentComplaint.StudentId,
-                    student_name = studentComplaint.StudentName,
-                    date = studentComplaint.Date.ToString("yyyy-MM-dd"),
-                    complaint_count = studentComplaint.Complaints.Count.ToString()
+                    var errorContent = await response.Content.ReadAsStringAsync();
+                    _logger.LogError($"Firebase notification failed: {response.StatusCode} - {errorContent}");
+                    throw new Exception($"Failed to send Firebase notification: {response.StatusCode}");
                 }
-            };
 
-            var json = JsonConvert.SerializeObject(notification);
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
-
-            _httpClient.DefaultRequestHeaders.Clear();
-            _httpClient.DefaultRequestHeaders.Add("Authorization", $"key={_firebaseOptions.ServerKey}");
-
-            var response = await _httpClient.PostAsync(_firebaseOptions.Url, content);
-            
-            if (!response.IsSuccessStatusCode)
-            {
-                var errorContent = await response.Content.ReadAsStringAsync();
-                _logger.LogError($"Firebase notification failed: {response.StatusCode} - {errorContent}");
-                throw new Exception($"Failed to send Firebase notification: {response.StatusCode}");
+                _logger.LogInformation($"Firebase notification sent successfully to token: {firebaseToken[..10]}...");
             }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending Firebase notification to token: {firebaseToken[..10]}...");
+                throw;
+            }
+        }
 
-            _logger.LogInformation($"Firebase notification sent successfully to token: {firebaseToken[..10]}...");
+        private async Task<string> GetAccessTokenAsync()
+        {
+            try
+            {
+                GoogleCredential credential;
+                
+                if (!string.IsNullOrEmpty(_firebaseOptions.ServiceAccountJson))
+                {
+                    // Use JSON content directly
+                    credential = GoogleCredential.FromJson(_firebaseOptions.ServiceAccountJson);
+                }
+                else if (!string.IsNullOrEmpty(_firebaseOptions.ServiceAccountKeyPath))
+                {
+                    // Use file path
+                    var serviceAccountPath = Path.IsPathRooted(_firebaseOptions.ServiceAccountKeyPath)
+                        ? _firebaseOptions.ServiceAccountKeyPath
+                        : Path.Combine(AppDomain.CurrentDomain.BaseDirectory, _firebaseOptions.ServiceAccountKeyPath);
+                        
+                    if (!File.Exists(serviceAccountPath))
+                    {
+                        throw new FileNotFoundException($"Firebase service account file not found at: {serviceAccountPath}");
+                    }
+                    
+                    credential = GoogleCredential.FromFile(serviceAccountPath);
+                }
+                else
+                {
+                    throw new InvalidOperationException("Either ServiceAccountJson or ServiceAccountKeyPath must be provided");
+                }
+
+                // Create scoped credential for FCM
+                var scopedCredential = credential.CreateScoped("https://www.googleapis.com/auth/firebase.messaging");
+                
+                // Get access token
+                var accessToken = await scopedCredential.UnderlyingCredential.GetAccessTokenForRequestAsync();
+                
+                return accessToken;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Error getting Firebase access token");
+                throw;
+            }
         }
     }
 }

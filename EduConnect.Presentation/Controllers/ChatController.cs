@@ -198,6 +198,7 @@ namespace EduConnect.Presentation.Controllers
         //                Message = "Redis read test failed - no data returned"
         //            });
         //        }
+
         //    }
         //    catch (Exception ex)
         //    {

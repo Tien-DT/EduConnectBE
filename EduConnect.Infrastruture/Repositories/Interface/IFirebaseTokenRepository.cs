@@ -11,5 +11,8 @@ namespace EduConnect.Infrastruture.Repositories.Interface
         Task<bool> UpdateTokenAsync(string userId, string newToken, string? deviceType = null, string? deviceId = null);
         Task<FirebaseToken> CreateOrUpdateTokenAsync(string userId, string token, string? deviceType = null, string? deviceId = null);
         Task<bool> CleanupExpiredTokensAsync();
+        Task<List<FirebaseToken>> GetAllActiveTokensAsync();
+        Task<int> RemoveExpiredTokensAsync();
+        Task<bool> DeactivateTokensAsync(List<string> tokenIds);
     }
 }
