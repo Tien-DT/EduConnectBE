@@ -7,6 +7,7 @@ using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Globalization;
+using System.Text;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -21,6 +22,13 @@ namespace EduConnect.Application.Services.Class
         private readonly IParentRepository _parentRepository;
         private readonly ISubjectService _subjectService;
         private readonly IExamService _examService;
+        private readonly ITeacherRepository _teacherRepository;
+        private readonly ILessonReportRepository _lessonReportRepository;
+        private readonly INotificationRepository _notificationRepository;
+        private readonly ITimetableRepository _timetableRepository;
+        private readonly IClassRepository _classRepository;
+        private readonly ISubjectRepository _subjectRepository;
+        private readonly INotificationService _notificationService;
 
         public GeminiFunctionService(
             EduConnectDbContext context,
@@ -31,7 +39,14 @@ namespace EduConnect.Application.Services.Class
             IFeedbackService feedbackService,
             IParentRepository parentRepository,
             ISubjectService subjectService,
-            IExamService examService)
+            IExamService examService,
+            ITeacherRepository teacherRepository,
+            ILessonReportRepository lessonReportRepository,
+            INotificationRepository notificationRepository,
+            ITimetableRepository timetableRepository,
+            IClassRepository classRepository,
+            ISubjectRepository subjectRepository,
+            INotificationService notificationService)
         {
             _context = context;
             _studentService = studentService;
@@ -42,6 +57,13 @@ namespace EduConnect.Application.Services.Class
             _parentRepository = parentRepository;
             _subjectService = subjectService;
             _examService = examService;
+            _teacherRepository = teacherRepository;
+            _lessonReportRepository = lessonReportRepository;
+            _notificationRepository = notificationRepository;
+            _timetableRepository = timetableRepository;
+            _classRepository = classRepository;
+            _subjectRepository = subjectRepository;
+            _notificationService = notificationService;
         }
 
         public FunctionDeclaration[] GetAvailableFunctions()
@@ -528,6 +550,253 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new[] { "report_type", "start_date", "end_date" }
                     }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_lesson_report",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Tạo báo cáo buổi học mới. Cho phép giáo viên ghi lại thông tin điểm danh và nhận xét về buổi học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["timetable_slot_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của tiết học trong thời khóa biểu"
+                            },
+                            ["lesson_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày của buổi học (yyyy-MM-dd)"
+                            },
+                            ["total_students"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Tổng số học sinh có mặt"
+                            },
+                            ["absent_students"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số học sinh vắng mặt"
+                            },
+                            ["remarks"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ghi chú chung về buổi học"
+                            },
+                            ["student_notes"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Danh sách ghi chú cho học sinh dưới dạng JSON: [{\"student_id\": \"string\", \"note_type\": \"Good|Warning|Violation|BonusPoint\", \"description\": \"string\", \"points\": number}]"
+                            }
+                        },
+                        Required = new[] { "timetable_slot_id", "lesson_date", "total_students", "absent_students" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_lesson_reports_by_teacher",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Lấy danh sách báo cáo buổi học đã tạo. Giáo viên có thể xem lại các báo cáo của mình",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của giáo viên (tùy chọn, nếu không có sẽ lấy theo user hiện tại)"
+                            },
+                            ["from_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày bắt đầu (yyyy-MM-dd) - tùy chọn"
+                            },
+                            ["to_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày kết thúc (yyyy-MM-dd) - tùy chọn"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng báo cáo trả về (mặc định: 20, tối đa: 50)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "send_notification_to_parent",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Gửi thông báo đến phụ huynh. Cho phép gửi thông báo quan trọng trực tiếp đến phụ huynh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["parent_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của phụ huynh nhận thông báo"
+                            },
+                            ["title"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tiêu đề thông báo"
+                            },
+                            ["message"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Nội dung thông báo"
+                            },
+                            ["notification_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại thông báo: 'urgent', 'normal', 'info'",
+                                Enum = new[] { "urgent", "normal", "info" }
+                            }
+                        },
+                        Required = new[] { "parent_id", "title", "message" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_all_feedbacks",
+                    Description = "📋 [CHỈ XEM] Lấy danh sách tất cả phản hồi từ phụ huynh. Giúp nắm bắt ý kiến và phản hồi từ phụ huynh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ khóa tìm kiếm trong nội dung phản hồi"
+                            },
+                            ["target"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Đối tượng nhận phản hồi: 'Principal', 'Teacher', hoặc để trống để lấy tất cả",
+                                Enum = new[] { "Principal", "Teacher" }
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng phản hồi trả về (mặc định: 20, tối đa: 50)"
+                            },
+                            ["sort_by"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Sắp xếp theo: 'DateTime', 'ParentName'",
+                                Enum = new[] { "DateTime", "ParentName" }
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_notifications_for_user",
+                    Description = "Lấy danh sách thông báo của người dùng hiện tại",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["unread_only"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Chỉ lấy thông báo chưa đọc (mặc định: false)"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng thông báo trả về (mặc định: 20, tối đa: 50)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "mark_notifications_as_read",
+                    Description = "Đánh dấu thông báo đã đọc",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["notification_ids"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Danh sách ID thông báo cần đánh dấu đã đọc, phân cách bằng dấu phẩy (ví dụ: '1,2,3')"
+                            }
+                        },
+                        Required = new[] { "notification_ids" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_timetable",
+                    Description = "Tạo thời khóa biểu mới cho lớp học (dành cho hiệu trưởng/quản lý)",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học"
+                            },
+                            ["name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tên của thời khóa biểu"
+                            },
+                            ["start_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày bắt đầu thời khóa biểu (yyyy-MM-dd)"
+                            },
+                            ["end_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày kết thúc thời khóa biểu (yyyy-MM-dd)"
+                            },
+                            ["slots"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Danh sách tiết học dưới dạng JSON: [{\"teacher_id\": \"string\", \"subject_id\": number, \"day_of_week\": \"Monday\", \"start_time\": \"08:00\", \"end_time\": \"09:00\", \"room\": \"string\", \"period\": number}]"
+                            }
+                        },
+                        Required = new[] { "class_id", "name", "start_date", "end_date", "slots" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_weekly_student_reports",
+                    Description = "Lấy báo cáo học sinh theo tuần (dành cho phụ huynh và giáo viên)",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID học sinh cần xem báo cáo (tùy chọn, nếu không có sẽ lấy tất cả con em của phụ huynh)"
+                            },
+                            ["week_offset"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Lùi lại số tuần từ tuần hiện tại (0 = tuần này, 1 = tuần trước, ...)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
                 }
             };
         }
@@ -558,14 +827,22 @@ namespace EduConnect.Application.Services.Class
                 "get_class_students",
                 "get_class_by_id",
                 "get_student_grade_report",
-                "get_all_students_grade_report"
+                "get_all_students_grade_report",
+                "create_lesson_report",
+                "get_lesson_reports_by_teacher",
+                "send_notification_to_parent",
+                "get_all_feedbacks",
+                "get_notifications_for_user",
+                "mark_notifications_as_read",
+                "create_timetable",
+                "get_weekly_student_reports"
             };
             return supportedFunctions.Contains(functionName);
         }
 
         public async Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args, string? userId = null)
         {
-            return functionName.ToLower() switch
+            var result = functionName.ToLower() switch
             {
                 "get_student_info" => await GetStudentInfoAsync(args),
                 "get_student_subjects" => await GetStudentSubjectsAsync(args),
@@ -590,6 +867,14 @@ namespace EduConnect.Application.Services.Class
                 "get_class_by_id" => await GetClassByIdAsync(args),
                 "get_student_grade_report" => await GetStudentGradeReportAsync(args, userId),
                 "get_all_students_grade_report" => await GetAllStudentsGradeReportAsync(args),
+                "create_lesson_report" => await CreateLessonReportAsync(args, userId),
+                "get_lesson_reports_by_teacher" => await GetLessonReportsByTeacherAsync(args, userId),
+                "send_notification_to_parent" => await SendNotificationToParentAsync(args, userId),
+                "get_all_feedbacks" => await GetAllFeedbacksAsync(args),
+                "get_notifications_for_user" => await GetNotificationsForUserAsync(args, userId),
+                "mark_notifications_as_read" => await MarkNotificationsAsReadAsync(args, userId),
+                "create_timetable" => await CreateTimetableAsync(args),
+                "get_weekly_student_reports" => await GetWeeklyStudentReportsAsync(args, userId),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -598,6 +883,14 @@ namespace EduConnect.Application.Services.Class
                     data = (object?)null
                 }, Formatting.Indented)
             };
+
+            // Gửi notification cho user sau mỗi lần chat
+            if (!string.IsNullOrEmpty(userId))
+            {
+                await SendChatNotificationAsync(userId, functionName, result);
+            }
+
+            return result;
         }
 
         private async Task<string> GetStudentInfoAsync(Dictionary<string, object> args)
@@ -3513,6 +3806,578 @@ namespace EduConnect.Application.Services.Class
             var firstDayOfWeek = culture.DateTimeFormat.FirstDayOfWeek;
             
             return calendar.GetWeekOfYear(date, calendarWeekRule, firstDayOfWeek);
+        }
+
+        private async Task<string> CreateLessonReportAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁCTHỰC:** Vui lòng đăng nhập để tạo báo cáo bài học.";
+                }
+
+                var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                if (teacher == null)
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ giáo viên mới có thể tạo báo cáo bài học.";
+                }
+
+                // Get arguments
+                var timetableSlotId = 0;
+                if (args.TryGetValue("timetable_slot_id", out var slotIdObj) && int.TryParse(slotIdObj?.ToString(), out var parsedSlotId))
+                {
+                    timetableSlotId = parsedSlotId;
+                }
+
+                var lessonDate = DateTime.Today;
+                if (args.TryGetValue("lesson_date", out var dateObj) && DateTime.TryParse(dateObj?.ToString(), out var parsedDate))
+                {
+                    lessonDate = parsedDate;
+                }
+
+                var totalStudents = 0;
+                if (args.TryGetValue("total_students", out var totalObj) && int.TryParse(totalObj?.ToString(), out var parsedTotal))
+                {
+                    totalStudents = parsedTotal;
+                }
+
+                var absentStudents = 0;
+                if (args.TryGetValue("absent_students", out var absentObj) && int.TryParse(absentObj?.ToString(), out var parsedAbsent))
+                {
+                    absentStudents = parsedAbsent;
+                }
+
+                var remarks = args.TryGetValue("remarks", out var remarksObj) ? remarksObj?.ToString() : "";
+
+                if (timetableSlotId == 0)
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp ID slot thời khóa biểu hợp lệ.";
+                }
+
+                var lessonReport = new LessonReport
+                {
+                    TimetableSlotID = timetableSlotId,
+                    LessonDate = lessonDate,
+                    TotalStudents = totalStudents,
+                    AbsentStudents = absentStudents,
+                    Remarks = remarks,
+                    CreatedAt = DateTime.UtcNow
+                };
+
+                await _lessonReportRepository.CreateAsync(lessonReport);
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("✅ **TẠO BÁO CÁO BÀI HỌC THÀNH CÔNG**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📋 **Mã báo cáo:** #{lessonReport.ReportID}");
+                successMessage.AppendLine($"📅 **Ngày học:** {lessonDate:dd/MM/yyyy}");
+                successMessage.AppendLine($"👥 **Tổng số học sinh:** {totalStudents}");
+                successMessage.AppendLine($"❌ **Số học sinh vắng:** {absentStudents}");
+                successMessage.AppendLine($"✨ **Tỷ lệ có mặt:** {(totalStudents > 0 ? ((totalStudents - absentStudents) * 100.0 / totalStudents):0):F1}%");
+                if (!string.IsNullOrEmpty(remarks))
+                    successMessage.AppendLine($"📝 **Ghi chú:** {remarks}");
+                successMessage.AppendLine($"⏰ **Thời gian tạo:** {lessonReport.CreatedAt:dd/MM/yyyy HH:mm}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể tạo báo cáo bài học. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> GetLessonReportsByTeacherAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem báo cáo bài học.";
+                }
+
+                var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                if (teacher == null)
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ giáo viên mới có thể xem báo cáo bài học.";
+                }
+
+                var reports = await _lessonReportRepository.GetByTeacherIdAsync(teacher.TeacherID);
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine("📚 **BÁO CÁO BÀI HỌC CỦA GIÁO VIÊN**");
+                formattedMessage.AppendLine($"👨‍🏫 Giáo viên: {teacher.FullName}");
+                formattedMessage.AppendLine($"📊 Tổng số báo cáo: {reports.Count()}");
+                formattedMessage.AppendLine();
+
+                foreach (var report in reports.Take(20))
+                {
+                    formattedMessage.AppendLine($"📋 **Báo cáo #{report.ReportID}**");
+                    formattedMessage.AppendLine($"   � Ngày học: {report.LessonDate:dd/MM/yyyy}");
+                    formattedMessage.AppendLine($"   👥 Tổng HS: {report.TotalStudents}");
+                    formattedMessage.AppendLine($"   ❌ Vắng mặt: {report.AbsentStudents}");
+                    if (!string.IsNullOrEmpty(report.Remarks))
+                        formattedMessage.AppendLine($"   📝 Ghi chú: {report.Remarks}");
+                    formattedMessage.AppendLine();
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = formattedMessage.ToString(),
+                    data = reports.Select(r => new
+                    {
+                        ReportId = r.ReportID,
+                        LessonDate = r.LessonDate,
+                        TotalStudents = r.TotalStudents,
+                        AbsentStudents = r.AbsentStudents,
+                        Remarks = r.Remarks,
+                        CreatedAt = r.CreatedAt
+                    })
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "Có lỗi xảy ra khi lấy báo cáo bài học",
+                    error = "INTERNAL_ERROR",
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> SendNotificationToParentAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                }
+
+                var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                if (teacher == null)
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ giáo viên mới có thể gửi thông báo cho phụ huynh.";
+                }
+
+                var parentId = "";
+                if (args.TryGetValue("parent_id", out var parentIdObj))
+                {
+                    parentId = parentIdObj?.ToString() ?? "";
+                }
+
+                var title = args.TryGetValue("title", out var titleObj) ? titleObj?.ToString() : "";
+                var message = args.TryGetValue("message", out var messageObj) ? messageObj?.ToString() : "";
+
+                if (string.IsNullOrEmpty(parentId) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp đầy đủ: Mã phụ huynh, tiêu đề và nội dung thông báo.";
+                }
+
+                var parent = await _context.Parents.FindAsync(parentId);
+                if (parent == null)
+                {
+                    return "❌ **KHÔNG TÌM THẤY:** Phụ huynh với mã này không tồn tại trong hệ thống.";
+                }
+
+                var notification = new Notification
+                {
+                    Title = title,
+                    Content = message,
+                    UserId = parent.AccountID,
+                    Type = "teacher_message",
+                    Category = "announcement",
+                    CreatedAt = DateTime.UtcNow,
+                    IsRead = false
+                };
+
+                await _notificationRepository.CreateAsync(notification);
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("✅ **GỬI THÔNG BÁO THÀNH CÔNG**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📧 **Người nhận:** {parent.FullName}");
+                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
+                successMessage.AppendLine($"📝 **Nội dung:** {message}");
+                successMessage.AppendLine($"⏰ **Thời gian gửi:** {notification.CreatedAt:dd/MM/yyyy HH:mm}");
+                successMessage.AppendLine($"🆔 **Mã thông báo:** #{notification.NotificationId}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể gửi thông báo. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> GetAllFeedbacksAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var feedbacks = await _context.Feedbacks
+                    .Include(f => f.Parent)
+                    .OrderByDescending(f => f.DateTime)
+                    .Take(50)
+                    .ToListAsync();
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine("💬 **TẤT CẢ PHẢN HỒI CỦA PHỤ HUYNH**");
+                formattedMessage.AppendLine($"📊 Tổng số phản hồi: {feedbacks.Count}");
+                formattedMessage.AppendLine();
+
+                foreach (var feedback in feedbacks)
+                {
+                    formattedMessage.AppendLine($"💌 **Phản hồi #{feedback.FeedbackID}**");
+                    formattedMessage.AppendLine($"   👨‍👩‍👧‍👦 Phụ huynh: {feedback.Parent?.FullName ?? "N/A"}");
+                    formattedMessage.AppendLine($"   � Đối tượng: {feedback.Target ?? "N/A"}");
+                    formattedMessage.AppendLine($"   📅 Ngày gửi: {feedback.DateTime?.ToString("dd/MM/yyyy HH:mm") ?? "N/A"}");
+                    formattedMessage.AppendLine($"   📝 Nội dung: {feedback.Content}");
+                    formattedMessage.AppendLine();
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = formattedMessage.ToString(),
+                    data = feedbacks.Select(f => new
+                    {
+                        FeedbackId = f.FeedbackID,
+                        ParentName = f.Parent?.FullName,
+                        Target = f.Target,
+                        Content = f.Content,
+                        CreatedDate = f.DateTime
+                    })
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể lấy danh sách phản hồi. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> GetNotificationsForUserAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem thông báo.";
+                }
+
+                var pageSize = 20;
+                if (args.TryGetValue("page_size", out var pageSizeObj) && int.TryParse(pageSizeObj?.ToString(), out var parsedPageSize))
+                {
+                    pageSize = Math.Min(parsedPageSize, 50);
+                }
+
+                var notifications = await _notificationRepository.GetNotificationsByUserIdAsync(userId, 0, pageSize);
+                var unreadCount = await _notificationRepository.GetUnreadCountAsync(userId);
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine("🔔 **THÔNG BÁO CỦA BẠN**");
+                formattedMessage.AppendLine();
+                formattedMessage.AppendLine($"📊 **Tổng số thông báo:** {notifications.Count}");
+                formattedMessage.AppendLine($"🆕 **Chưa đọc:** {unreadCount}");
+                formattedMessage.AppendLine("─".PadRight(50, '─'));
+
+                foreach (var notification in notifications)
+                {
+                    var status = notification.IsRead ? "✅" : "🆕";
+                    formattedMessage.AppendLine();
+                    formattedMessage.AppendLine($"{status} **{notification.Title}**");
+                    formattedMessage.AppendLine($"├─ 📅 {notification.CreatedAt:dd/MM/yyyy HH:mm}");
+                    formattedMessage.AppendLine($"└─ 📝 {notification.Content}");
+                }
+
+                return formattedMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể lấy thông báo. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> MarkNotificationsAsReadAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để đánh dấu thông báo đã đọc.";
+                }
+
+                var notificationIds = new List<string>();
+                if (args.TryGetValue("notification_ids", out var idsObj))
+                {
+                    if (idsObj is List<object> idsList)
+                    {
+                        notificationIds = idsList.Select(id => id.ToString()).Where(id => !string.IsNullOrEmpty(id)).ToList()!;
+                    }
+                }
+
+                bool result;
+                if (notificationIds.Any())
+                {
+                    result = await _notificationRepository.MarkAsReadAsync(notificationIds);
+                }
+                else
+                {
+                    // Mark all user's notifications as read
+                    var userNotifications = await _notificationRepository.GetUnreadNotificationsByUserIdAsync(userId);
+                    var allIds = userNotifications.Select(n => n.NotificationId).ToList();
+                    result = await _notificationRepository.MarkAsReadAsync(allIds);
+                    notificationIds = allIds;
+                }
+
+                var successMessage = result ? 
+                    $"✅ **THÀNH CÔNG:** Đã đánh dấu {notificationIds.Count} thông báo là đã đọc" :
+                    "❌ **THẤT BẠI:** Có lỗi khi đánh dấu thông báo";
+                
+                return successMessage;
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể đánh dấu thông báo đã đọc. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> CreateTimetableAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var classId = 0;
+                if (args.TryGetValue("class_id", out var classIdObj) && int.TryParse(classIdObj?.ToString(), out var parsedClassId))
+                {
+                    classId = parsedClassId;
+                }
+
+                var dayOfWeek = args.TryGetValue("day_of_week", out var dayObj) ? dayObj?.ToString() : "";
+                var startTime = args.TryGetValue("start_time", out var startObj) ? startObj?.ToString() : "";
+                var endTime = args.TryGetValue("end_time", out var endObj) ? endObj?.ToString() : "";
+
+                var subjectId = 0;
+                if (args.TryGetValue("subject_id", out var subjectIdObj) && int.TryParse(subjectIdObj?.ToString(), out var parsedSubjectId))
+                {
+                    subjectId = parsedSubjectId;
+                }
+
+                var teacherId = args.TryGetValue("teacher_id", out var teacherIdObj) ? teacherIdObj?.ToString() : "";
+
+                if (classId == 0 || string.IsNullOrEmpty(dayOfWeek) || string.IsNullOrEmpty(startTime) || 
+                    string.IsNullOrEmpty(endTime) || subjectId == 0 || string.IsNullOrEmpty(teacherId))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp đầy đủ: Mã lớp, thứ, giờ bắt đầu, giờ kết thúc, mã môn học, mã giáo viên.";
+                }
+
+                var classEntity = await _classRepository.GetByIdAsync(classId);
+                if (classEntity == null)
+                {
+                    return "❌ **KHÔNG TÌM THẤY:** Lớp học với mã này không tồn tại.";
+                }
+
+                var subject = await _subjectRepository.GetByIdAsync(subjectId);
+                if (subject == null)
+                {
+                    return "❌ **KHÔNG TÌM THẤY:** Môn học với mã này không tồn tại.";
+                }
+
+                var teacher = await _teacherRepository.GetByIdAsync(teacherId);
+                if (teacher == null)
+                {
+                    return "❌ **KHÔNG TÌM THẤY:** Giáo viên với mã này không tồn tại.";
+                }
+
+                var timetable = new Timetable
+                {
+                    ClassID = classId,
+                    StartDate = DateTime.Today,
+                    EndDate = DateTime.Today.AddDays(365) // Default 1 year
+                };
+
+                var createdTimetable = await _timetableRepository.CreateTimetableAsync(timetable);
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("✅ **TẠO THỜI KHÓA BIỂU THÀNH CÔNG**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"🆔 **Mã TKB:** #{createdTimetable.TimetableID}");
+                successMessage.AppendLine($"🏫 **Lớp học:** {classEntity.ClassName}");
+                successMessage.AppendLine($"📅 **Thứ:** {dayOfWeek}");
+                successMessage.AppendLine($"⏰ **Giờ học:** {startTime} - {endTime}");
+                successMessage.AppendLine($"📚 **Môn học:** {subject.SubjectName}");
+                successMessage.AppendLine($"👨‍🏫 **Giáo viên:** {teacher.FullName}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể tạo thời khóa biểu. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> GetWeeklyStudentReportsAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem báo cáo tuần.";
+                }
+
+                var parent = await _parentRepository.GetByAccountIdAsync(userId);
+                if (parent == null)
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ phụ huynh mới có thể xem báo cáo tuần của con.";
+                }
+
+                var weekOffset = 0;
+                if (args.TryGetValue("week_offset", out var offsetObj) && int.TryParse(offsetObj?.ToString(), out var parsedOffset))
+                {
+                    weekOffset = parsedOffset;
+                }
+
+                var weekStart = DateTime.Today.AddDays(-(int)DateTime.Today.DayOfWeek + weekOffset * 7);
+                var weekEnd = weekStart.AddDays(6);
+
+                var students = await _context.Students
+                    .Include(s => s.Account)
+                    .Include(s => s.Class)
+                    .Where(s => s.ParentID == parent.ParentID)
+                    .ToListAsync();
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine("📊 **BÁO CÁO TUẦN CỦA CON**");
+                formattedMessage.AppendLine($"📅 Tuần từ {weekStart:dd/MM/yyyy} đến {weekEnd:dd/MM/yyyy}");
+                formattedMessage.AppendLine();
+
+                foreach (var student in students)
+                {
+                    formattedMessage.AppendLine($"👨‍🎓 **{student.FullName}** (Lớp: {student.Class?.ClassName})");
+                    
+                    // Điểm danh tuần này - TimetableSlot không có Date, chỉ lấy tổng số điểm danh
+                    var attendance = await _context.Attendances
+                        .Where(a => a.StudentID == student.StudentID)
+                        .CountAsync();
+                    
+                    formattedMessage.AppendLine($"   📋 Số buổi điểm danh: {attendance}");
+                    
+                    // Điểm số tuần này - Grade không có trường ExamDate
+                    var grades = await _context.Grades
+                        .Where(g => g.StudentID == student.StudentID)
+                        .ToListAsync();
+                    
+                    if (grades.Any())
+                    {
+                        formattedMessage.AppendLine($"   📚 Tổng điểm hiện có: {grades.Count} điểm");
+                        var recentGrades = grades.Take(3);
+                        foreach (var grade in recentGrades)
+                        {
+                            // Lấy tên môn học từ SubjectID
+                            var subject = await _context.Subjects.FindAsync(grade.SubjectID);
+                            formattedMessage.AppendLine($"      • {subject?.SubjectName ?? "N/A"}: {grade.Score} ({grade.GradeType})");
+                        }
+                    }
+                    else
+                    {
+                        formattedMessage.AppendLine("   📚 Chưa có điểm");
+                    }
+                    
+                    formattedMessage.AppendLine();
+                }
+
+                return formattedMessage.ToString();
+            }
+            catch (Exception ex)
+            {
+                return "❌ **LỖI:** Không thể lấy báo cáo tuần. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task SendChatNotificationAsync(string userId, string functionName, string result)
+        {
+            try
+            {
+                // Tạo title và body notification dựa trên function name
+                var title = GetNotificationTitle(functionName);
+                var body = GetNotificationBody(functionName, result);
+
+                // Tạo data payload cho notification
+                var data = new Dictionary<string, string>
+                {
+                    ["type"] = "chat_response",
+                    ["function"] = functionName,
+                    ["timestamp"] = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
+                    ["userId"] = userId
+                };
+
+                // Gửi notification qua Firebase
+                await _notificationService.SendNotificationToAllDevicesAsync(userId, title, body, data);
+            }
+            catch (Exception ex)
+            {
+                // Log error nhưng không throw để không ảnh hưởng đến function chính
+                // Có thể thêm logger ở đây nếu cần
+                Console.WriteLine($"Error sending chat notification: {ex.Message}");
+            }
+        }
+
+        private string GetNotificationTitle(string functionName)
+        {
+            return functionName.ToLower() switch
+            {
+                "get_student_info" => "📋 Thông tin học sinh",
+                "get_student_subjects" => "📚 Môn học của học sinh", 
+                "get_current_time" => "🕒 Thời gian hiện tại",
+                "calculate_sum" => "🧮 Kết quả tính toán",
+                "get_student_timetable" => "📅 Thời khóa biểu học sinh",
+                "get_teacher_info" => "👨‍🏫 Thông tin giáo viên",
+                "get_teacher_timetable" => "📅 Thời khóa biểu giáo viên",
+                "search_students" => "🔍 Tìm kiếm học sinh",
+                "search_teachers" => "🔍 Tìm kiếm giáo viên",
+                "get_all_classes" => "🏫 Danh sách lớp học",
+                "get_timetable_by_class" => "📅 Thời khóa biểu lớp",
+                "create_parent_feedback" => "📝 Phản hồi đã gửi",
+                "get_student_grades" => "📊 Điểm số học sinh",
+                "get_student_lesson_reports" => "📋 Báo cáo buổi học",
+                "get_student_attendance" => "✅ Điểm danh học sinh",
+                "add_student_attendance" => "✅ Điểm danh đã cập nhật",
+                "get_student_grade_report" => "📈 Báo cáo điểm số",
+                "get_all_students_grade_report" => "📊 Báo cáo tổng hợp",
+                "create_lesson_report" => "📝 Báo cáo buổi học",
+                "get_lesson_reports_by_teacher" => "📋 Báo cáo của giáo viên",
+                "send_notification_to_parent" => "📢 Thông báo đã gửi",
+                "get_all_feedbacks" => "📝 Danh sách phản hồi",
+                "get_notifications_for_user" => "🔔 Thông báo của bạn",
+                "mark_notifications_as_read" => "✅ Đã đánh dấu đọc",
+                "create_timetable" => "📅 Thời khóa biểu mới",
+                "get_weekly_student_reports" => "📊 Báo cáo tuần",
+                _ => "💬 Có phản hồi mới từ EduConnect AI"
+            };
+        }
+
+        private string GetNotificationBody(string functionName, string result)
+        {
+            // Extract first line or summary from result for notification body
+            var lines = result.Split('\n', StringSplitOptions.RemoveEmptyEntries);
+            var firstMeaningfulLine = lines.FirstOrDefault(l => !string.IsNullOrWhiteSpace(l.Trim()));
+            
+            if (!string.IsNullOrEmpty(firstMeaningfulLine))
+            {
+                // Remove formatting characters and limit length
+                var cleanBody = firstMeaningfulLine
+                    .Replace("✅", "")
+                    .Replace("📋", "")
+                    .Replace("🔒", "")
+                    .Replace("**", "")
+                    .Replace("*", "")
+                    .Trim();
+                
+                return cleanBody.Length > 100 ? cleanBody.Substring(0, 97) + "..." : cleanBody;
+            }
+
+            return "Bạn có câu trả lời mới từ EduConnect AI. Nhấn để xem chi tiết.";
         }
     }
 }
