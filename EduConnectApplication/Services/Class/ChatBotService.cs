@@ -454,7 +454,6 @@ namespace EduConnect.Application.Services.Class
             {
                 var contents = new List<GeminiContent>();
                 
-                // Add system instruction for feedback detection
                 contents.Add(new GeminiContent
                 {
                     Role = "user",
