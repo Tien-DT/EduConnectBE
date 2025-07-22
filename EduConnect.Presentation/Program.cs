@@ -92,7 +92,6 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IParentReportNotificationService, ParentReportNotificationService>();
             builder.Services.AddScoped<INotificationService, NotificationService>();
             builder.Services.AddScoped<IEnhancedNotificationService, EnhancedNotificationService>();
-            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<ILessonReportComplaintService, LessonReportComplaintService>();
             builder.Services.AddScoped<IFirebaseTokenRepository, FirebaseTokenRepository>();
             builder.Services.AddScoped<IFirebaseTokenService, FirebaseTokenService>();
@@ -100,7 +99,6 @@ namespace EduConnect.Presentation
             builder.Services.AddHostedService<DailyComplaintNotificationService>();
             builder.Services.AddHostedService<DailyParentNotificationBackgroundService>();
             builder.Services.AddHostedService<WeeklyParentNotificationBackgroundService>();
-            builder.Services.AddHostedService<NotificationBackgroundService>();
             builder.Services.AddHostedService<MonthlyParentNotificationBackgroundService>();
             builder.Services.AddHttpClient();
             builder.Services.AddScoped<IAuthService, AuthService>();
@@ -121,6 +119,7 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ITeacherRepository, TeacherRepository>();
             builder.Services.AddScoped<IParentService, ParentService>();
             builder.Services.AddScoped<IParentRepository, ParentRepository>();
+            builder.Services.AddScoped<INotificationRepository, NotificationRepository>();
             builder.Services.AddScoped<IRoleService, RoleService>();
             builder.Services.AddScoped<ITimetableSlotRepository, TimetableSlotRepository>();
             builder.Services.AddScoped<ITimetableRepository, TimetableRepository>();

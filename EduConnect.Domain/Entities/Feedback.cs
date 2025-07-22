@@ -12,7 +12,7 @@ public partial class Feedback
 
     public string ParentID { get; set; } = string.Empty;
 
-    [Column(TypeName = "text")]
+    [Column(TypeName = "nvarchar(max)")]
     public string? Content { get; set; }
 
     public DateTime? DateTime { get; set; }

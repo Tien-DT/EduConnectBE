@@ -1,6 +1,7 @@
 using EduConnect.Application.DTOs.Request;
 using EduConnect.Application.Services.Interface;
 using EduConnect.Data;
+using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
 using Newtonsoft.Json;
 using System.Globalization;
@@ -14,19 +15,25 @@ namespace EduConnect.Application.Services.Class
         private readonly ITeacherService _teacherService;
         private readonly IClassService _classService;
         private readonly ITimetableService _timetableService;
+        private readonly IFeedbackService _feedbackService;
+        private readonly IParentRepository _parentRepository;
 
         public GeminiFunctionService(
             EduConnectDbContext context,
             IStudentService studentService,
             ITeacherService teacherService,
             IClassService classService,
-            ITimetableService timetableService)
+            ITimetableService timetableService,
+            IFeedbackService feedbackService,
+            IParentRepository parentRepository)
         {
             _context = context;
             _studentService = studentService;
             _teacherService = teacherService;
             _classService = classService;
             _timetableService = timetableService;
+            _feedbackService = feedbackService;
+            _parentRepository = parentRepository;
         }
 
         public FunctionDeclaration[] GetAvailableFunctions()
@@ -275,6 +282,36 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new[] { "class_id" }
                     }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_parent_feedback",
+                    Description = "Create a feedback/complaint from parent to school. Use this when a parent is complaining, giving feedback, or making requests to school management or teachers. IMPORTANT: Only call this function when the parent is making a complaint, feedback, or request.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["content"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "The detailed content of the feedback/complaint"
+                            },
+                            ["target"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Who the feedback is directed to: 'Principal' for school management/infrastructure issues, 'Teacher' for teaching-related issues",
+                                Enum = new[] { "Principal", "Teacher" }
+                            },
+                            ["category"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Category of the feedback",
+                                Enum = new[] { "Infrastructure", "Teaching", "Service", "Student", "Other" }
+                            }
+                        },
+                        Required = new[] { "content", "target" }
+                    }
                 }
             };
         }
@@ -293,12 +330,13 @@ namespace EduConnect.Application.Services.Class
                 "search_students",
                 "search_teachers",
                 "get_all_classes",
-                "get_timetable_by_class"
+                "get_timetable_by_class",
+                "create_parent_feedback"
             };
             return supportedFunctions.Contains(functionName);
         }
 
-        public async Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args)
+        public async Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args, string? userId = null)
         {
             return functionName.ToLower() switch
             {
@@ -313,6 +351,7 @@ namespace EduConnect.Application.Services.Class
                 "search_teachers" => await SearchTeachersAsync(args),
                 "get_all_classes" => await GetAllClassesAsync(args),
                 "get_timetable_by_class" => await GetTimetableByClassAsync(args),
+                "create_parent_feedback" => await CreateParentFeedbackAsync(args, userId),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -1053,6 +1092,121 @@ namespace EduConnect.Application.Services.Class
                     message = "Có lỗi xảy ra khi truy vấn thời khóa biểu lớp học. Vui lòng thử lại sau hoặc liên hệ bộ phận kỹ thuật.",
                     error = "DATABASE_ERROR",
                     data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> CreateParentFeedbackAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Validate userId from parameter
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể tạo phản hồi: Thiếu thông tin người dùng",
+                        error = "MISSING_USER_ID"
+                    }, Formatting.Indented);
+                }
+
+                if (!args.TryGetValue("content", out var contentObj) || string.IsNullOrEmpty(contentObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể tạo phản hồi: Thiếu nội dung phản hồi",
+                        error = "MISSING_CONTENT"
+                    }, Formatting.Indented);
+                }
+
+                if (!args.TryGetValue("target", out var targetObj) || string.IsNullOrEmpty(targetObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể tạo phản hồi: Thiếu thông tin đối tượng phản hồi",
+                        error = "MISSING_TARGET"
+                    }, Formatting.Indented);
+                }
+
+                var content = contentObj.ToString()!;
+                var target = targetObj.ToString()!;
+                var category = args.TryGetValue("category", out var categoryObj) ? categoryObj.ToString() : "Other";
+
+                // Validate target
+                if (target != "Principal" && target != "Teacher")
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Đối tượng phản hồi không hợp lệ. Chỉ có thể gửi phản hồi đến 'Principal' hoặc 'Teacher'",
+                        error = "INVALID_TARGET"
+                    }, Formatting.Indented);
+                }
+
+                // Get parent information
+                var parent = await _parentRepository.GetByAccountIdAsync(userId);
+                if (parent == null)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không tìm thấy thông tin phụ huynh. Vui lòng đảm bảo bạn đã đăng nhập với tài khoản phụ huynh.",
+                        error = "PARENT_NOT_FOUND"
+                    }, Formatting.Indented);
+                }
+
+                // Create feedback request
+                var feedbackRequest = new CreateFeedbackRequest
+                {
+                    Content = content,
+                    Target = target,
+                    ParentId = parent.ParentID
+                };
+
+                // Create feedback
+                var result = await _feedbackService.CreateFeedbackAsync(feedbackRequest);
+
+                if (result.Success)
+                {
+                    var targetDescription = target == "Principal" ? "ban giám hiệu" : "giáo viên";
+                    
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = true,
+                        message = $"✅ Đã tạo phản hồi thành công và gửi đến {targetDescription}. Mã phản hồi: #{result.Data?.FeedbackId}",
+                        data = new
+                        {
+                            FeedbackId = result.Data?.FeedbackId,
+                            Target = target,
+                            TargetDescription = targetDescription,
+                            Content = content,
+                            Category = category,
+                            ParentName = parent.FullName,
+                            CreatedAt = DateTime.Now
+                        }
+                    }, Formatting.Indented);
+                }
+                else
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = $"❌ Không thể tạo phản hồi: {result.Message}",
+                        error = "FEEDBACK_CREATION_FAILED"
+                    }, Formatting.Indented);
+                }
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi tạo phản hồi. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
                     errorDetails = ex.Message
                 }, Formatting.Indented);
             }

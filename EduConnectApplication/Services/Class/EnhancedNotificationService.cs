@@ -161,18 +161,18 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<NotificationDto>>> GetUserNotificationsAsync(string userId, int pageIndex = 0, int pageSize = 20)
+        public async Task<ApiResponse<List<NotificationResponse>>> GetUserNotificationsAsync(string userId, int pageIndex = 0, int pageSize = 20)
         {
             try
             {
                 var notifications = await _notificationRepository.GetNotificationsByUserIdAsync(userId, pageIndex, pageSize);
                 
-                var notificationDtos = notifications.Select(n => new NotificationDto
+                var notificationResponses = notifications.Select(n => new NotificationResponse
                 {
                     NotificationId = n.NotificationId,
                     Title = n.Title,
                     Content = n.Content,
-                    Summary = n.Summary,
+                    Summary = n.Summary ?? string.Empty,
                     Type = n.Type,
                     Category = n.Category,
                     Priority = n.Priority,
@@ -184,17 +184,17 @@ namespace EduConnect.Application.Services.Class
                         : null
                 }).ToList();
 
-                return new ApiResponse<List<NotificationDto>>
+                return new ApiResponse<List<NotificationResponse>>
                 {
                     Success = true,
-                    Message = $"Lấy danh sách {notificationDtos.Count} thông báo thành công",
-                    Data = notificationDtos
+                    Message = $"Lấy danh sách {notificationResponses.Count} thông báo thành công",
+                    Data = notificationResponses
                 };
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, $"Lỗi khi lấy notifications cho user {userId}");
-                return new ApiResponse<List<NotificationDto>>
+                return new ApiResponse<List<NotificationResponse>>
                 {
                     Success = false,
                     Message = "Có lỗi xảy ra khi lấy danh sách thông báo"

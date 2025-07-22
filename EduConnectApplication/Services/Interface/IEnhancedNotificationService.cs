@@ -8,7 +8,7 @@ namespace EduConnect.Application.Services.Interface
     {
         Task<ApiResponse<string>> CreateAndSendNotificationAsync(string userId, string title, string content, string summary, string type, Dictionary<string, string>? metaData = null);
         Task<ApiResponse<string>> SendStoredNotificationsAsync(string userId);
-        Task<ApiResponse<List<NotificationDto>>> GetUserNotificationsAsync(string userId, int pageIndex = 0, int pageSize = 20);
+        Task<ApiResponse<List<NotificationResponse>>> GetUserNotificationsAsync(string userId, int pageIndex = 0, int pageSize = 20);
         Task<ApiResponse<string>> MarkNotificationsAsReadAsync(List<string> notificationIds);
         Task<ApiResponse<int>> GetUnreadCountAsync(string userId);
         Task<ApiResponse<string>> ProcessUnpushedNotificationsAsync();

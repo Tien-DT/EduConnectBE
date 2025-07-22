@@ -4,7 +4,7 @@ namespace EduConnect.Application.Services.Interface
 {
     public interface IGeminiFunctionService
     {
-        Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args);
+        Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args, string? userId = null);
         FunctionDeclaration[] GetAvailableFunctions();
         bool IsFunctionSupported(string functionName);
     }

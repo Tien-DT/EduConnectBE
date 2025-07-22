@@ -217,6 +217,37 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
+        public async Task<ApiResponse<string>> SendTestNotificationAsync(string userId, SendTestNotificationRequest request)
+        {
+            try
+            {
+                if (string.IsNullOrWhiteSpace(request.Title) || string.IsNullOrWhiteSpace(request.Body))
+                {
+                    return new ApiResponse<string>
+                    {
+                        Success = false,
+                        Message = "Title and Body are required"
+                    };
+                }
+
+                if (!string.IsNullOrWhiteSpace(request.SpecificToken))
+                {
+                    return await SendNotificationToTokenAsync(request.SpecificToken, request.Title, request.Body, request.Data);
+                }
+
+                return await SendNotificationToAllDevicesAsync(userId, request.Title, request.Body, request.Data);
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Error sending test notification for user {userId}");
+                return new ApiResponse<string>
+                {
+                    Success = false,
+                    Message = "Failed to send test notification"
+                };
+            }
+        }
+
         public async Task<ApiResponse<string>> SendNotificationToAllDevicesAsync(string userId, string title, string body, Dictionary<string, string>? data = null)
         {
             try
