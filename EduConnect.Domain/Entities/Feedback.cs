@@ -21,6 +21,16 @@ public partial class Feedback
     [StringLength(100)]
     public string? Target { get; set; }
 
+
+    [StringLength(100)]
+    public string? Category { get; set; }
+
+
     [ForeignKey("ParentID")]
     public virtual Parent Parent { get; set; } = null!;
+
+    public string? TeacherId { get; set; }
+
+    [ForeignKey("TeacherId")]
+    public virtual Teacher? Teacher { get; set; }
 }

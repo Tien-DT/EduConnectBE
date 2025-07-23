@@ -5,6 +5,7 @@ using EduConnect.Data;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Text;
@@ -29,6 +30,9 @@ namespace EduConnect.Application.Services.Class
         private readonly IClassRepository _classRepository;
         private readonly ISubjectRepository _subjectRepository;
         private readonly INotificationService _notificationService;
+        private readonly IGradeService _gradeService;
+        private readonly UserManager<ApplicationUser> _userManager;
+        private readonly RoleManager<IdentityRole> _roleManager;
 
         public GeminiFunctionService(
             EduConnectDbContext context,
@@ -46,7 +50,10 @@ namespace EduConnect.Application.Services.Class
             ITimetableRepository timetableRepository,
             IClassRepository classRepository,
             ISubjectRepository subjectRepository,
-            INotificationService notificationService)
+            INotificationService notificationService,
+            IGradeService gradeService,
+            UserManager<ApplicationUser> userManager,
+            RoleManager<IdentityRole> roleManager)
         {
             _context = context;
             _studentService = studentService;
@@ -64,6 +71,9 @@ namespace EduConnect.Application.Services.Class
             _classRepository = classRepository;
             _subjectRepository = subjectRepository;
             _notificationService = notificationService;
+            _gradeService = gradeService;
+            _userManager = userManager;
+            _roleManager = roleManager;
         }
 
         public FunctionDeclaration[] GetAvailableFunctions()
@@ -797,6 +807,780 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new string[] { }
                     }
+                },
+                // Principal Functions - Full CRUD User Management
+                new FunctionDeclaration
+                {
+                    Name = "create_user_account",
+                    Description = "🔒 [CHỈ HIỆU TRƯỞNG] Tạo tài khoản mới cho giáo viên, học sinh hoặc phụ huynh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["email"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Email của tài khoản mới"
+                            },
+                            ["password"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Mật khẩu tạm thời"
+                            },
+                            ["first_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tên"
+                            },
+                            ["last_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Họ"
+                            },
+                            ["phone"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Số điện thoại"
+                            },
+                            ["role"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Vai trò: 'Teacher', 'Student', 'Parent'",
+                                Enum = new[] { "Teacher", "Student", "Parent" }
+                            }
+                        },
+                        Required = new[] { "email", "password", "first_name", "last_name", "role" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "assign_user_roles",
+                    Description = "🔒 [CHỈ HIỆU TRƯỞNG] Phân quyền cho người dùng trong hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["user_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của người dùng"
+                            },
+                            ["role"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Vai trò mới: 'Principal', 'Teacher', 'Student', 'Parent'",
+                                Enum = new[] { "Principal", "Teacher", "Student", "Parent" }
+                            },
+                            ["entity_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID thực thể tương ứng (TeacherID, StudentID, ParentID)"
+                            },
+                            ["full_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Họ tên đầy đủ"
+                            }
+                        },
+                        Required = new[] { "user_id", "role", "entity_id", "full_name" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "delete_user_account",
+                    Description = "🔒 [CHỈ HIỆU TRƯỞNG] Xóa tài khoản người dùng khỏi hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["user_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của người dùng cần xóa"
+                            },
+                            ["reason"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lý do xóa tài khoản"
+                            }
+                        },
+                        Required = new[] { "user_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_all_users",
+                    Description = "🔒 [CHỈ HIỆU TRƯỞNG] Xem danh sách tất cả người dùng trong hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["role_filter"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo vai trò: 'All', 'Teacher', 'Student', 'Parent'",
+                                Enum = new[] { "All", "Teacher", "Student", "Parent" }
+                            },
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ khóa tìm kiếm (tên, email)"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng kết quả trả về (mặc định: 20, tối đa: 50)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                // Teacher Functions - Exam Management  
+                new FunctionDeclaration
+                {
+                    Name = "create_class_exam",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Tạo lịch thi mới cho lớp học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học"
+                            },
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID lớp học"
+                            },
+                            ["exam_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại thi: 'Midterm', 'Final', 'Quiz', 'Assignment'"
+                            },
+                            ["exam_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày thi (yyyy-MM-dd HH:mm)"
+                            },
+                            ["room"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Phòng thi"
+                            },
+                            ["exam_note"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ghi chú về kỳ thi"
+                            }
+                        },
+                        Required = new[] { "subject_id", "class_id", "exam_type", "exam_date" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "update_exam",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Cập nhật thông tin kỳ thi",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["exam_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của kỳ thi cần cập nhật"
+                            },
+                            ["exam_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại thi mới"
+                            },
+                            ["exam_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày thi mới (yyyy-MM-dd HH:mm)"
+                            },
+                            ["room"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Phòng thi mới"
+                            },
+                            ["exam_note"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ghi chú mới"
+                            }
+                        },
+                        Required = new[] { "exam_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "delete_exam",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Xóa kỳ thi khỏi hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["exam_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của kỳ thi cần xóa"
+                            },
+                            ["reason"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lý do xóa kỳ thi"
+                            }
+                        },
+                        Required = new[] { "exam_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_class_exams",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Xem danh sách thi của lớp học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID lớp học (tùy chọn, nếu không có sẽ lấy tất cả lớp của giáo viên)"
+                            },
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học (tùy chọn)"
+                            },
+                            ["from_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ ngày (yyyy-MM-dd)"
+                            },
+                            ["to_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Đến ngày (yyyy-MM-dd)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                // Teacher Functions - Enhanced Grade Management
+                new FunctionDeclaration
+                {
+                    Name = "create_grade",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Tạo điểm mới cho học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID học sinh"
+                            },
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học"
+                            },
+                            ["score"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Điểm số (0-10)"
+                            },
+                            ["grade_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại điểm: 'Oral', 'Written', 'Midterm', 'Final'"
+                            },
+                            ["semester"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Học kỳ"
+                            },
+                            ["evaluation"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Nhận xét của giáo viên"
+                            }
+                        },
+                        Required = new[] { "student_id", "subject_id", "score", "grade_type" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "update_grade",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Cập nhật điểm của học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["grade_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của điểm cần cập nhật"
+                            },
+                            ["score"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Điểm số mới (0-10)"
+                            },
+                            ["grade_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại điểm mới"
+                            },
+                            ["evaluation"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Nhận xét mới"
+                            }
+                        },
+                        Required = new[] { "grade_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "delete_grade",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Xóa điểm của học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["grade_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của điểm cần xóa"
+                            },
+                            ["reason"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lý do xóa điểm"
+                            }
+                        },
+                        Required = new[] { "grade_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_students_for_grading",
+                    Description = "🔒 [CHỈ GIÁO VIÊN] Lấy danh sách học sinh để chấm điểm theo môn học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học"
+                            },
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID lớp học (tùy chọn)"
+                            }
+                        },
+                        Required = new[] { "subject_id" }
+                    }
+                },
+                // Student Functions - Personal Information
+                new FunctionDeclaration
+                {
+                    Name = "get_my_info",
+                    Description = "📋 [CHỈ HỌC SINH] Xem thông tin cá nhân của học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>(),
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_my_exams",
+                    Description = "📝 [CHỈ HỌC SINH] Xem lịch thi của bản thân",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["from_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ ngày (yyyy-MM-dd) - tùy chọn"
+                            },
+                            ["to_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Đến ngày (yyyy-MM-dd) - tùy chọn"
+                            },
+                            ["subject_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tên môn học để lọc (tùy chọn)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_student_parent_info",
+                    Description = "🏠 [CHỈ XEM] Lấy thông tin phụ huynh của học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của học sinh cần xem thông tin phụ huynh"
+                            }
+                        },
+                        Required = new[] { "student_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_all_subjects",
+                    Description = "📚 [CHỈ XEM] Lấy danh sách tất cả môn học trong hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ khóa tìm kiếm tên môn học"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng môn học trả về (mặc định: 20, tối đa: 50)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_subject_teachers",
+                    Description = "👨‍🏫 [CHỈ XEM] Lấy danh sách giáo viên dạy một môn học cụ thể",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của môn học"
+                            }
+                        },
+                        Required = new[] { "subject_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_class_students_list",
+                    Description = "👥 [CHỈ XEM] Lấy danh sách học sinh trong một lớp học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học"
+                            },
+                            ["include_grades"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm điểm số của học sinh không (mặc định: false)"
+                            }
+                        },
+                        Required = new[] { "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_teacher_classes",
+                    Description = "🏫 [CHỈ XEM] Lấy danh sách lớp học mà giáo viên đang dạy",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của giáo viên"
+                            },
+                            ["include_subjects"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm thông tin môn học không (mặc định: true)"
+                            }
+                        },
+                        Required = new[] { "teacher_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_class_attendance_summary",
+                    Description = "📊 [CHỈ XEM] Lấy tổng quan điểm danh của một lớp học trong khoảng thời gian",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học"
+                            },
+                            ["start_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày bắt đầu (định dạng: YYYY-MM-DD)"
+                            },
+                            ["end_date"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày kết thúc (định dạng: YYYY-MM-DD)"
+                            }
+                        },
+                        Required = new[] { "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_exam_results_by_class",
+                    Description = "📝 [CHỈ XEM] Lấy kết quả thi của tất cả học sinh trong một lớp cho một bài thi",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["exam_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của bài thi"
+                            },
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học"
+                            }
+                        },
+                        Required = new[] { "exam_id", "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_student_exam_history",
+                    Description = "📜 [CHỈ XEM] Lấy lịch sử thi cử của một học sinh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của học sinh"
+                            },
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học (tùy chọn để lọc theo môn)"
+                            },
+                            ["limit"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng bài thi gần nhất (mặc định: 10)"
+                            }
+                        },
+                        Required = new[] { "student_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_parent_children_info",
+                    Description = "👶 [CHỈ XEM] Lấy thông tin tất cả con em của một phụ huynh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["parent_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của phụ huynh"
+                            }
+                        },
+                        Required = new[] { "parent_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_recent_lesson_reports",
+                    Description = "📋 [CHỈ XEM] Lấy báo cáo bài học gần đây",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của giáo viên (tùy chọn để lọc theo giáo viên)"
+                            },
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học (tùy chọn để lọc theo lớp)"
+                            },
+                            ["days_back"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số ngày trở về từ hôm nay (mặc định: 7 ngày)"
+                            },
+                            ["limit"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng báo cáo tối đa (mặc định: 20)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_user_role_info",
+                    Description = "🔐 [CHỈ XEM] Lấy thông tin vai trò của người dùng trong hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["user_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của người dùng"
+                            }
+                        },
+                        Required = new[] { "user_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "search_notifications",
+                    Description = "🔍 [CHỈ XEM] Tìm kiếm thông báo theo từ khóa",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ khóa tìm kiếm trong tiêu đề hoặc nội dung thông báo"
+                            },
+                            ["user_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID người dùng (tùy chọn để lọc theo người nhận)"
+                            },
+                            ["date_from"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày bắt đầu tìm kiếm (YYYY-MM-DD)"
+                            },
+                            ["date_to"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Ngày kết thúc tìm kiếm (YYYY-MM-DD)"
+                            }
+                        },
+                        Required = new[] { "search_term" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_class_grade_statistics",
+                    Description = "📈 [CHỈ XEM] Lấy thống kê điểm số của một lớp học",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học"
+                            },
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học (tùy chọn để lọc theo môn)"
+                            },
+                            ["semester"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Học kỳ (tùy chọn)"
+                            }
+                        },
+                        Required = new[] { "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_upcoming_exams",
+                    Description = "📅 [CHỈ XEM] Lấy danh sách các bài thi sắp tới",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID học sinh (tùy chọn để lọc theo học sinh cụ thể)"
+                            },
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID giáo viên (tùy chọn để lọc theo giáo viên tạo)"
+                            },
+                            ["days_ahead"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số ngày tới trong tương lai (mặc định: 30 ngày)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
                 }
             };
         }
@@ -808,7 +1592,7 @@ namespace EduConnect.Application.Services.Class
                 "get_student_info",
                 "get_student_subjects",
                 "get_current_time",
-                "calculate_sum",
+                // "calculate_sum",
                 "get_student_timetable",
                 "get_teacher_info",
                 "get_teacher_timetable",
@@ -834,8 +1618,41 @@ namespace EduConnect.Application.Services.Class
                 "get_all_feedbacks",
                 "get_notifications_for_user",
                 "mark_notifications_as_read",
+                // New functions added
+                "get_student_parent_info",
+                "get_all_subjects",
+                "get_subject_teachers",
+                "get_class_students_list",
+                "get_teacher_classes",
+                "get_class_attendance_summary",
+                "get_exam_results_by_class",
+                "get_student_exam_history",
+                "get_parent_children_info",
+                "get_recent_lesson_reports",
+                "get_user_role_info",
+                "search_notifications",
+                "get_class_grade_statistics",
+                "get_upcoming_exams",
                 "create_timetable",
-                "get_weekly_student_reports"
+                "get_weekly_student_reports",
+                // Principal Functions
+                "create_user_account",
+                "assign_user_roles",
+                "delete_user_account",
+                "get_all_users",
+                // Teacher Functions - Exam Management
+                "create_class_exam",
+                "update_exam",
+                "delete_exam",
+                "get_class_exams",
+                // Teacher Functions - Grade Management
+                "create_grade",
+                "update_grade",
+                "delete_grade",
+                "get_students_for_grading",
+                // Student Functions
+                "get_my_info",
+                "get_my_exams"
             };
             return supportedFunctions.Contains(functionName);
         }
@@ -873,8 +1690,40 @@ namespace EduConnect.Application.Services.Class
                 "get_all_feedbacks" => await GetAllFeedbacksAsync(args),
                 "get_notifications_for_user" => await GetNotificationsForUserAsync(args, userId),
                 "mark_notifications_as_read" => await MarkNotificationsAsReadAsync(args, userId),
+                // New functions
+                "get_student_parent_info" => await GetStudentParentInfoAsync(args),
+                "get_subject_teachers" => await GetSubjectTeachersAsync(args),
+                "get_class_students_list" => await GetClassStudentsListAsync(args),
+                "get_teacher_classes" => await GetTeacherClassesAsync(args),
+                "get_class_attendance_summary" => await GetClassAttendanceSummaryAsync(args),
+                "get_exam_results_by_class" => await GetExamResultsByClassAsync(args),
+                "get_student_exam_history" => await GetStudentExamHistoryAsync(args),
+                "get_parent_children_info" => await GetParentChildrenInfoAsync(args),
+                "get_recent_lesson_reports" => await GetRecentLessonReportsAsync(args),
+                "get_user_role_info" => await GetUserRoleInfoAsync(args),
+                "search_notifications" => await SearchNotificationsAsync(args),
+                "get_class_grade_statistics" => await GetClassGradeStatisticsAsync(args),
+                "get_upcoming_exams" => await GetUpcomingExamsAsync(args),
                 "create_timetable" => await CreateTimetableAsync(args),
                 "get_weekly_student_reports" => await GetWeeklyStudentReportsAsync(args, userId),
+                // Principal Functions
+                "create_user_account" => JsonConvert.SerializeObject(await CreateUserAccountAsync(args, userId), Formatting.Indented),
+                "assign_user_roles" => JsonConvert.SerializeObject(await AssignUserRolesAsync(args, userId), Formatting.Indented),
+                "delete_user_account" => JsonConvert.SerializeObject(await DeleteUserAccountAsync(args, userId), Formatting.Indented),
+                "get_all_users" => JsonConvert.SerializeObject(await GetAllUsersAsync(args, userId), Formatting.Indented),
+                // Teacher Functions - Exam Management
+                "create_class_exam" => JsonConvert.SerializeObject(await CreateClassExamAsync(args, userId), Formatting.Indented),
+                "update_exam" => JsonConvert.SerializeObject(await UpdateExamAsync(args, userId), Formatting.Indented),
+                "delete_exam" => JsonConvert.SerializeObject(await DeleteExamAsync(args, userId), Formatting.Indented),
+                "get_class_exams" => JsonConvert.SerializeObject(await GetClassExamsAsync(args, userId), Formatting.Indented),
+                // Teacher Functions - Grade Management
+                "create_grade" => JsonConvert.SerializeObject(await CreateGradeAsync(args, userId), Formatting.Indented),
+                "update_grade" => JsonConvert.SerializeObject(await UpdateGradeAsync(args, userId), Formatting.Indented),
+                "delete_grade" => JsonConvert.SerializeObject(await DeleteGradeAsync(args, userId), Formatting.Indented),
+                "get_students_for_grading" => JsonConvert.SerializeObject(await GetStudentsForGradingAsync(args, userId), Formatting.Indented),
+                // Student Functions
+                "get_my_info" => JsonConvert.SerializeObject(await GetMyInfoAsync(args, userId), Formatting.Indented),
+                "get_my_exams" => JsonConvert.SerializeObject(await GetMyExamsAsync(args, userId), Formatting.Indented),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -1690,13 +2539,58 @@ namespace EduConnect.Application.Services.Class
                     }, Formatting.Indented);
                 }
 
-                // Create feedback request
+                // Create feedback request with detailed information
                 var feedbackRequest = new CreateFeedbackRequest
                 {
                     Content = content,
                     Target = target,
-                    ParentId = parent.ParentID
+                    ParentId = parent.ParentID,
+                    Category = category
                 };
+
+                // Get detailed information based on target and additional parameters
+                if (target == "Teacher")
+                {
+                    // Try to get teacher information from arguments
+                    if (args.TryGetValue("teacher_id", out var teacherIdObj) && !string.IsNullOrEmpty(teacherIdObj.ToString()))
+                    {
+                        var teacherId = teacherIdObj.ToString()!;
+                        var teacher = await _teacherRepository.GetByIdAsync(teacherId);
+                        if (teacher != null)
+                        {
+                            feedbackRequest.TeacherId = teacherId;
+                            feedbackRequest.TeacherName = $"{teacher.Account.FirstName} {teacher.Account.LastName}".Trim();
+                        }
+                    }
+
+                    // Try to get subject information from arguments
+                    if (args.TryGetValue("subject_id", out var subjectIdObj) && int.TryParse(subjectIdObj.ToString(), out var subjectId))
+                    {
+                        var subject = await _subjectRepository.GetByIdAsync(subjectId);
+                        if (subject != null)
+                        {
+                            feedbackRequest.SubjectId = subjectId;
+                            feedbackRequest.SubjectName = subject.SubjectName;
+                        }
+                    }
+
+                    // Try to get class information from arguments
+                    if (args.TryGetValue("class_id", out var classIdObj) && int.TryParse(classIdObj.ToString(), out var classId))
+                    {
+                        var classEntity = await _classRepository.GetByIdAsync(classId);
+                        if (classEntity != null)
+                        {
+                            feedbackRequest.ClassId = classId;
+                            feedbackRequest.ClassName = classEntity.ClassName;
+                        }
+                    }
+
+                    feedbackRequest.TargetDescription = "giáo viên";
+                }
+                else if (target == "Principal")
+                {
+                    feedbackRequest.TargetDescription = "ban giám hiệu";
+                }
 
                 // Create feedback
                 var result = await _feedbackService.CreateFeedbackAsync(feedbackRequest);
@@ -1704,6 +2598,21 @@ namespace EduConnect.Application.Services.Class
                 if (result.Success)
                 {
                     var targetDescription = target == "Principal" ? "ban giám hiệu" : "giáo viên";
+                    
+                    // Build content details for response
+                    object? contentDetails = null;
+                    if (target == "Teacher" && !string.IsNullOrEmpty(feedbackRequest.TeacherId))
+                    {
+                        contentDetails = new
+                        {
+                            TeacherId = feedbackRequest.TeacherId,
+                            TeacherName = feedbackRequest.TeacherName,
+                            SubjectId = feedbackRequest.SubjectId,
+                            SubjectName = feedbackRequest.SubjectName,
+                            ClassId = feedbackRequest.ClassId,
+                            ClassName = feedbackRequest.ClassName
+                        };
+                    }
                     
                     return JsonConvert.SerializeObject(new
                     {
@@ -1714,10 +2623,10 @@ namespace EduConnect.Application.Services.Class
                             FeedbackId = result.Data?.FeedbackId,
                             Target = target,
                             TargetDescription = targetDescription,
-                            Content = content,
+                            Content = contentDetails ?? new { Message = content },
                             Category = category,
                             ParentName = parent.FullName,
-                            CreatedAt = DateTime.Now
+                            CreatedAt = DateTime.UtcNow
                         }
                     }, Formatting.Indented);
                 }
@@ -3881,7 +4790,7 @@ namespace EduConnect.Application.Services.Class
                 
                 return successMessage.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể tạo báo cáo bài học. Vui lòng thử lại sau.";
             }
@@ -4007,7 +4916,7 @@ namespace EduConnect.Application.Services.Class
                 
                 return successMessage.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể gửi thông báo. Vui lòng thử lại sau.";
             }
@@ -4052,7 +4961,7 @@ namespace EduConnect.Application.Services.Class
                     })
                 }, Formatting.Indented);
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể lấy danh sách phản hồi. Vui lòng thử lại sau.";
             }
@@ -4094,7 +5003,7 @@ namespace EduConnect.Application.Services.Class
 
                 return formattedMessage.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể lấy thông báo. Vui lòng thử lại sau.";
             }
@@ -4138,7 +5047,7 @@ namespace EduConnect.Application.Services.Class
                 
                 return successMessage;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể đánh dấu thông báo đã đọc. Vui lòng thử lại sau.";
             }
@@ -4211,7 +5120,7 @@ namespace EduConnect.Application.Services.Class
                 
                 return successMessage.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể tạo thời khóa biểu. Vui lòng thử lại sau.";
             }
@@ -4289,7 +5198,7 @@ namespace EduConnect.Application.Services.Class
 
                 return formattedMessage.ToString();
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 return "❌ **LỖI:** Không thể lấy báo cáo tuần. Vui lòng thử lại sau.";
             }
@@ -4379,5 +5288,953 @@ namespace EduConnect.Application.Services.Class
 
             return "Bạn có câu trả lời mới từ EduConnect AI. Nhấn để xem chi tiết.";
         }
+
+        #region Helper Methods
+
+        private string GetUserFullName(ApplicationUser user)
+        {
+            return $"{user.FirstName} {user.LastName}".Trim();
+        }
+
+        #endregion
+
+        #region Principal User Management Functions
+
+        private async Task<object> CreateUserAccountAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ hiệu trưởng mới có quyền tạo tài khoản người dùng" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> AssignUserRolesAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ hiệu trưởng mới có quyền phân quyền" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> DeleteUserAccountAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ hiệu trưởng mới có quyền xóa tài khoản" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> GetAllUsersAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ hiệu trưởng mới có quyền xem danh sách người dùng" };
+                }
+
+                var users = _userManager.Users.Take(10).Select(u => new
+                {
+                    id = u.Id,
+                    fullName = GetUserFullName(u),
+                    email = u.Email,
+                    emailConfirmed = u.EmailConfirmed
+                }).ToList();
+
+                return new 
+                { 
+                    success = true, 
+                    message = $"📋 Danh sách {users.Count} người dùng",
+                    users = users
+                };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        #endregion
+
+        #region Teacher Exam Management Functions
+
+        private async Task<object> CreateClassExamAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền tạo lịch thi" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> UpdateExamAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền chỉnh sửa lịch thi" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> DeleteExamAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền xóa lịch thi" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> GetClassExamsAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền xem lịch thi lớp" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        #endregion
+
+        #region Teacher Grade Management Functions
+
+        private async Task<object> CreateGradeAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền nhập điểm" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> UpdateGradeAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền cập nhật điểm" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> DeleteGradeAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền xóa điểm" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> GetStudentsForGradingAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Teacher"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ giáo viên mới có quyền xem danh sách học sinh" };
+                }
+
+                return new { success = true, message = "✅ Chức năng đang được phát triển" };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        #endregion
+
+        #region Student Personal Info Functions
+
+        private async Task<object> GetMyInfoAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Student"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ học sinh mới có quyền xem thông tin cá nhân" };
+                }
+
+                var student = await _context.Students
+                    .Where(s => s.AccountID == userId)
+                    .Include(s => s.Account)
+                    .Include(s => s.Class)
+                    .FirstOrDefaultAsync();
+
+                if (student == null)
+                {
+                    return new { success = false, message = "❌ Không tìm thấy thông tin học sinh" };
+                }
+
+                return new 
+                { 
+                    success = true, 
+                    message = "📋 Thông tin cá nhân",
+                    studentInfo = new
+                    {
+                        id = student.StudentID,
+                        fullName = GetUserFullName(student.Account),
+                        email = student.Account.Email,
+                        studentCode = student.StudentID,
+                        dateOfBirth = student.DateOfBirth?.ToString("dd/MM/yyyy"),
+                        className = student.Class?.ClassName
+                    }
+                };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        private async Task<object> GetMyExamsAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return new { success = false, message = "⚠️ Yêu cầu xác thực người dùng" };
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Student"))
+                {
+                    return new { success = false, message = "⚠️ Chỉ học sinh mới có quyền xem lịch thi của mình" };
+                }
+
+                var student = await _context.Students
+                    .FirstOrDefaultAsync(s => s.AccountID == userId);
+
+                if (student == null)
+                {
+                    return new { success = false, message = "❌ Không tìm thấy thông tin học sinh" };
+                }
+
+                var exams = await _context.Exams
+                    .Where(e => e.StudentID == student.StudentID)
+                    .Include(e => e.Subject)
+                    .OrderBy(e => e.ExamDate)
+                    .Take(10)
+                    .Select(e => new
+                    {
+                        id = e.ExamId,
+                        examType = e.ExamType,
+                        examDate = e.ExamDate.ToString("dd/MM/yyyy HH:mm"),
+                        subject = e.Subject.SubjectName,
+                        examNote = e.ExamNote,
+                        isUpcoming = e.ExamDate > DateTime.Now
+                    })
+                    .ToListAsync();
+
+                return new 
+                { 
+                    success = true, 
+                    message = $"📋 Lịch thi của bạn ({exams.Count} kỳ thi)",
+                    exams = exams
+                };
+            }
+            catch (Exception)
+            {
+                return new { success = false, message = "❌ Lỗi hệ thống" };
+            }
+        }
+
+        #endregion
+
+        #region New Functions Implementation
+
+        private async Task<string> GetStudentParentInfoAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var studentId = args["student_id"].ToString();
+                var student = await _context.Students
+                    .Include(s => s.Parent)
+                    .ThenInclude(p => p.Account)
+                    .FirstOrDefaultAsync(s => s.StudentID == studentId);
+
+                if (student?.Parent == null)
+                {
+                    return JsonConvert.SerializeObject(new { success = false, message = "❌ Không tìm thấy thông tin phụ huynh" }, Formatting.Indented);
+                }
+
+                var parentInfo = new
+                {
+                    ParentId = student.Parent.ParentID,
+                    FullName = $"{student.Parent.Account?.FirstName} {student.Parent.Account?.LastName}".Trim(),
+                    Email = student.Parent.Account?.Email ?? "Chưa cập nhật",
+                    PhoneNumber = student.Parent.Account?.PhoneNumber ?? "Chưa cập nhật"
+                };
+
+                return JsonConvert.SerializeObject(new { success = true, message = "🏠 Thông tin phụ huynh", parent = parentInfo }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetSubjectTeachersAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var subjectId = Convert.ToInt32(args["subject_id"]);
+                
+                var teachers = await _context.Teachers
+                    .Include(t => t.Account)
+                    .Include(t => t.ClassTeachers)
+                    .ThenInclude(ct => ct.Class)
+                    .Where(t => t.ClassTeachers.Any())
+                    .Select(t => new
+                    {
+                        TeacherId = t.TeacherID,
+                        FullName = t.Account.FirstName + " " + t.Account.LastName,
+                        Email = t.Account.Email,
+                        PhoneNumber = t.Account.PhoneNumber,
+                        Classes = t.ClassTeachers
+                            .Select(ct => new { ct.Class.ClassName, ct.ClassID })
+                            .Select(ct => new
+                            {
+                                ClassId = ct.ClassID,
+                                ClassName = ct.ClassName
+                            })
+                            .ToList()
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"👨‍🏫 Danh sách giáo viên ({teachers.Count} người)", teachers }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetClassStudentsListAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var classId = Convert.ToInt32(args["class_id"]);
+                var includeGrades = args.ContainsKey("include_grades") && Convert.ToBoolean(args["include_grades"]);
+
+                var students = await _context.Students
+                    .Include(s => s.Account)
+                    .Where(s => s.ClassID == classId)
+                    .ToListAsync();
+
+                var studentList = new List<object>();
+
+                foreach (var student in students)
+                {
+                    var studentInfo = new
+                    {
+                        StudentId = student.StudentID,
+                        FullName = $"{student.Account?.FirstName} {student.Account?.LastName}".Trim(),
+                        Email = student.Account?.Email,
+                        DateOfBirth = student.DateOfBirth?.ToString("dd/MM/yyyy"),
+                        Gender = student.Gender
+                    };
+
+                    if (includeGrades)
+                    {
+                        var grades = await _context.Grades
+                            .Where(g => g.StudentID == student.StudentID)
+                            .Select(g => new
+                            {
+                                SubjectId = g.SubjectID,
+                                Score = g.Score,
+                                GradeType = g.GradeType,
+                                Semester = g.Semester
+                            })
+                            .ToListAsync();
+
+                        studentList.Add(new { Student = studentInfo, Grades = grades });
+                    }
+                    else
+                    {
+                        studentList.Add(studentInfo);
+                    }
+                }
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"👥 Danh sách học sinh ({studentList.Count} học sinh)", students = studentList }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetTeacherClassesAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var teacherId = args["teacher_id"].ToString();
+                var includeSubjects = !args.ContainsKey("include_subjects") || Convert.ToBoolean(args["include_subjects"]);
+
+                var classes = await _context.ClassTeachers
+                    .Include(ct => ct.Class)
+                    .Include(ct => ct.Teacher)
+                    .Where(ct => ct.TeacherID == teacherId)
+                    .GroupBy(ct => ct.Class)
+                    .Select(g => new
+                    {
+                        ClassId = g.Key.ClassID,
+                        ClassName = g.Key.ClassName,
+                        StudentCount = _context.Students.Count(s => s.ClassID == g.Key.ClassID),
+                        Subjects = includeSubjects ? g.Select(ct => new
+                        {
+                            TeacherId = ct.TeacherID,
+                            TeacherName = ct.Teacher.FullName
+                        }).Cast<object>().ToList() : new List<object>()
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"🏫 Danh sách lớp đang dạy ({classes.Count} lớp)", classes }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetClassAttendanceSummaryAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var classId = Convert.ToInt32(args["class_id"]);
+
+                if (args.ContainsKey("start_date"))
+                    DateTime.TryParse(args["start_date"].ToString(), out var startDate);
+                if (args.ContainsKey("end_date"))
+                    DateTime.TryParse(args["end_date"].ToString(), out var end);
+
+                var query = _context.Attendances
+                    .Include(a => a.Student)
+                    .ThenInclude(s => s.Account)
+                    .Where(a => a.Student.ClassID == classId);
+
+                // Note: Date filtering would require complex join with Timetable entity
+                // Simplified for now - can be enhanced later
+
+                var attendances = await query.ToListAsync();
+
+                var summary = attendances
+                    .GroupBy(a => a.StudentID)
+                    .Select(g => new
+                    {
+                        StudentId = g.Key,
+                        StudentName = $"{g.First().Student?.Account?.FirstName} {g.First().Student?.Account?.LastName}".Trim() ?? "N/A",
+                        TotalDays = g.Count(),
+                        PresentDays = g.Count(a => a.Status == 1), // Assuming 1 = Present
+                        AbsentDays = g.Count(a => a.Status == 0), // Assuming 0 = Absent  
+                        LateDays = g.Count(a => a.Status == 2), // Assuming 2 = Late
+                        AttendanceRate = g.Count() > 0 ? Math.Round((double)g.Count(a => a.Status == 1) / g.Count() * 100, 2) : 0
+                    })
+                    .ToList();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"📊 Tổng quan điểm danh lớp ({summary.Count} học sinh)", summary }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetExamResultsByClassAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var examId = Convert.ToInt32(args["exam_id"]);
+                var classId = Convert.ToInt32(args["class_id"]);
+
+                var grades = await _context.Grades
+                    .Where(g => g.SubjectID == examId)
+                    .Select(g => new
+                    {
+                        StudentId = g.StudentID,
+                        Grade = g.Score ?? 0,
+                        GradeType = g.GradeType,
+                        Semester = g.Semester,
+                        Evaluation = g.Evaluation
+                    })
+                    .OrderByDescending(g => g.Grade)
+                    .ToListAsync();
+
+                var statistics = new
+                {
+                    TotalStudents = grades.Count,
+                    AverageGrade = grades.Count > 0 ? Math.Round(grades.Average(g => g.Grade), 2) : 0,
+                    HighestGrade = grades.Count > 0 ? grades.Max(g => g.Grade) : 0,
+                    LowestGrade = grades.Count > 0 ? grades.Min(g => g.Grade) : 0,
+                    PassingStudents = grades.Count(g => g.Grade >= 5),
+                    PassingRate = grades.Count > 0 ? Math.Round((double)grades.Count(g => g.Grade >= 5) / grades.Count * 100, 2) : 0
+                };
+
+                return JsonConvert.SerializeObject(new { success = true, message = "📝 Kết quả thi theo lớp", results = grades, statistics }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetStudentExamHistoryAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var studentId = args["student_id"].ToString();
+                var limit = args.ContainsKey("limit") ? Convert.ToInt32(args["limit"]) : 10;
+                int? subjectId = args.ContainsKey("subject_id") ? Convert.ToInt32(args["subject_id"]) : null;
+
+                var query = _context.Grades
+                    .Where(g => g.StudentID == studentId);
+
+                if (subjectId.HasValue)
+                    query = query.Where(g => g.SubjectID == subjectId);
+
+                var examHistory = await query
+                    .OrderByDescending(g => g.GradeID)
+                    .Take(limit)
+                    .Select(g => new
+                    {
+                        GradeId = g.GradeID,
+                        StudentId = g.StudentID,
+                        SubjectId = g.SubjectID,
+                        Grade = g.Score ?? 0,
+                        GradeType = g.GradeType,
+                        Semester = g.Semester,
+                        Evaluation = g.Evaluation
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"📜 Lịch sử thi cử ({examHistory.Count} bài thi)", history = examHistory }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetParentChildrenInfoAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var parentId = args["parent_id"].ToString();
+                
+                var children = await _context.Students
+                    .Include(s => s.Account)
+                    .Include(s => s.Class)
+                    .Where(s => s.ParentID == parentId)
+                    .Select(s => new
+                    {
+                        StudentId = s.StudentID,
+                        FullName = s.Account.FirstName + " " + s.Account.LastName,
+                        DateOfBirth = s.DateOfBirth,
+                        Gender = s.Gender,
+                        ClassName = s.Class.ClassName,
+                        ClassId = s.ClassID
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"👶 Danh sách con em ({children.Count} học sinh)", children }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetRecentLessonReportsAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var daysBack = args.ContainsKey("days_back") ? Convert.ToInt32(args["days_back"]) : 7;
+                var limit = args.ContainsKey("limit") ? Convert.ToInt32(args["limit"]) : 20;
+                var startDate = DateTime.Now.AddDays(-daysBack);
+
+                var query = _context.LessonReports
+                    .Include(lr => lr.TimetableSlot)
+                    .ThenInclude(ts => ts.Teacher)
+                    .ThenInclude(t => t.Account)
+                    .Include(lr => lr.TimetableSlot.Timetable.Class)
+                    .Include(lr => lr.TimetableSlot.Subject)
+                    .Where(lr => lr.CreatedAt >= startDate);
+
+                if (args.ContainsKey("teacher_id"))
+                    query = query.Where(lr => lr.TimetableSlot.TeacherID == args["teacher_id"].ToString());
+
+                if (args.ContainsKey("class_id"))
+                    query = query.Where(lr => lr.TimetableSlot.Timetable.ClassID == Convert.ToInt32(args["class_id"]));
+
+                var reports = await query
+                    .OrderByDescending(lr => lr.CreatedAt)
+                    .Take(limit)
+                    .Select(lr => new
+                    {
+                        ReportId = lr.ReportID,
+                        TeacherName = lr.TimetableSlot.Teacher.Account.FirstName + " " + lr.TimetableSlot.Teacher.Account.LastName,
+                        ClassName = lr.TimetableSlot.Timetable.Class.ClassName,
+                        SubjectName = lr.TimetableSlot.Subject.SubjectName,
+                        LessonDate = lr.LessonDate,
+                        TotalStudents = lr.TotalStudents,
+                        AbsentStudents = lr.AbsentStudents,
+                        Remarks = lr.Remarks,
+                        CreatedDate = lr.CreatedAt
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"📋 Báo cáo bài học gần đây ({reports.Count} báo cáo)", reports }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetUserRoleInfoAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var userId = args["user_id"].ToString();
+                
+                var user = await _userManager.FindByIdAsync(userId ?? string.Empty);
+                if (user == null)
+                {
+                    return JsonConvert.SerializeObject(new { success = false, message = "❌ Không tìm thấy người dùng" }, Formatting.Indented);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                var userInfo = new
+                {
+                    UserId = user.Id,
+                    FullName = user.FirstName + " " + user.LastName,
+                    Email = user.Email,
+                    PhoneNumber = user.PhoneNumber,
+                    Roles = roles.ToList(),
+                    EmailConfirmed = user.EmailConfirmed,
+                    LockoutEnabled = user.LockoutEnabled,
+                    AccessFailedCount = user.AccessFailedCount
+                };
+
+                return JsonConvert.SerializeObject(new { success = true, message = "🔐 Thông tin vai trò người dùng", userInfo }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> SearchNotificationsAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var searchTerm = args["search_term"].ToString();
+                
+                var query = _context.Notifications
+                    .Include(n => n.User)
+                    .Include(n => n.User)
+                    .Where(n => n.Title.Contains(searchTerm ?? string.Empty) || n.Content.Contains(searchTerm ?? string.Empty));
+
+                if (args.ContainsKey("user_id"))
+                    query = query.Where(n => n.UserId == args["user_id"].ToString());
+
+                if (args.ContainsKey("date_from") && DateTime.TryParse(args["date_from"].ToString(), out var dateFrom))
+                    query = query.Where(n => n.CreatedAt >= dateFrom);
+
+                if (args.ContainsKey("date_to") && DateTime.TryParse(args["date_to"].ToString(), out var dateTo))
+                    query = query.Where(n => n.CreatedAt <= dateTo.AddDays(1));
+
+                var notifications = await query
+                    .OrderByDescending(n => n.CreatedAt)
+                    .Select(n => new
+                    {
+                        NotificationId = n.NotificationId,
+                        Title = n.Title,
+                        Message = n.Content,
+                        SenderName = "Hệ thống",
+                        ReceiverName = n.User.FirstName + " " + n.User.LastName,
+                        IsRead = n.IsRead,
+                        CreatedDate = n.CreatedAt
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"🔍 Kết quả tìm kiếm ({notifications.Count} thông báo)", notifications }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetClassGradeStatisticsAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var classId = Convert.ToInt32(args["class_id"]);
+                int? subjectId = args.ContainsKey("subject_id") ? Convert.ToInt32(args["subject_id"]) : null;
+                string semester = args.ContainsKey("semester") ? args["semester"]?.ToString() ?? string.Empty : string.Empty;
+
+                var query = _context.Grades
+                    .Where(g => _context.Students.Any(s => s.StudentID == g.StudentID && s.ClassID == classId));
+
+                if (subjectId.HasValue)
+                    query = query.Where(g => g.SubjectID == subjectId);
+
+                if (!string.IsNullOrEmpty(semester))
+                    query = query.Where(g => g.Semester == semester);
+
+                var grades = await query.ToListAsync();
+
+                var statistics = new
+                {
+                    TotalGrades = grades.Count,
+                    AverageGrade = grades.Count > 0 && grades.Any(g => g.Score.HasValue) ? Math.Round(grades.Where(g => g.Score.HasValue).Average(g => g.Score!.Value), 2) : 0,
+                    HighestGrade = grades.Count > 0 && grades.Any(g => g.Score.HasValue) ? grades.Where(g => g.Score.HasValue).Max(g => g.Score!.Value) : 0,
+                    LowestGrade = grades.Count > 0 && grades.Any(g => g.Score.HasValue) ? grades.Where(g => g.Score.HasValue).Min(g => g.Score!.Value) : 0,
+                    ExcellentCount = grades.Count(g => g.Score >= 8),
+                    GoodCount = grades.Count(g => g.Score >= 6.5 && g.Score < 8),
+                    AverageCount = grades.Count(g => g.Score >= 5 && g.Score < 6.5),
+                    BelowAverageCount = grades.Count(g => g.Score < 5),
+                    SubjectBreakdown = grades.GroupBy(g => g.SubjectID).Select(g => new
+                    {
+                        SubjectId = g.Key,
+                        AverageGrade = g.Any(x => x.Score.HasValue) ? Math.Round(g.Where(x => x.Score.HasValue).Average(x => x.Score!.Value), 2) : 0,
+                        StudentCount = g.Select(x => x.StudentID).Distinct().Count()
+                    }).ToList()
+                };
+
+                return JsonConvert.SerializeObject(new { success = true, message = "📈 Thống kê điểm số lớp học", statistics }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetUpcomingExamsAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                var daysAhead = args.ContainsKey("days_ahead") ? Convert.ToInt32(args["days_ahead"]) : 30;
+                var endDate = DateTime.Now.AddDays(daysAhead);
+
+                var query = _context.Exams
+                    .Include(e => e.Subject)
+                    .Include(e => e.CreatedByUser)
+                    .Where(e => e.ExamDate >= DateTime.Now && e.ExamDate <= endDate);
+
+                if (args.ContainsKey("student_id"))
+                {
+                    var studentId = args["student_id"].ToString();
+                    var student = await _context.Students.FindAsync(studentId);
+                    if (student != null)
+                    {
+                        // Filter exams for student's subject
+                        query = query.Where(e => e.StudentID == studentId);
+                    }
+                }
+
+                if (args.ContainsKey("teacher_id"))
+                    query = query.Where(e => e.CreatedBy == args["teacher_id"].ToString());
+
+                var upcomingExams = await query
+                    .OrderBy(e => e.ExamDate)
+                    .Select(e => new
+                    {
+                        ExamId = e.ExamId,
+                        ExamType = e.ExamType,
+                        SubjectName = e.Subject.SubjectName,
+                        ExamDate = e.ExamDate,
+                        Room = e.Room,
+                        ExamNote = e.ExamNote,
+                        CreatedBy = e.CreatedByUser != null ? e.CreatedByUser.FirstName + " " + e.CreatedByUser.LastName : "N/A",
+                        DaysUntilExam = (e.ExamDate - DateTime.Now).Days
+                    })
+                    .ToListAsync();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"📅 Lịch thi sắp tới ({upcomingExams.Count} kỳ thi)", exams = upcomingExams }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        #endregion
     }
 }

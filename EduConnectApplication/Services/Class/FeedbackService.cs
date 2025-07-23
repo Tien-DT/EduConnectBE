@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -39,14 +40,13 @@ namespace EduConnect.Application.Services.Class
                     ParentID = request.ParentId,
                     Content = request.Content,
                     Target = request.Target,
+                    Category = request.Category ?? "Other",
                     DateTime = DateTime.UtcNow,
                     IsDeleted = false
                 };
 
                 var createdFeedback = await _feedbackRepository.CreateAsync(feedback);
-                
                 var feedbackWithParent = await _feedbackRepository.GetByIdAsync(createdFeedback.FeedbackID);
-                
                 var response = MapToFeedbackResponse(feedbackWithParent);
 
                 return ApiResponse<FeedbackResponse>.SuccessResponse(
@@ -236,7 +236,7 @@ namespace EduConnect.Application.Services.Class
                     ? $"{feedback.Parent.Account.FirstName} {feedback.Parent.Account.LastName}".Trim()
                     : "Unknown",
                 Content = feedback.Content ?? string.Empty,
-                DateTime = feedback.DateTime,
+                CreatedAt = feedback.DateTime,
                 Target = feedback.Target ?? string.Empty,
                 IsDeleted = feedback.IsDeleted ?? false
             };

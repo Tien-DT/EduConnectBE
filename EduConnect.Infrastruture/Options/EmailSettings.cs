@@ -1,4 +1,4 @@
-namespace EduConnect.Application.Options
+namespace EduConnect.Infrastruture.Options
 {
     public class EmailSettings
     {

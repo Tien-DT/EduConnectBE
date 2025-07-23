@@ -237,6 +237,11 @@ namespace EduConnect.Data
                 .WithMany(s => s.StudentLessonNotes)
                 .HasForeignKey(sln => sln.StudentID)
                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Feedback>()
+                .HasOne(f => f.Teacher)
+                .WithMany()
+                .HasForeignKey(f => f.TeacherId)
+                .OnDelete(DeleteBehavior.SetNull);
         }
     }
 }

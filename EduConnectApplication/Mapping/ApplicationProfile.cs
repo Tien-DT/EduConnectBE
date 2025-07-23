@@ -122,6 +122,31 @@ namespace EduConnect.Application.Mapping
                 .ForMember(dest => dest.Subject, opt => opt.Ignore())
                 .ForMember(dest => dest.Student, opt => opt.Ignore())
                 .ForMember(dest => dest.CreatedByUser, opt => opt.Ignore());
+
+            // Lesson mappings
+            CreateMap<Lesson, LessonResponse>()
+                .ForMember(dest => dest.LessonId, opt => opt.MapFrom(src => src.LessonID))
+                .ForMember(dest => dest.ClassId, opt => opt.MapFrom(src => src.ClassID))
+                .ForMember(dest => dest.TeacherId, opt => opt.MapFrom(src => src.TeacherID))
+                .ForMember(dest => dest.TimetableId, opt => opt.MapFrom(src => src.TimetableID))
+                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectId))
+                .ForMember(dest => dest.ClassName, opt => opt.MapFrom(src => src.Class != null ? src.Class.ClassName : string.Empty))
+                .ForMember(dest => dest.TeacherName, opt => opt.MapFrom(src => src.Teacher != null ? src.Teacher.FullName : string.Empty))
+                .ForMember(dest => dest.SubjectName, opt => opt.MapFrom(src => src.Subject != null ? src.Subject.SubjectName : string.Empty))
+                .ForMember(dest => dest.TimetableSlot, opt => opt.MapFrom(src => src.Timetable != null ? src.Timetable.Name : string.Empty));
+
+            CreateMap<CreateLessonRequest, Lesson>()
+                .ForMember(dest => dest.LessonID, opt => opt.Ignore())
+                .ForMember(dest => dest.ClassID, opt => opt.MapFrom(src => src.ClassId))
+                .ForMember(dest => dest.TeacherID, opt => opt.MapFrom(src => src.TeacherId))
+                .ForMember(dest => dest.TimetableID, opt => opt.MapFrom(src => src.TimetableId))
+                .ForMember(dest => dest.SubjectId, opt => opt.MapFrom(src => src.SubjectId))
+                .ForMember(dest => dest.IsDeleted, opt => opt.Ignore())
+                .ForMember(dest => dest.Class, opt => opt.Ignore())
+                .ForMember(dest => dest.Teacher, opt => opt.Ignore())
+                .ForMember(dest => dest.Subject, opt => opt.Ignore())
+                .ForMember(dest => dest.Timetable, opt => opt.Ignore())
+                .ForMember(dest => dest.LessonReports, opt => opt.Ignore());
         }
     }
 }
