@@ -25,5 +25,7 @@ namespace EduConnect.Domain.Entities
         public virtual Principal? Principal { get; set; }
         public virtual RefreshToken? RefreshToken { get; set; }
         public virtual ICollection<FirebaseToken> FirebaseTokens { get; set; } = new List<FirebaseToken>();
+
+        public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
     }
 }

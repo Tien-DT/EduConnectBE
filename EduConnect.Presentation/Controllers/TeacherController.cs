@@ -1,8 +1,9 @@
-using EduConnect.Application.Services.Interface;
+    using EduConnect.Application.Services.Interface;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using System;
 using System.Threading.Tasks;
+using EduConnectApplication.DTOs.Response;
 
 namespace EduConnect.Presentation.Controllers
 {
@@ -45,6 +46,15 @@ namespace EduConnect.Presentation.Controllers
         public async Task<IActionResult> GetTimetableByTeacherId(string teacherId, [FromQuery] DateTime? startDate = null, [FromQuery] DateTime? endDate = null)
         {
             var result = await _teacherService.GetTimetableByTeacherIdAsync(teacherId, startDate, endDate);
+            if (result.Success)
+                return Ok(result);
+            return NotFound(result);
+        }
+
+        [HttpGet("{teacherId}/classes-with-timetable")]
+        public async Task<IActionResult> GetClassesWithTimetableByTeacher(string teacherId)
+        {
+            var result = await _teacherService.GetClassesWithTimetableByTeacherAsync(teacherId);
             if (result.Success)
                 return Ok(result);
             return NotFound(result);

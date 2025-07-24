@@ -25,6 +25,7 @@ namespace EduConnect.Application.Services.Class
         private readonly IExamService _examService;
         private readonly ITeacherRepository _teacherRepository;
         private readonly ILessonReportRepository _lessonReportRepository;
+        private readonly ILessonReportService _lessonReportService;
         private readonly INotificationRepository _notificationRepository;
         private readonly ITimetableRepository _timetableRepository;
         private readonly IClassRepository _classRepository;
@@ -46,6 +47,7 @@ namespace EduConnect.Application.Services.Class
             IExamService examService,
             ITeacherRepository teacherRepository,
             ILessonReportRepository lessonReportRepository,
+            ILessonReportService lessonReportService,
             INotificationRepository notificationRepository,
             ITimetableRepository timetableRepository,
             IClassRepository classRepository,
@@ -66,6 +68,7 @@ namespace EduConnect.Application.Services.Class
             _examService = examService;
             _teacherRepository = teacherRepository;
             _lessonReportRepository = lessonReportRepository;
+            _lessonReportService = lessonReportService;
             _notificationRepository = notificationRepository;
             _timetableRepository = timetableRepository;
             _classRepository = classRepository;
@@ -573,32 +576,37 @@ namespace EduConnect.Application.Services.Class
                             ["timetable_slot_id"] = new ParameterSchema
                             {
                                 Type = "number",
-                                Description = "ID của tiết học trong thời khóa biểu"
+                                Description = "ID của tiết học trong thời khóa biểu (bắt buộc)"
                             },
                             ["lesson_date"] = new ParameterSchema
                             {
                                 Type = "string",
-                                Description = "Ngày của buổi học (yyyy-MM-dd)"
+                                Description = "Ngày của buổi học (yyyy-MM-dd) (bắt buộc)"
                             },
                             ["total_students"] = new ParameterSchema
                             {
                                 Type = "number",
-                                Description = "Tổng số học sinh có mặt"
+                                Description = "Tổng số học sinh trong lớp (bắt buộc)"
                             },
                             ["absent_students"] = new ParameterSchema
                             {
                                 Type = "number",
-                                Description = "Số học sinh vắng mặt"
+                                Description = "Số học sinh vắng mặt (bắt buộc)"
+                            },
+                            ["lesson_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của bài học (tùy chọn)"
                             },
                             ["remarks"] = new ParameterSchema
                             {
                                 Type = "string",
-                                Description = "Ghi chú chung về buổi học"
+                                Description = "Ghi chú chung về buổi học (tùy chọn)"
                             },
                             ["student_notes"] = new ParameterSchema
                             {
                                 Type = "string",
-                                Description = "Danh sách ghi chú cho học sinh dưới dạng JSON: [{\"student_id\": \"string\", \"note_type\": \"Good|Warning|Violation|BonusPoint\", \"description\": \"string\", \"points\": number}]"
+                                Description = "Danh sách ghi chú cho học sinh dưới dạng JSON: [{\"student_id\": \"string\", \"note_type\": \"Good|Warning|Violation|BonusPoint\", \"description\": \"string\"}] (tùy chọn)"
                             }
                         },
                         Required = new[] { "timetable_slot_id", "lesson_date", "total_students", "absent_students" }
@@ -2584,12 +2592,6 @@ namespace EduConnect.Application.Services.Class
                             feedbackRequest.ClassName = classEntity.ClassName;
                         }
                     }
-
-                    feedbackRequest.TargetDescription = "giáo viên";
-                }
-                else if (target == "Principal")
-                {
-                    feedbackRequest.TargetDescription = "ban giám hiệu";
                 }
 
                 // Create feedback
@@ -2597,36 +2599,26 @@ namespace EduConnect.Application.Services.Class
 
                 if (result.Success)
                 {
-                    var targetDescription = target == "Principal" ? "ban giám hiệu" : "giáo viên";
-                    
-                    // Build content details for response
-                    object? contentDetails = null;
-                    if (target == "Teacher" && !string.IsNullOrEmpty(feedbackRequest.TeacherId))
+                    return JsonConvert.SerializeObject(new
                     {
-                        contentDetails = new
+                        success = true,
+                        message = $"✅ Đã tạo phản hồi thành công. Mã phản hồi: #{result.Data?.FeedbackId}",
+                        data = new
                         {
+                            FeedbackId = result.Data?.FeedbackId,
+                            Content = content,
+                            Target = target,
+                            Category = category,
+                            ParentId = parent.ParentID,
+                            ParentName = parent.FullName,
                             TeacherId = feedbackRequest.TeacherId,
                             TeacherName = feedbackRequest.TeacherName,
                             SubjectId = feedbackRequest.SubjectId,
                             SubjectName = feedbackRequest.SubjectName,
                             ClassId = feedbackRequest.ClassId,
-                            ClassName = feedbackRequest.ClassName
-                        };
-                    }
-                    
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = true,
-                        message = $"✅ Đã tạo phản hồi thành công và gửi đến {targetDescription}. Mã phản hồi: #{result.Data?.FeedbackId}",
-                        data = new
-                        {
-                            FeedbackId = result.Data?.FeedbackId,
-                            Target = target,
-                            TargetDescription = targetDescription,
-                            Content = contentDetails ?? new { Message = content },
-                            Category = category,
-                            ParentName = parent.FullName,
-                            CreatedAt = DateTime.UtcNow
+                            ClassName = feedbackRequest.ClassName,
+                            CreatedAt = DateTime.UtcNow,
+                            IsDeleted = false
                         }
                     }, Formatting.Indented);
                 }
@@ -4723,76 +4715,144 @@ namespace EduConnect.Application.Services.Class
             {
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return "🔒 **LỖI XÁCTHỰC:** Vui lòng đăng nhập để tạo báo cáo bài học.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Cần đăng nhập để tạo báo cáo buổi học",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
                 }
 
-                var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
-                if (teacher == null)
+                // Validate required parameters
+                if (!args.TryGetValue("timetable_slot_id", out var slotIdObj) || !int.TryParse(slotIdObj?.ToString(), out var timetableSlotId))
                 {
-                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ giáo viên mới có thể tạo báo cáo bài học.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Thiếu hoặc không hợp lệ timetable_slot_id",
+                        error = "MISSING_TIMETABLE_SLOT_ID"
+                    }, Formatting.Indented);
                 }
 
-                // Get arguments
-                var timetableSlotId = 0;
-                if (args.TryGetValue("timetable_slot_id", out var slotIdObj) && int.TryParse(slotIdObj?.ToString(), out var parsedSlotId))
+                if (!args.TryGetValue("lesson_date", out var dateObj) || !DateTime.TryParse(dateObj?.ToString(), out var lessonDate))
                 {
-                    timetableSlotId = parsedSlotId;
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Thiếu hoặc không hợp lệ lesson_date (yyyy-MM-dd)",
+                        error = "MISSING_LESSON_DATE"
+                    }, Formatting.Indented);
                 }
 
-                var lessonDate = DateTime.Today;
-                if (args.TryGetValue("lesson_date", out var dateObj) && DateTime.TryParse(dateObj?.ToString(), out var parsedDate))
+                if (!args.TryGetValue("total_students", out var totalObj) || !int.TryParse(totalObj?.ToString(), out var totalStudents))
                 {
-                    lessonDate = parsedDate;
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Thiếu hoặc không hợp lệ total_students",
+                        error = "MISSING_TOTAL_STUDENTS"
+                    }, Formatting.Indented);
                 }
 
-                var totalStudents = 0;
-                if (args.TryGetValue("total_students", out var totalObj) && int.TryParse(totalObj?.ToString(), out var parsedTotal))
+                if (!args.TryGetValue("absent_students", out var absentObj) || !int.TryParse(absentObj?.ToString(), out var absentStudents))
                 {
-                    totalStudents = parsedTotal;
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Thiếu hoặc không hợp lệ absent_students",
+                        error = "MISSING_ABSENT_STUDENTS"
+                    }, Formatting.Indented);
                 }
 
-                var absentStudents = 0;
-                if (args.TryGetValue("absent_students", out var absentObj) && int.TryParse(absentObj?.ToString(), out var parsedAbsent))
+                // Optional parameters
+                var remarks = args.TryGetValue("remarks", out var remarksObj) ? remarksObj?.ToString() : null;
+                var lessonId = args.TryGetValue("lesson_id", out var lessonIdObj) && int.TryParse(lessonIdObj?.ToString(), out var parsedLessonId) ? parsedLessonId : (int?)null;
+
+                // Parse student notes if provided
+                var studentNotes = new List<CreateStudentLessonNoteRequest>();
+                if (args.TryGetValue("student_notes", out var notesObj) && !string.IsNullOrEmpty(notesObj?.ToString()))
                 {
-                    absentStudents = parsedAbsent;
+                    try
+                    {
+                        var notesData = JsonConvert.DeserializeObject<List<Dictionary<string, object>>>(notesObj.ToString()!);
+                        if (notesData != null)
+                        {
+                            foreach (var note in notesData)
+                            {
+                                if (note.TryGetValue("student_id", out var studentIdObj) && 
+                                    note.TryGetValue("note_type", out var noteTypeObj))
+                                {
+                                    var studentNote = new CreateStudentLessonNoteRequest
+                                    {
+                                        StudentId = studentIdObj.ToString()!,
+                                        NoteType = noteTypeObj.ToString()!,
+                                        NoteContent = note.TryGetValue("description", out var descObj) ? descObj.ToString() : null
+                                    };
+                                    studentNotes.Add(studentNote);
+                                }
+                            }
+                        }
+                    }
+                    catch (JsonException)
+                    {
+                        // Ignore JSON parsing errors for student notes
+                    }
                 }
 
-                var remarks = args.TryGetValue("remarks", out var remarksObj) ? remarksObj?.ToString() : "";
-
-                if (timetableSlotId == 0)
+                // Create the request
+                var request = new CreateLessonReportRequest
                 {
-                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp ID slot thời khóa biểu hợp lệ.";
-                }
-
-                var lessonReport = new LessonReport
-                {
-                    TimetableSlotID = timetableSlotId,
+                    LessonId = lessonId,
+                    TimetableSlotId = timetableSlotId,
                     LessonDate = lessonDate,
                     TotalStudents = totalStudents,
                     AbsentStudents = absentStudents,
                     Remarks = remarks,
-                    CreatedAt = DateTime.UtcNow
+                    StudentNotes = studentNotes
                 };
 
-                await _lessonReportRepository.CreateAsync(lessonReport);
+                // Call the service
+                var result = await _lessonReportService.CreateLessonReportAsync(request, userId);
 
-                var successMessage = new StringBuilder();
-                successMessage.AppendLine("✅ **TẠO BÁO CÁO BÀI HỌC THÀNH CÔNG**");
-                successMessage.AppendLine();
-                successMessage.AppendLine($"📋 **Mã báo cáo:** #{lessonReport.ReportID}");
-                successMessage.AppendLine($"📅 **Ngày học:** {lessonDate:dd/MM/yyyy}");
-                successMessage.AppendLine($"👥 **Tổng số học sinh:** {totalStudents}");
-                successMessage.AppendLine($"❌ **Số học sinh vắng:** {absentStudents}");
-                successMessage.AppendLine($"✨ **Tỷ lệ có mặt:** {(totalStudents > 0 ? ((totalStudents - absentStudents) * 100.0 / totalStudents):0):F1}%");
-                if (!string.IsNullOrEmpty(remarks))
-                    successMessage.AppendLine($"📝 **Ghi chú:** {remarks}");
-                successMessage.AppendLine($"⏰ **Thời gian tạo:** {lessonReport.CreatedAt:dd/MM/yyyy HH:mm}");
-                
-                return successMessage.ToString();
+                if (result.Success)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = true,
+                        message = $"✅ Đã tạo báo cáo buổi học thành công",
+                        data = new
+                        {
+                            TimetableSlotId = timetableSlotId,
+                            LessonDate = lessonDate.ToString("yyyy-MM-dd"),
+                            TotalStudents = totalStudents,
+                            AbsentStudents = absentStudents,
+                            AttendanceRate = totalStudents > 0 ? Math.Round((double)(totalStudents - absentStudents) / totalStudents * 100, 1) : 0,
+                            Remarks = remarks,
+                            StudentNotesCount = studentNotes.Count,
+                            CreatedAt = DateTime.UtcNow
+                        }
+                    }, Formatting.Indented);
+                }
+                else
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = $"❌ Không thể tạo báo cáo: {result.Message}",
+                        error = "LESSON_REPORT_CREATION_FAILED",
+                        details = result.Error
+                    }, Formatting.Indented);
+                }
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return "❌ **LỖI:** Không thể tạo báo cáo bài học. Vui lòng thử lại sau.";
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi tạo báo cáo buổi học",
+                    error = "INTERNAL_ERROR",
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
             }
         }
 

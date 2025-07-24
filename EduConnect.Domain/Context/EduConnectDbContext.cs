@@ -32,6 +32,8 @@ namespace EduConnect.Data
         public DbSet<FirebaseToken> FirebaseTokens { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
+        public DbSet<Report> Reports { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -242,6 +244,12 @@ namespace EduConnect.Data
                 .WithMany()
                 .HasForeignKey(f => f.TeacherId)
                 .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.Account)
+                .WithMany()
+                .HasForeignKey(r => r.AccountId)
+                .OnDelete(DeleteBehavior.NoAction);
         }
     }
 }

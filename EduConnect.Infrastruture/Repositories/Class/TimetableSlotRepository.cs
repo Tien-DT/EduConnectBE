@@ -33,5 +33,19 @@ namespace EduConnect.Infrastruture.Repositories.Class
 
             return await query.ToListAsync();
         }
+
+        public async Task<List<EduConnect.Domain.Entities.Class>> GetClassesByTeacherIdAsync(string teacherId)
+        {
+            var classes = await _context.TimetableSlots
+                .Include(ts => ts.Timetable)
+                .ThenInclude(t => t.Class)
+                .Where(ts => ts.TeacherID == teacherId && ts.IsDeleted != true)
+                .Where(ts => ts.Timetable != null && ts.Timetable.Class != null)
+                .Select(ts => ts.Timetable.Class)
+                .Distinct()
+                .ToListAsync();
+
+            return classes;
+        }
     }
 }

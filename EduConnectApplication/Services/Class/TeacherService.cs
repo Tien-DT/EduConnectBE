@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EduConnectApplication.DTOs.Response;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -20,6 +21,41 @@ namespace EduConnect.Application.Services.Class
         {
             _timetableSlotRepository = timetableSlotRepository;
             _teacherRepository = teacherRepository;
+        }
+        public async Task<ApiResponse<List<ClassWithTimetableResponse>>> GetClassesWithTimetableByTeacherAsync(string teacherId)
+        {
+            try
+            {
+                // Debug: Kiểm tra teacherId
+                if (string.IsNullOrEmpty(teacherId))
+                {
+                    return ApiResponse<List<ClassWithTimetableResponse>>.ErrorResponse(new List<string> { "TeacherId không được để trống" }, "Invalid teacherId");
+                }
+
+                // Sử dụng repository method để lấy classes
+                var classes = await _timetableSlotRepository.GetClassesByTeacherIdAsync(teacherId);
+                
+                if (classes == null || !classes.Any())
+                {
+                    return ApiResponse<List<ClassWithTimetableResponse>>.SuccessResponse(
+                        new List<ClassWithTimetableResponse>(), 
+                        $"Không tìm thấy lớp nào cho giáo viên {teacherId}");
+                }
+
+                var classGroups = classes.Select(c => new ClassWithTimetableResponse
+                {
+                    ClassId = c.ClassID,
+                    ClassName = c.ClassName ?? string.Empty
+                }).ToList();
+
+                return ApiResponse<List<ClassWithTimetableResponse>>.SuccessResponse(
+                    classGroups, 
+                    $"Lấy danh sách lớp thành công. Tìm thấy {classGroups.Count} lớp");
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<ClassWithTimetableResponse>>.ErrorResponse(new List<string> { ex.Message }, "Lỗi khi lấy danh sách lớp");
+            }
         }
 
         public async Task<ApiResponse<TimetableResponse>> GetTimetableByTeacherIdAsync(string teacherId, DateTime? startDate = null, DateTime? endDate = null)

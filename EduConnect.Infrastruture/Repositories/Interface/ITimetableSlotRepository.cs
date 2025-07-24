@@ -8,5 +8,6 @@ namespace EduConnect.Infrastruture.Repositories.Interface
     public interface ITimetableSlotRepository
     {
         Task<List<TimetableSlot>> GetTimetableSlotsByTeacherIdAsync(string teacherId, DateTime? startDate = null, DateTime? endDate = null);
+        Task<List<EduConnect.Domain.Entities.Class>> GetClassesByTeacherIdAsync(string teacherId);
     }
 }

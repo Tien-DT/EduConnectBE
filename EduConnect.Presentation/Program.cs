@@ -22,6 +22,8 @@ using AutoMapper;
 using EduConnect.Application.Mapping;
 using CloudinaryDotNet;
 using Microsoft.Extensions.Options;
+using EduConnectApplication.Services;
+using EduConnectApplication.Services.Interface;
 
 namespace EduConnect.Presentation
 {
@@ -145,6 +147,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<ILessonRepository, LessonRepository>();
             builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+
+            builder.Services.AddScoped<IReportService, ReportService>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
