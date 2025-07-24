@@ -744,6 +744,64 @@ namespace EduConnect.Application.Services.Class
                 },
                 new FunctionDeclaration
                 {
+                    Name = "get_feedbacks_by_parent",
+                    Description = "📋 [CHỈ XEM] Lấy danh sách phản hồi của một phụ huynh cụ thể. Giúp xem lịch sử phản hồi của phụ huynh",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["parent_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của phụ huynh cần lấy phản hồi"
+                            },
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Từ khóa tìm kiếm trong nội dung phản hồi"
+                            },
+                            ["target"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Đối tượng nhận phản hồi: 'Principal', 'Teacher', hoặc để trống để lấy tất cả",
+                                Enum = new[] { "Principal", "Teacher" }
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng phản hồi trả về (mặc định: 20, tối đa: 50)"
+                            },
+                            ["sort_by"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Sắp xếp theo: 'DateTime', 'Target'",
+                                Enum = new[] { "DateTime", "Target" }
+                            }
+                        },
+                        Required = new[] { "parent_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_feedback_by_id",
+                    Description = "📋 [CHỈ XEM] Lấy thông tin chi tiết của một phản hồi cụ thể. Giúp xem nội dung chi tiết phản hồi",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["feedback_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của phản hồi cần lấy thông tin"
+                            }
+                        },
+                        Required = new[] { "feedback_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
                     Name = "get_notifications_for_user",
                     Description = "Lấy danh sách thông báo của người dùng hiện tại",
                     Parameters = new FunctionParameters
@@ -1750,6 +1808,118 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new string[] { "report_id", "status" }
                     }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "send_broadcast_notification",
+                    Description = "Send a system-wide notification to all users in the system. Only Principal can use this function.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["title"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Title of the notification"
+                            },
+                            ["message"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Content of the notification"
+                            },
+                            ["category"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Category of notification (system, announcement, etc.)"
+                            }
+                        },
+                        Required = new string[] { "title", "message" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "send_notification_to_teachers",
+                    Description = "Send notification to all teachers in the system. Only Principal can use this function.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["title"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Title of the notification"
+                            },
+                            ["message"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Content of the notification"
+                            },
+                            ["category"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Category of notification (announcement, urgent, etc.)"
+                            }
+                        },
+                        Required = new string[] { "title", "message" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "send_notification_to_students",
+                    Description = "Send notification to all students in the system. Principal and Teacher can use this function.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["title"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Title of the notification"
+                            },
+                            ["message"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Content of the notification"
+                            },
+                            ["category"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Category of notification (announcement, urgent, etc.)"
+                            }
+                        },
+                        Required = new string[] { "title", "message" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "send_notification_to_parents",
+                    Description = "Send notification to all parents in the system. Principal and Teacher can use this function.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["title"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Title of the notification"
+                            },
+                            ["message"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Content of the notification"
+                            },
+                            ["category"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Category of notification (announcement, urgent, etc.)"
+                            }
+                        },
+                        Required = new string[] { "title", "message" }
+                    }
                 }
             };
         }
@@ -1786,6 +1956,8 @@ namespace EduConnect.Application.Services.Class
                 "get_lesson_reports_by_teacher",
                 "send_notification_to_parent",
                 "get_all_feedbacks",
+                "get_feedbacks_by_parent",
+                "get_feedback_by_id",
                 "get_notifications_for_user",
                 "mark_notifications_as_read",
                 // New functions added
@@ -1806,6 +1978,10 @@ namespace EduConnect.Application.Services.Class
                 "create_timetable",
                 "get_weekly_student_reports",
                 // Principal Functions
+                "send_broadcast_notification",
+                "send_notification_to_teachers",
+                "send_notification_to_students",
+                "send_notification_to_parents",
                 "create_user_account",
                 "assign_user_roles",
                 "delete_user_account",
@@ -1864,6 +2040,8 @@ namespace EduConnect.Application.Services.Class
                 "get_lesson_reports_by_teacher" => await GetLessonReportsByTeacherAsync(args, userId),
                 "send_notification_to_parent" => await SendNotificationToParentAsync(args, userId),
                 "get_all_feedbacks" => await GetAllFeedbacksAsync(args),
+                "get_feedbacks_by_parent" => await GetFeedbacksByParentAsync(args),
+                "get_feedback_by_id" => await GetFeedbackByIdAsync(args),
                 "get_notifications_for_user" => await GetNotificationsForUserAsync(args, userId),
                 "mark_notifications_as_read" => await MarkNotificationsAsReadAsync(args, userId),
                 // New functions
@@ -1883,6 +2061,10 @@ namespace EduConnect.Application.Services.Class
                 "create_timetable" => await CreateTimetableAsync(args),
                 "get_weekly_student_reports" => await GetWeeklyStudentReportsAsync(args, userId),
                 // Principal Functions
+                "send_broadcast_notification" => await SendBroadcastNotificationAsync(args, userId),
+                "send_notification_to_teachers" => await SendNotificationToTeachersAsync(args, userId),
+                "send_notification_to_students" => await SendNotificationToStudentsAsync(args, userId),
+                "send_notification_to_parents" => await SendNotificationToParentsAsync(args, userId),
                 "create_user_account" => JsonConvert.SerializeObject(await CreateUserAccountAsync(args, userId), Formatting.Indented),
                 "assign_user_roles" => JsonConvert.SerializeObject(await AssignUserRolesAsync(args, userId), Formatting.Indented),
                 "delete_user_account" => JsonConvert.SerializeObject(await DeleteUserAccountAsync(args, userId), Formatting.Indented),
@@ -3040,6 +3222,7 @@ namespace EduConnect.Application.Services.Class
                 // Get all students of this parent
                 var students = await _context.Students
                     .Include(s => s.Account)
+                    .Include(s => s.Class)
                     .Where(s => s.ParentID == parent.ParentID)
                     .ToListAsync();
 
@@ -5394,6 +5577,160 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
+        private async Task<string> GetFeedbacksByParentAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                // Validate parent_id
+                if (!args.TryGetValue("parent_id", out var parentIdObj) || string.IsNullOrEmpty(parentIdObj?.ToString()))
+                {
+                    return "❌ **LỖI:** Thiếu ID phụ huynh. Vui lòng cung cấp parent_id.";
+                }
+
+                var parentId = parentIdObj.ToString();
+
+                // Parse parameters
+                var searchTerm = args.TryGetValue("search_term", out var searchObj) ? searchObj?.ToString() : null;
+                var target = args.TryGetValue("target", out var targetObj) ? targetObj?.ToString() : null;
+                
+                var pageSize = 20;
+                if (args.TryGetValue("page_size", out var pageSizeObj) && int.TryParse(pageSizeObj?.ToString(), out var parsedPageSize))
+                {
+                    pageSize = Math.Min(parsedPageSize, 50);
+                }
+
+                var sortBy = args.TryGetValue("sort_by", out var sortObj) ? sortObj?.ToString() : "DateTime";
+
+                // Check if parent exists
+                var parent = await _parentRepository.GetParentByIdAsync(parentId!);
+                if (parent == null)
+                {
+                    return $"❌ **LỖI:** Không tìm thấy phụ huynh với ID: {parentId}";
+                }
+
+                // Get feedbacks by parent
+                var feedbacksResult = await _feedbackService.GetFeedbacksByParentIdAsync(parentId!);
+                if (!feedbacksResult.Success || feedbacksResult.Data == null)
+                {
+                    return "❌ **LỖI:** Không thể lấy danh sách phản hồi. Vui lòng thử lại sau.";
+                }
+
+                var feedbacks = feedbacksResult.Data.ToList();
+
+                // Apply filters
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    var searchLower = searchTerm.ToLower();
+                    feedbacks = feedbacks.Where(f => 
+                        f.Content.ToLower().Contains(searchLower)
+                    ).ToList();
+                }
+
+                if (!string.IsNullOrEmpty(target))
+                {
+                    feedbacks = feedbacks.Where(f => f.Target.Equals(target, StringComparison.OrdinalIgnoreCase)).ToList();
+                }
+
+                // Apply sorting
+                feedbacks = sortBy switch
+                {
+                    "Target" => feedbacks.OrderBy(f => f.Target).ToList(),
+                    _ => feedbacks.OrderByDescending(f => f.CreatedAt ?? DateTime.MinValue).ToList()
+                };
+
+                // Take only requested number
+                feedbacks = feedbacks.Take(pageSize).ToList();
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine($"📝 **PHẢN HỒI CỦA PHỤ HUYNH: {parent.FullName}**");
+                formattedMessage.AppendLine();
+                formattedMessage.AppendLine($"📊 **Tổng số phản hồi:** {feedbacks.Count}");
+                
+                if (!string.IsNullOrEmpty(searchTerm))
+                {
+                    formattedMessage.AppendLine($"🔍 **Từ khóa tìm kiếm:** {searchTerm}");
+                }
+                
+                if (!string.IsNullOrEmpty(target))
+                {
+                    formattedMessage.AppendLine($"🎯 **Đối tượng:** {target}");
+                }
+
+                formattedMessage.AppendLine();
+
+                if (!feedbacks.Any())
+                {
+                    formattedMessage.AppendLine("📭 **Chưa có phản hồi nào.**");
+                }
+                else
+                {
+                    foreach (var feedback in feedbacks)
+                    {
+                        formattedMessage.AppendLine($"🆔 **ID:** {feedback.FeedbackId}");
+                        formattedMessage.AppendLine($"📅 **Ngày:** {(feedback.CreatedAt?.ToString("dd/MM/yyyy HH:mm") ?? "Không xác định")}");
+                        formattedMessage.AppendLine($"🎯 **Đối tượng:** {feedback.Target}");
+                        formattedMessage.AppendLine($"📝 **Nội dung:** {(feedback.Content.Length > 100 ? feedback.Content.Substring(0, 100) + "..." : feedback.Content)}");
+                        formattedMessage.AppendLine("━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━");
+                    }
+                }
+
+                return formattedMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể lấy danh sách phản hồi của phụ huynh. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> GetFeedbackByIdAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                // Validate feedback_id
+                if (!args.TryGetValue("feedback_id", out var feedbackIdObj) || 
+                    !int.TryParse(feedbackIdObj?.ToString(), out var feedbackId))
+                {
+                    return "❌ **LỖI:** ID phản hồi không hợp lệ. Vui lòng cung cấp feedback_id là một số nguyên.";
+                }
+
+                // Get feedback by ID
+                var feedbackResult = await _feedbackService.GetFeedbackByIdAsync(feedbackId);
+                if (!feedbackResult.Success || feedbackResult.Data == null)
+                {
+                    return $"❌ **LỖI:** Không tìm thấy phản hồi với ID: {feedbackId}";
+                }
+
+                var feedback = feedbackResult.Data;
+
+                // Get parent info
+                var parent = await _parentRepository.GetParentByIdAsync(feedback.ParentId);
+                var parentName = parent?.FullName ?? "Không xác định";
+
+                var formattedMessage = new StringBuilder();
+                formattedMessage.AppendLine("📝 **CHI TIẾT PHẢN HỒI**");
+                formattedMessage.AppendLine();
+                formattedMessage.AppendLine($"🆔 **ID:** {feedback.FeedbackId}");
+                formattedMessage.AppendLine($"📅 **Ngày gửi:** {(feedback.CreatedAt?.ToString("dd/MM/yyyy HH:mm:ss") ?? "Không xác định")}");
+                formattedMessage.AppendLine($"👤 **Phụ huynh:** {parentName}");
+                formattedMessage.AppendLine($"🎯 **Đối tượng:** {feedback.Target}");
+                if (!string.IsNullOrEmpty(feedback.Category))
+                {
+                    formattedMessage.AppendLine($"📂 **Danh mục:** {feedback.Category}");
+                }
+                formattedMessage.AppendLine();
+                formattedMessage.AppendLine("📝 **Nội dung phản hồi:**");
+                formattedMessage.AppendLine($"```");
+                formattedMessage.AppendLine(feedback.Content);
+                formattedMessage.AppendLine($"```");
+
+                return formattedMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể lấy thông tin phản hồi. Vui lòng thử lại sau.";
+            }
+        }
+
         private async Task<string> GetNotificationsForUserAsync(Dictionary<string, object> args, string? userId = null)
         {
             try
@@ -5686,6 +6023,12 @@ namespace EduConnect.Application.Services.Class
                 "get_lesson_reports_by_teacher" => "📋 Báo cáo của giáo viên",
                 "send_notification_to_parent" => "📢 Thông báo đã gửi",
                 "get_all_feedbacks" => "📝 Danh sách phản hồi",
+                "get_feedbacks_by_parent" => "📝 Phản hồi của phụ huynh",
+                "get_feedback_by_id" => "📝 Chi tiết phản hồi",
+                "send_broadcast_notification" => "📢 Thông báo hệ thống",
+                "send_notification_to_teachers" => "👨‍🏫 Thông báo đến giáo viên",
+                "send_notification_to_students" => "🎓 Thông báo đến học sinh", 
+                "send_notification_to_parents" => "👨‍👩‍👧‍👦 Thông báo đến phụ huynh",
                 "get_notifications_for_user" => "🔔 Thông báo của bạn",
                 "mark_notifications_as_read" => "✅ Đã đánh dấu đọc",
                 "create_timetable" => "📅 Thời khóa biểu mới",
@@ -5727,6 +6070,336 @@ namespace EduConnect.Application.Services.Class
         #endregion
 
         #region Principal User Management Functions
+
+        private async Task<string> SendBroadcastNotificationAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ hiệu trưởng mới có quyền gửi thông báo hệ thống.";
+                }
+
+                var title = args.TryGetValue("title", out var titleObj) ? titleObj?.ToString() : "";
+                var message = args.TryGetValue("message", out var messageObj) ? messageObj?.ToString() : "";
+                var category = args.TryGetValue("category", out var categoryObj) ? categoryObj?.ToString() ?? "system" : "system";
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp tiêu đề và nội dung thông báo.";
+                }
+
+                // Get all users in the system
+                var allUsers = _userManager.Users.ToList();
+                var successCount = 0;
+
+                foreach (var targetUser in allUsers)
+                {
+                    try
+                    {
+                        var notification = new Notification
+                        {
+                            Title = title,
+                            Content = message,
+                            UserId = targetUser.Id,
+                            Type = "system_broadcast",
+                            Category = category,
+                            CreatedAt = DateTime.UtcNow,
+                            IsRead = false
+                        };
+
+                        await _notificationRepository.CreateAsync(notification);
+                        
+                        // Send Firebase push notification
+                        var data = new Dictionary<string, string>
+                        {
+                            ["type"] = "system_broadcast",
+                            ["category"] = category,
+                            ["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["notificationId"] = notification.NotificationId
+                        };
+                        
+                        await _notificationService.SendNotificationToAllDevicesAsync(targetUser.Id, title, message, data);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        // Continue with next user if one fails
+                        continue;
+                    }
+                }
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("📢 **THÔNG BÁO HỆ THỐNG ĐÃ GỬI**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
+                successMessage.AppendLine($"📝 **Nội dung:** {message}");
+                successMessage.AppendLine($"👥 **Số người nhận:** {successCount}/{allUsers.Count}");
+                successMessage.AppendLine($"⏰ **Thời gian gửi:** {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể gửi thông báo hệ thống. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> SendNotificationToTeachersAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                }
+
+                // Validate user role
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || !await _userManager.IsInRoleAsync(user, "Principal"))
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ hiệu trưởng mới có quyền gửi thông báo đến giáo viên.";
+                }
+
+                var title = args.TryGetValue("title", out var titleObj) ? titleObj?.ToString() : "";
+                var message = args.TryGetValue("message", out var messageObj) ? messageObj?.ToString() : "";
+                var category = args.TryGetValue("category", out var categoryObj) ? categoryObj?.ToString() ?? "announcement" : "announcement";
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp tiêu đề và nội dung thông báo.";
+                }
+
+                // Get all teachers
+                var teachers = await _context.Teachers
+                    .Include(t => t.Account)
+                    .ToListAsync();
+
+                var successCount = 0;
+
+                foreach (var teacher in teachers)
+                {
+                    try
+                    {
+                        var notification = new Notification
+                        {
+                            Title = title,
+                            Content = message,
+                            UserId = teacher.AccountID,
+                            Type = "principal_to_teachers",
+                            Category = category,
+                            CreatedAt = DateTime.UtcNow,
+                            IsRead = false
+                        };
+
+                        await _notificationRepository.CreateAsync(notification);
+                        
+                        // Send Firebase push notification
+                        var data = new Dictionary<string, string>
+                        {
+                            ["type"] = "principal_to_teachers",
+                            ["category"] = category,
+                            ["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["notificationId"] = notification.NotificationId
+                        };
+                        
+                        await _notificationService.SendNotificationToAllDevicesAsync(teacher.AccountID, title, message, data);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("👨‍🏫 **THÔNG BÁO ĐẾN GIÁO VIÊN ĐÃ GỬI**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
+                successMessage.AppendLine($"📝 **Nội dung:** {message}");
+                successMessage.AppendLine($"👥 **Số giáo viên nhận:** {successCount}/{teachers.Count}");
+                successMessage.AppendLine($"⏰ **Thời gian gửi:** {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể gửi thông báo đến giáo viên. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> SendNotificationToStudentsAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                }
+
+                // Validate user role - Allow both Principal and Teacher
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || (!await _userManager.IsInRoleAsync(user, "Principal") && !await _userManager.IsInRoleAsync(user, "Teacher")))
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ hiệu trưởng và giáo viên mới có quyền gửi thông báo đến học sinh.";
+                }
+
+                var title = args.TryGetValue("title", out var titleObj) ? titleObj?.ToString() : "";
+                var message = args.TryGetValue("message", out var messageObj) ? messageObj?.ToString() : "";
+                var category = args.TryGetValue("category", out var categoryObj) ? categoryObj?.ToString() ?? "announcement" : "announcement";
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp tiêu đề và nội dung thông báo.";
+                }
+
+                // Get all students
+                var students = await _context.Students
+                    .Include(s => s.Account)
+                    .ToListAsync();
+
+                var successCount = 0;
+
+                foreach (var student in students)
+                {
+                    try
+                    {
+                        var notification = new Notification
+                        {
+                            Title = title,
+                            Content = message,
+                            UserId = student.AccountID,
+                            Type = await _userManager.IsInRoleAsync(user, "Principal") ? "principal_to_students" : "teacher_to_students",
+                            Category = category,
+                            CreatedAt = DateTime.UtcNow,
+                            IsRead = false
+                        };
+
+                        await _notificationRepository.CreateAsync(notification);
+                        
+                        // Send Firebase push notification
+                        var data = new Dictionary<string, string>
+                        {
+                            ["type"] = notification.Type,
+                            ["category"] = category,
+                            ["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["notificationId"] = notification.NotificationId
+                        };
+                        
+                        await _notificationService.SendNotificationToAllDevicesAsync(student.AccountID, title, message, data);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("🎓 **THÔNG BÁO ĐẾN HỌC SINH ĐÃ GỬI**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
+                successMessage.AppendLine($"📝 **Nội dung:** {message}");
+                successMessage.AppendLine($"👥 **Số học sinh nhận:** {successCount}/{students.Count}");
+                successMessage.AppendLine($"⏰ **Thời gian gửi:** {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể gửi thông báo đến học sinh. Vui lòng thử lại sau.";
+            }
+        }
+
+        private async Task<string> SendNotificationToParentsAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                }
+
+                // Validate user role - Allow both Principal and Teacher
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null || (!await _userManager.IsInRoleAsync(user, "Principal") && !await _userManager.IsInRoleAsync(user, "Teacher")))
+                {
+                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ hiệu trưởng và giáo viên mới có quyền gửi thông báo đến phụ huynh.";
+                }
+
+                var title = args.TryGetValue("title", out var titleObj) ? titleObj?.ToString() : "";
+                var message = args.TryGetValue("message", out var messageObj) ? messageObj?.ToString() : "";
+                var category = args.TryGetValue("category", out var categoryObj) ? categoryObj?.ToString() ?? "announcement" : "announcement";
+
+                if (string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
+                {
+                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp tiêu đề và nội dung thông báo.";
+                }
+
+                // Get all parents
+                var parents = await _context.Parents
+                    .Include(p => p.Account)
+                    .ToListAsync();
+
+                var successCount = 0;
+
+                foreach (var parent in parents)
+                {
+                    try
+                    {
+                        var notification = new Notification
+                        {
+                            Title = title,
+                            Content = message,
+                            UserId = parent.AccountID,
+                            Type = await _userManager.IsInRoleAsync(user, "Principal") ? "principal_to_parents" : "teacher_to_parents",
+                            Category = category,
+                            CreatedAt = DateTime.UtcNow,
+                            IsRead = false
+                        };
+
+                        await _notificationRepository.CreateAsync(notification);
+                        
+                        // Send Firebase push notification
+                        var data = new Dictionary<string, string>
+                        {
+                            ["type"] = notification.Type,
+                            ["category"] = category,
+                            ["timestamp"] = DateTime.UtcNow.ToString("yyyy-MM-dd HH:mm:ss"),
+                            ["notificationId"] = notification.NotificationId
+                        };
+                        
+                        await _notificationService.SendNotificationToAllDevicesAsync(parent.AccountID, title, message, data);
+                        successCount++;
+                    }
+                    catch
+                    {
+                        continue;
+                    }
+                }
+
+                var successMessage = new StringBuilder();
+                successMessage.AppendLine("👨‍👩‍👧‍👦 **THÔNG BÁO ĐẾN PHỤ HUYNH ĐÃ GỬI**");
+                successMessage.AppendLine();
+                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
+                successMessage.AppendLine($"📝 **Nội dung:** {message}");
+                successMessage.AppendLine($"👥 **Số phụ huynh nhận:** {successCount}/{parents.Count}");
+                successMessage.AppendLine($"⏰ **Thời gian gửi:** {DateTime.UtcNow:dd/MM/yyyy HH:mm}");
+                
+                return successMessage.ToString();
+            }
+            catch (Exception)
+            {
+                return "❌ **LỖI:** Không thể gửi thông báo đến phụ huynh. Vui lòng thử lại sau.";
+            }
+        }
 
         private async Task<object> CreateUserAccountAsync(Dictionary<string, object> args, string? userId)
         {
