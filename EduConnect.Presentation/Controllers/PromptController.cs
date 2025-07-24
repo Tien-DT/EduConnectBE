@@ -83,10 +83,10 @@ namespace EduConnect.Presentation.Controllers
         }
 
         /// <summary>
-        /// Lấy prompts theo AccountId với phân trang, tìm kiếm và sắp xếp (cho Admin/Principal)
+        /// Lấy prompts theo AccountId với phân trang, tìm kiếm và sắp xếp - tự động lấy từ JWT token
         /// </summary>
         [HttpGet("account/{accountId}")]
-        [Authorize(Roles = "Admin,Principal")]
+        [Authorize]
         public async Task<IActionResult> GetPromptsByAccountId(
             string accountId,
             [FromQuery] int pageIndex = 0,
@@ -97,7 +97,14 @@ namespace EduConnect.Presentation.Controllers
             [FromQuery] string? type = null,
             [FromQuery] string? status = null)
         {
-            var result = await _promptService.GetPromptsByAccountIdAsync(accountId, pageIndex, pageSize, searchTerm, sortBy, ascending, type, status);
+            // Lấy userId từ JWT token thay vì sử dụng accountId từ URL
+            var userId = GetCurrentUserId();
+            if (string.IsNullOrEmpty(userId))
+            {
+                return Unauthorized("User not authenticated");
+            }
+
+            var result = await _promptService.GetPromptsByAccountIdAsync(userId, pageIndex, pageSize, searchTerm, sortBy, ascending, type, status);
             if (result.Success)
                 return Ok(result);
             return BadRequest(result);
@@ -181,7 +188,7 @@ namespace EduConnect.Presentation.Controllers
         /// Xóa prompt vĩnh viễn (hard delete) - chỉ admin
         /// </summary>
         [HttpDelete("{promptId:int}/permanent")]
-        [Authorize(Roles = "Admin")]
+        [Authorize]
         public async Task<IActionResult> PermanentDeletePrompt(int promptId)
         {
             var userId = GetCurrentUserId();
