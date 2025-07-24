@@ -34,18 +34,47 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return await query.ToListAsync();
         }
 
-        public async Task<List<EduConnect.Domain.Entities.Class>> GetClassesByTeacherIdAsync(string teacherId)
+        public async Task<List<EduConnect.Domain.Entities.Class>> GetClassesByTeacherIdAsync(string teacherId, int? timetableSlotId = null)
         {
-            var classes = await _context.TimetableSlots
+            var query = _context.TimetableSlots
                 .Include(ts => ts.Timetable)
                 .ThenInclude(t => t.Class)
                 .Where(ts => ts.TeacherID == teacherId && ts.IsDeleted != true)
-                .Where(ts => ts.Timetable != null && ts.Timetable.Class != null)
+                .Where(ts => ts.Timetable != null && ts.Timetable.Class != null);
+
+            // Nếu có timetableSlotId thì filter theo nó
+            if (timetableSlotId.HasValue)
+            {
+                query = query.Where(ts => ts.TimetableSlotID == timetableSlotId.Value);
+            }
+
+            var classes = await query
                 .Select(ts => ts.Timetable.Class)
                 .Distinct()
                 .ToListAsync();
 
             return classes;
+        }
+
+        public async Task<List<(EduConnect.Domain.Entities.Class Class, int TimetableSlotId)>> GetClassesWithTimetableSlotIdByTeacherIdAsync(string teacherId, int? timetableSlotId = null)
+        {
+            var query = _context.TimetableSlots
+                .Include(ts => ts.Timetable)
+                .ThenInclude(t => t.Class)
+                .Where(ts => ts.TeacherID == teacherId && ts.IsDeleted != true)
+                .Where(ts => ts.Timetable != null && ts.Timetable.Class != null);
+
+            // Nếu có timetableSlotId thì filter theo nó
+            if (timetableSlotId.HasValue)
+            {
+                query = query.Where(ts => ts.TimetableSlotID == timetableSlotId.Value);
+            }
+
+            var classesWithSlotId = await query
+                .Select(ts => new { Class = ts.Timetable.Class, TimetableSlotId = ts.TimetableSlotID })
+                .ToListAsync();
+
+            return classesWithSlotId.Select(x => (x.Class, x.TimetableSlotId)).ToList();
         }
     }
 }

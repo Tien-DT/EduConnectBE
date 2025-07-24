@@ -27,5 +27,6 @@ namespace EduConnect.Domain.Entities
         public virtual ICollection<FirebaseToken> FirebaseTokens { get; set; } = new List<FirebaseToken>();
 
         public virtual ICollection<Report> Reports { get; set; } = new List<Report>();
+        public virtual ICollection<Prompt> Prompts { get; set; } = new List<Prompt>();
     }
 }

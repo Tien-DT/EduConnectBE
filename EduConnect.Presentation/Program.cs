@@ -9,6 +9,7 @@ using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Options;
 using EduConnect.Infrastruture.Repositories.Class;
 using EduConnect.Infrastruture.Repositories.Interface;
+using EduConnect.Infrastruture.Repositories;
 using EduConnect.Infrastruture.UnitOfWork.Class;
 using EduConnect.Infrastruture.UnitOfWork.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -149,6 +150,8 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IAttendanceService, AttendanceService>();
 
             builder.Services.AddScoped<IReportService, ReportService>();
+            builder.Services.AddScoped<IPromptService, PromptService>();
+            builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 

@@ -33,6 +33,7 @@ namespace EduConnect.Data
         public DbSet<Notification> Notifications { get; set; }
 
         public DbSet<Report> Reports { get; set; }
+        public DbSet<Prompt> Prompts { get; set; }
 
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
@@ -57,6 +58,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
             modelBuilder.Entity<FirebaseToken>().ToTable("FirebaseToken");
             modelBuilder.Entity<Notification>().ToTable("Notification");
+            modelBuilder.Entity<Prompt>().ToTable("Prompt");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
@@ -247,9 +249,28 @@ namespace EduConnect.Data
 
             modelBuilder.Entity<Report>()
                 .HasOne(r => r.Account)
-                .WithMany()
+                .WithMany(u => u.Reports)
                 .HasForeignKey(r => r.AccountId)
                 .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Prompt>()
+                .HasOne(p => p.Account)
+                .WithMany(u => u.Prompts)
+                .HasForeignKey(p => p.AccountId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Add index for better performance
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.AccountId)
+                .HasDatabaseName("IX_Prompt_AccountId");
+
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.Type)
+                .HasDatabaseName("IX_Prompt_Type");
+
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.Status)
+                .HasDatabaseName("IX_Prompt_Status");
         }
     }
 }

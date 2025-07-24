@@ -1,4 +1,4 @@
-namespace EduConnect.Presentation.DTOs;
+namespace EduConnectApplication.DTOs.Request;
 
 public class AddStudentToClassDto
 {

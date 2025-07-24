@@ -1,6 +1,8 @@
 using EduConnect.Application.DTOs.Request;
 using EduConnect.Application.DTOs.Response;
 using EduConnect.Application.Services.Interface;
+using EduConnectApplication.Services.Interface;
+using EduConnectApplication.DTOs.Request;
 using EduConnect.Data;
 using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Repositories.Interface;
@@ -32,6 +34,7 @@ namespace EduConnect.Application.Services.Class
         private readonly ISubjectRepository _subjectRepository;
         private readonly INotificationService _notificationService;
         private readonly IGradeService _gradeService;
+        private readonly IReportService _reportService;
         private readonly UserManager<ApplicationUser> _userManager;
         private readonly RoleManager<IdentityRole> _roleManager;
 
@@ -54,6 +57,7 @@ namespace EduConnect.Application.Services.Class
             ISubjectRepository subjectRepository,
             INotificationService notificationService,
             IGradeService gradeService,
+            IReportService reportService,
             UserManager<ApplicationUser> userManager,
             RoleManager<IdentityRole> roleManager)
         {
@@ -75,6 +79,7 @@ namespace EduConnect.Application.Services.Class
             _subjectRepository = subjectRepository;
             _notificationService = notificationService;
             _gradeService = gradeService;
+            _reportService = reportService;
             _userManager = userManager;
             _roleManager = roleManager;
         }
@@ -122,7 +127,7 @@ namespace EduConnect.Application.Services.Class
                 new FunctionDeclaration
                 {
                     Name = "get_current_time",
-                    Description = "Get the current date and time with optional timezone",
+                    Description = "Get the current date and time in Vietnam timezone (GMT+7). Returns detailed time information including date, time, day of week, season, and various formats",
                     Parameters = new FunctionParameters
                     {
                         Type = "object",
@@ -131,7 +136,30 @@ namespace EduConnect.Application.Services.Class
                             ["timezone"] = new ParameterSchema
                             {
                                 Type = "string",
-                                Description = "Optional timezone (default: local time)"
+                                Description = "Timezone preference (default: GMT+7 Vietnam time). Currently only supports GMT+7"
+                            }
+                        },
+                        Required = new string[0]
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "format_vietnam_time",
+                    Description = "Format the current Vietnam time (GMT+7) according to specific format requirements. Useful for creating timestamps, scheduling, or time-based content",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["format"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Time format: 'full' (complete info), 'date_only' (just date), 'time_only' (just time), 'iso' (ISO 8601), 'timestamp' (unix), 'friendly' (human readable Vietnamese)"
+                            },
+                            ["include_timezone"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Whether to include timezone information in the output (default: true)"
                             }
                         },
                         Required = new string[0]
@@ -1589,6 +1617,139 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new string[] { }
                     }
+                },
+                // Report Functions
+                new FunctionDeclaration
+                {
+                    Name = "create_report",
+                    Description = "📝 Tạo báo cáo mới cho hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["report_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại báo cáo (Bug Report, Feature Request, Complaint, General, etc.)"
+                            },
+                            ["content"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Nội dung chi tiết của báo cáo"
+                            },
+                            ["status"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Trạng thái báo cáo (Pending, Processing, Resolved, Rejected) - mặc định là Pending"
+                            }
+                        },
+                        Required = new string[] { "report_type", "content" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_my_reports",
+                    Description = "📋 Xem danh sách báo cáo của bản thân",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["report_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo loại báo cáo (tùy chọn)"
+                            },
+                            ["status"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo trạng thái (tùy chọn)"
+                            },
+                            ["search"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tìm kiếm trong nội dung báo cáo (tùy chọn)"
+                            },
+                            ["page"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số trang (mặc định 1)"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng báo cáo mỗi trang (mặc định 10)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_all_reports",
+                    Description = "📋 [CHỈ ADMIN/PRINCIPAL] Xem tất cả báo cáo trong hệ thống",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["account_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo ID người tạo báo cáo (tùy chọn)"
+                            },
+                            ["report_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo loại báo cáo (tùy chọn)"
+                            },
+                            ["status"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Lọc theo trạng thái (tùy chọn)"
+                            },
+                            ["search"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tìm kiếm trong nội dung báo cáo (tùy chọn)"
+                            },
+                            ["page"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số trang (mặc định 1)"
+                            },
+                            ["page_size"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số lượng báo cáo mỗi trang (mặc định 10)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "update_report_status",
+                    Description = "🔄 [CHỈ ADMIN/PRINCIPAL] Cập nhật trạng thái báo cáo",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["report_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của báo cáo cần cập nhật"
+                            },
+                            ["status"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Trạng thái mới (Pending, Processing, Resolved, Rejected)"
+                            }
+                        },
+                        Required = new string[] { "report_id", "status" }
+                    }
                 }
             };
         }
@@ -1600,6 +1761,7 @@ namespace EduConnect.Application.Services.Class
                 "get_student_info",
                 "get_student_subjects",
                 "get_current_time",
+                "format_vietnam_time",
                 // "calculate_sum",
                 "get_student_timetable",
                 "get_teacher_info",
@@ -1660,7 +1822,12 @@ namespace EduConnect.Application.Services.Class
                 "get_students_for_grading",
                 // Student Functions
                 "get_my_info",
-                "get_my_exams"
+                "get_my_exams",
+                // Report Functions
+                "create_report",
+                "get_my_reports",
+                "get_all_reports",
+                "update_report_status"
             };
             return supportedFunctions.Contains(functionName);
         }
@@ -1672,6 +1839,7 @@ namespace EduConnect.Application.Services.Class
                 "get_student_info" => await GetStudentInfoAsync(args),
                 "get_student_subjects" => await GetStudentSubjectsAsync(args),
                 "get_current_time" => GetCurrentTimeAsync(args),
+                "format_vietnam_time" => FormatVietnamTimeAsync(args),
                 "calculate_sum" => CalculateSumAsync(args),
                 "get_student_timetable" => await GetStudentTimetableAsync(args),
                 "get_teacher_info" => await GetTeacherInfoAsync(args),
@@ -1732,6 +1900,11 @@ namespace EduConnect.Application.Services.Class
                 // Student Functions
                 "get_my_info" => JsonConvert.SerializeObject(await GetMyInfoAsync(args, userId), Formatting.Indented),
                 "get_my_exams" => JsonConvert.SerializeObject(await GetMyExamsAsync(args, userId), Formatting.Indented),
+                // Report Functions
+                "create_report" => await CreateReportAsync(args, userId),
+                "get_my_reports" => await GetMyReportsAsync(args, userId),
+                "get_all_reports" => await GetAllReportsAsync(args, userId),
+                "update_report_status" => await UpdateReportStatusAsync(args, userId),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -1929,27 +2102,39 @@ namespace EduConnect.Application.Services.Class
 
         private string GetCurrentTimeAsync(Dictionary<string, object> args)
         {
-            var timezone = "Local";
+            var timezone = "GMT+7";
             if (args.TryGetValue("timezone", out var timezoneObj))
             {
-                timezone = timezoneObj.ToString() ?? "Local";
+                timezone = timezoneObj.ToString() ?? "GMT+7";
             }
 
             try
             {
+                // Vietnam timezone (GMT+7)
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vietnamTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, vietnamTimeZone);
+                
+                // Culture info for Vietnamese
+                var vietnameseCulture = new System.Globalization.CultureInfo("vi-VN");
+
                 var result = new
                 {
                     success = true,
-                    message = "Đây là thời gian hiện tại theo yêu cầu của bạn:",
+                    message = "Đây là thời gian hiện tại theo múi giờ Việt Nam (GMT+7):",
                     error = (string?)null,
                     data = new
                     {
-                        CurrentTime = DateTime.Now.ToString("yyyy-MM-dd HH:mm:ss"),
-                        CurrentDate = DateTime.Now.ToString("dd/MM/yyyy"),
-                        DayOfWeek = DateTime.Now.ToString("dddd", new System.Globalization.CultureInfo("vi-VN")),
-                        Timezone = timezone,
-                        FriendlyTime = DateTime.Now.ToString("HH:mm"),
-                        FriendlyDate = DateTime.Now.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", new System.Globalization.CultureInfo("vi-VN"))
+                        CurrentTime = vietnamTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        CurrentDate = vietnamTime.ToString("dd/MM/yyyy"),
+                        DayOfWeek = vietnamTime.ToString("dddd", vietnameseCulture),
+                        Timezone = "GMT+7 (Giờ Việt Nam)",
+                        FriendlyTime = vietnamTime.ToString("HH:mm"),
+                        FriendlyDate = vietnamTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture),
+                        ISO8601 = vietnamTime.ToString("yyyy-MM-ddTHH:mm:ss+07:00"),
+                        UnixTimestamp = ((DateTimeOffset)vietnamTime).ToUnixTimeSeconds(),
+                        WeekOfYear = vietnameseCulture.Calendar.GetWeekOfYear(vietnamTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                        Quarter = $"Quý {(vietnamTime.Month - 1) / 3 + 1}",
+                        Season = GetVietnameseSeason(vietnamTime.Month)
                     }
                 };
 
@@ -1957,15 +2142,197 @@ namespace EduConnect.Application.Services.Class
             }
             catch (Exception ex)
             {
-                return JsonConvert.SerializeObject(new
+                // Fallback to UTC+7 if timezone lookup fails
+                var fallbackTime = DateTime.UtcNow.AddHours(7);
+                var vietnameseCulture = new System.Globalization.CultureInfo("vi-VN");
+                
+                var fallbackResult = new
                 {
-                    success = false,
-                    message = "Có lỗi xảy ra khi lấy thời gian hiện tại. Vui lòng thử lại sau.",
-                    error = "TIME_ERROR",
-                    data = (object?)null,
-                    errorDetails = ex.Message
-                }, Formatting.Indented);
+                    success = true,
+                    message = "Đây là thời gian hiện tại theo múi giờ Việt Nam (GMT+7) - Fallback mode:",
+                    error = "TIMEZONE_FALLBACK",
+                    data = new
+                    {
+                        CurrentTime = fallbackTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        CurrentDate = fallbackTime.ToString("dd/MM/yyyy"),
+                        DayOfWeek = fallbackTime.ToString("dddd", vietnameseCulture),
+                        Timezone = "GMT+7 (Giờ Việt Nam)",
+                        FriendlyTime = fallbackTime.ToString("HH:mm"),
+                        FriendlyDate = fallbackTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture),
+                        ISO8601 = fallbackTime.ToString("yyyy-MM-ddTHH:mm:ss+07:00"),
+                        UnixTimestamp = ((DateTimeOffset)fallbackTime.AddHours(-7)).ToUnixTimeSeconds(),
+                        Note = "Sử dụng phương pháp tính toán thay thế do lỗi timezone system"
+                    }
+                };
+
+                return JsonConvert.SerializeObject(fallbackResult, Formatting.Indented);
             }
+        }
+
+        private string GetVietnameseSeason(int month)
+        {
+            return month switch
+            {
+                12 or 1 or 2 => "Mùa đông",
+                3 or 4 or 5 => "Mùa xuân", 
+                6 or 7 or 8 => "Mùa hè",
+                9 or 10 or 11 => "Mùa thu",
+                _ => "Không xác định"
+            };
+        }
+
+        private string FormatVietnamTimeAsync(Dictionary<string, object> args)
+        {
+            var format = "full";
+            var includeTimezone = true;
+
+            if (args.TryGetValue("format", out var formatObj))
+            {
+                format = formatObj.ToString()?.ToLower() ?? "full";
+            }
+
+            if (args.TryGetValue("include_timezone", out var timezoneObj))
+            {
+                bool.TryParse(timezoneObj.ToString(), out includeTimezone);
+            }
+
+            try
+            {
+                // Vietnam timezone (GMT+7)
+                var vietnamTimeZone = TimeZoneInfo.FindSystemTimeZoneById("SE Asia Standard Time");
+                var vietnamTime = TimeZoneInfo.ConvertTime(DateTime.UtcNow, vietnamTimeZone);
+                var vietnameseCulture = new System.Globalization.CultureInfo("vi-VN");
+
+                object result = format switch
+                {
+                    "date_only" => new
+                    {
+                        success = true,
+                        message = "Ngày hiện tại tại Việt Nam:",
+                        data = new
+                        {
+                            Date = vietnamTime.ToString("dd/MM/yyyy"),
+                            DateLong = vietnamTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture),
+                            DayOfWeek = vietnamTime.ToString("dddd", vietnameseCulture),
+                            WeekOfYear = vietnameseCulture.Calendar.GetWeekOfYear(vietnamTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                            Quarter = $"Quý {(vietnamTime.Month - 1) / 3 + 1}",
+                            Season = GetVietnameseSeason(vietnamTime.Month),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    },
+                    "time_only" => new
+                    {
+                        success = true,
+                        message = "Thời gian hiện tại tại Việt Nam:",
+                        data = new
+                        {
+                            Time = vietnamTime.ToString("HH:mm:ss"),
+                            TimeShort = vietnamTime.ToString("HH:mm"),
+                            TimeWithAmPm = vietnamTime.ToString("hh:mm:ss tt", vietnameseCulture),
+                            Hour = vietnamTime.Hour,
+                            Minute = vietnamTime.Minute,
+                            Second = vietnamTime.Second,
+                            TimeOfDay = GetTimeOfDay(vietnamTime.Hour),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    },
+                    "iso" => new
+                    {
+                        success = true,
+                        message = "Thời gian hiện tại tại Việt Nam (ISO 8601):",
+                        data = new
+                        {
+                            ISO8601 = vietnamTime.ToString("yyyy-MM-ddTHH:mm:ss+07:00"),
+                            ISO8601_UTC = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ"),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    },
+                    "timestamp" => new
+                    {
+                        success = true,
+                        message = "Unix timestamp hiện tại:",
+                        data = new
+                        {
+                            UnixTimestamp = ((DateTimeOffset)vietnamTime).ToUnixTimeSeconds(),
+                            UnixTimestampMs = ((DateTimeOffset)vietnamTime).ToUnixTimeMilliseconds(),
+                            UnixTimestampUTC = ((DateTimeOffset)DateTime.UtcNow).ToUnixTimeSeconds(),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    },
+                    "friendly" => new
+                    {
+                        success = true,
+                        message = "Thời gian hiện tại tại Việt Nam (dễ đọc):",
+                        data = new
+                        {
+                            FriendlyDateTime = $"{GetTimeOfDay(vietnamTime.Hour)} {vietnamTime:HH:mm}, {vietnamTime.ToString("dddd", vietnameseCulture)}, {vietnamTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture)}",
+                            TimeOfDay = GetTimeOfDay(vietnamTime.Hour),
+                            DateFriendly = vietnamTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture),
+                            TimeFriendly = vietnamTime.ToString("HH:mm"),
+                            DayOfWeek = vietnamTime.ToString("dddd", vietnameseCulture),
+                            Season = GetVietnameseSeason(vietnamTime.Month),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    },
+                    _ => new // "full" or default
+                    {
+                        success = true,
+                        message = "Thời gian đầy đủ hiện tại tại Việt Nam:",
+                        data = new
+                        {
+                            DateTime = vietnamTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                            Date = vietnamTime.ToString("dd/MM/yyyy"),
+                            Time = vietnamTime.ToString("HH:mm:ss"),
+                            DayOfWeek = vietnamTime.ToString("dddd", vietnameseCulture),
+                            ISO8601 = vietnamTime.ToString("yyyy-MM-ddTHH:mm:ss+07:00"),
+                            UnixTimestamp = ((DateTimeOffset)vietnamTime).ToUnixTimeSeconds(),
+                            FriendlyDateTime = $"{GetTimeOfDay(vietnamTime.Hour)} {vietnamTime:HH:mm}, {vietnamTime.ToString("dddd", vietnameseCulture)}, {vietnamTime.ToString("'ngày' dd 'tháng' MM 'năm' yyyy", vietnameseCulture)}",
+                            TimeOfDay = GetTimeOfDay(vietnamTime.Hour),
+                            WeekOfYear = vietnameseCulture.Calendar.GetWeekOfYear(vietnamTime, CalendarWeekRule.FirstDay, DayOfWeek.Monday),
+                            Quarter = $"Quý {(vietnamTime.Month - 1) / 3 + 1}",
+                            Season = GetVietnameseSeason(vietnamTime.Month),
+                            Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                        }
+                    }
+                };
+
+                return JsonConvert.SerializeObject(result, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                // Fallback to UTC+7 if timezone lookup fails
+                var fallbackTime = DateTime.UtcNow.AddHours(7);
+                var vietnameseCulture = new System.Globalization.CultureInfo("vi-VN");
+                
+                var fallbackResult = new
+                {
+                    success = true,
+                    message = $"Thời gian hiện tại tại Việt Nam (format: {format}) - Fallback mode:",
+                    error = "TIMEZONE_FALLBACK",
+                    data = new
+                    {
+                        DateTime = fallbackTime.ToString("yyyy-MM-dd HH:mm:ss"),
+                        Date = fallbackTime.ToString("dd/MM/yyyy"),
+                        Time = fallbackTime.ToString("HH:mm:ss"),
+                        Note = "Sử dụng phương pháp tính toán thay thế do lỗi timezone system",
+                        Timezone = includeTimezone ? "GMT+7 (Việt Nam)" : null
+                    }
+                };
+
+                return JsonConvert.SerializeObject(fallbackResult, Formatting.Indented);
+            }
+        }
+
+        private string GetTimeOfDay(int hour)
+        {
+            return hour switch
+            {
+                >= 5 and < 12 => "Buổi sáng",
+                >= 12 and < 14 => "Buổi trưa", 
+                >= 14 and < 18 => "Buổi chiều",
+                >= 18 and < 22 => "Buổi tối",
+                _ => "Buổi đêm"
+            };
         }
 
         private string CalculateSumAsync(Dictionary<string, object> args)
@@ -5299,6 +5666,7 @@ namespace EduConnect.Application.Services.Class
                 "get_student_info" => "📋 Thông tin học sinh",
                 "get_student_subjects" => "📚 Môn học của học sinh", 
                 "get_current_time" => "🕒 Thời gian hiện tại",
+                "format_vietnam_time" => "🕐 Định dạng thời gian Việt Nam",
                 "calculate_sum" => "🧮 Kết quả tính toán",
                 "get_student_timetable" => "📅 Thời khóa biểu học sinh",
                 "get_teacher_info" => "👨‍🏫 Thông tin giáo viên",
@@ -6292,6 +6660,406 @@ namespace EduConnect.Application.Services.Class
             catch (Exception)
             {
                 return JsonConvert.SerializeObject(new { success = false, message = "❌ Lỗi hệ thống" }, Formatting.Indented);
+            }
+        }
+
+        #endregion
+
+        #region Report Functions
+
+        private async Task<string> CreateReportAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Validate userId
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể tạo báo cáo: Thiếu thông tin người dùng",
+                        error = "MISSING_USER_ID",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Validate required parameters
+                if (!args.TryGetValue("report_type", out var reportTypeObj) || string.IsNullOrEmpty(reportTypeObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Bạn cần cung cấp loại báo cáo. Các loại báo cáo có thể là: Bug Report, Feature Request, Complaint, General",
+                        error = "MISSING_REPORT_TYPE",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                if (!args.TryGetValue("content", out var contentObj) || string.IsNullOrEmpty(contentObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Bạn cần cung cấp nội dung báo cáo chi tiết",
+                        error = "MISSING_CONTENT",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                var reportType = reportTypeObj.ToString()!;
+                var content = contentObj.ToString()!;
+                var status = args.TryGetValue("status", out var statusObj) && !string.IsNullOrEmpty(statusObj.ToString()) 
+                    ? statusObj.ToString()! : "Pending";
+
+                // Get user information for CreatedBy field
+                var user = await _userManager.FindByIdAsync(userId);
+                var createdBy = user != null ? $"{user.FirstName} {user.LastName}".Trim() : "Unknown User";
+
+                // Create report request
+                var createRequest = new CreateReportRequest
+                {
+                    AccountId = userId,
+                    ReportType = reportType,
+                    Content = content,
+                    Status = status,
+                    CreatedBy = createdBy
+                };
+
+                // Create report
+                var result = await _reportService.CreateReportAsync(createRequest);
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = $"✅ Đã tạo báo cáo thành công. Mã báo cáo: #{result.ReportId}",
+                    error = (string?)null,
+                    data = new
+                    {
+                        ReportId = result.ReportId,
+                        ReportType = result.ReportType,
+                        Content = result.Content,
+                        Status = result.Status,
+                        CreatedBy = result.CreatedBy,
+                        CreatedDate = result.CreatedDate,
+                        AccountId = result.AccountId
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi tạo báo cáo. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
+                    data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetMyReportsAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Validate userId
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể lấy danh sách báo cáo: Thiếu thông tin người dùng",
+                        error = "MISSING_USER_ID",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Parse optional parameters
+                var reportType = args.TryGetValue("report_type", out var reportTypeObj) && !string.IsNullOrEmpty(reportTypeObj.ToString()) 
+                    ? reportTypeObj.ToString() : null;
+                var status = args.TryGetValue("status", out var statusObj) && !string.IsNullOrEmpty(statusObj.ToString()) 
+                    ? statusObj.ToString() : null;
+                var search = args.TryGetValue("search", out var searchObj) && !string.IsNullOrEmpty(searchObj.ToString()) 
+                    ? searchObj.ToString() : null;
+                
+                var page = args.TryGetValue("page", out var pageObj) && int.TryParse(pageObj.ToString(), out var parsedPage) 
+                    ? Math.Max(parsedPage, 1) : 1;
+                var pageSize = args.TryGetValue("page_size", out var pageSizeObj) && int.TryParse(pageSizeObj.ToString(), out var parsedPageSize) 
+                    ? Math.Min(Math.Max(parsedPageSize, 1), 50) : 10;
+
+                // Create request
+                var getRequest = new GetReportRequest
+                {
+                    AccountId = userId,
+                    ReportType = reportType,
+                    Status = status,
+                    Search = search,
+                    Page = page,
+                    PageSize = pageSize
+                };
+
+                // Get reports
+                var result = await _reportService.GetReportsAsync(getRequest);
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = $"Tôi đã tìm thấy {result.TotalCount} báo cáo của bạn:",
+                    error = (string?)null,
+                    data = new
+                    {
+                        Reports = result.Items,
+                        TotalCount = result.TotalCount,
+                        CurrentPage = result.PageIndex,
+                        PageSize = result.PageSize,
+                        TotalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize)
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi lấy danh sách báo cáo. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
+                    data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> GetAllReportsAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Validate userId and check admin/principal role
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể lấy danh sách báo cáo: Thiếu thông tin người dùng",
+                        error = "MISSING_USER_ID",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Check user roles
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không tìm thấy thông tin người dùng",
+                        error = "USER_NOT_FOUND",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                if (!roles.Contains("Admin") && !roles.Contains("Principal"))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "❌ Bạn không có quyền xem tất cả báo cáo. Chỉ Admin và Principal mới có thể sử dụng chức năng này.",
+                        error = "PERMISSION_DENIED",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Parse optional parameters
+                var accountId = args.TryGetValue("account_id", out var accountIdObj) && !string.IsNullOrEmpty(accountIdObj.ToString()) 
+                    ? accountIdObj.ToString() : null;
+                var reportType = args.TryGetValue("report_type", out var reportTypeObj) && !string.IsNullOrEmpty(reportTypeObj.ToString()) 
+                    ? reportTypeObj.ToString() : null;
+                var status = args.TryGetValue("status", out var statusObj) && !string.IsNullOrEmpty(statusObj.ToString()) 
+                    ? statusObj.ToString() : null;
+                var search = args.TryGetValue("search", out var searchObj) && !string.IsNullOrEmpty(searchObj.ToString()) 
+                    ? searchObj.ToString() : null;
+                
+                var page = args.TryGetValue("page", out var pageObj) && int.TryParse(pageObj.ToString(), out var parsedPage) 
+                    ? Math.Max(parsedPage, 1) : 1;
+                var pageSize = args.TryGetValue("page_size", out var pageSizeObj) && int.TryParse(pageSizeObj.ToString(), out var parsedPageSize) 
+                    ? Math.Min(Math.Max(parsedPageSize, 1), 50) : 10;
+
+                // Create request
+                var getRequest = new GetReportRequest
+                {
+                    AccountId = accountId,
+                    ReportType = reportType,
+                    Status = status,
+                    Search = search,
+                    Page = page,
+                    PageSize = pageSize
+                };
+
+                // Get all reports
+                var result = await _reportService.GetReportsAsync(getRequest);
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = $"Tôi đã tìm thấy {result.TotalCount} báo cáo trong hệ thống:",
+                    error = (string?)null,
+                    data = new
+                    {
+                        Reports = result.Items,
+                        TotalCount = result.TotalCount,
+                        CurrentPage = result.PageIndex,
+                        PageSize = result.PageSize,
+                        TotalPages = (int)Math.Ceiling((double)result.TotalCount / result.PageSize)
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi lấy danh sách báo cáo. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
+                    data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
+            }
+        }
+
+        private async Task<string> UpdateReportStatusAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Validate userId and check admin/principal role
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không thể cập nhật báo cáo: Thiếu thông tin người dùng",
+                        error = "MISSING_USER_ID",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Check user roles
+                var user = await _userManager.FindByIdAsync(userId);
+                if (user == null)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Không tìm thấy thông tin người dùng",
+                        error = "USER_NOT_FOUND",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                var roles = await _userManager.GetRolesAsync(user);
+                if (!roles.Contains("Admin") && !roles.Contains("Principal"))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "❌ Bạn không có quyền cập nhật trạng thái báo cáo. Chỉ Admin và Principal mới có thể sử dụng chức năng này.",
+                        error = "PERMISSION_DENIED",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Validate required parameters
+                if (!args.TryGetValue("report_id", out var reportIdObj) || !int.TryParse(reportIdObj.ToString(), out var reportId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Bạn cần cung cấp ID báo cáo hợp lệ",
+                        error = "MISSING_OR_INVALID_REPORT_ID",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                if (!args.TryGetValue("status", out var statusObj) || string.IsNullOrEmpty(statusObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Bạn cần cung cấp trạng thái mới cho báo cáo. Các trạng thái có thể là: Pending, Processing, Resolved, Rejected",
+                        error = "MISSING_STATUS",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                var status = statusObj.ToString()!;
+
+                // Validate status values
+                var validStatuses = new[] { "Pending", "Processing", "Resolved", "Rejected" };
+                if (!validStatuses.Contains(status))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = $"Trạng thái '{status}' không hợp lệ. Các trạng thái có thể là: {string.Join(", ", validStatuses)}",
+                        error = "INVALID_STATUS",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Get the current report first
+                var currentReport = await _reportService.GetReportByIdAsync(reportId);
+                if (currentReport == null)
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = $"Không tìm thấy báo cáo với ID {reportId}",
+                        error = "REPORT_NOT_FOUND",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                // Create update request
+                var updateRequest = new UpdateReportRequest
+                {
+                    ReportId = reportId,
+                    ReportType = currentReport.ReportType,
+                    Content = currentReport.Content,
+                    Status = status,
+                    IsDelete = currentReport.IsDelete
+                };
+
+                // Update report
+                var result = await _reportService.UpdateReportAsync(updateRequest);
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = $"✅ Đã cập nhật trạng thái báo cáo #{reportId} thành '{status}' thành công",
+                    error = (string?)null,
+                    data = new
+                    {
+                        ReportId = result.ReportId,
+                        ReportType = result.ReportType,
+                        Content = result.Content,
+                        OldStatus = currentReport.Status,
+                        NewStatus = result.Status,
+                        CreatedBy = result.CreatedBy,
+                        CreatedDate = result.CreatedDate,
+                        AccountId = result.AccountId
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception ex)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ Có lỗi xảy ra khi cập nhật trạng thái báo cáo. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
+                    data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
             }
         }
 

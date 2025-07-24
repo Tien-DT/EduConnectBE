@@ -52,9 +52,9 @@ namespace EduConnect.Presentation.Controllers
         }
 
         [HttpGet("{teacherId}/classes-with-timetable")]
-        public async Task<IActionResult> GetClassesWithTimetableByTeacher(string teacherId)
+        public async Task<IActionResult> GetClassesWithTimetableByTeacher(string teacherId, [FromQuery] int? timetableSlotId = null)
         {
-            var result = await _teacherService.GetClassesWithTimetableByTeacherAsync(teacherId);
+            var result = await _teacherService.GetClassesWithTimetableByTeacherAsync(teacherId, timetableSlotId);
             if (result.Success)
                 return Ok(result);
             return NotFound(result);

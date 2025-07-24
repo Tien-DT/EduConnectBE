@@ -28,7 +28,8 @@ namespace EduConnect.Application.Services.Interface
         /// Lấy danh sách lớp mà giáo viên có thời khóa biểu
         /// </summary>
         /// <param name="teacherId">Id của giáo viên</param>
+        /// <param name="timetableSlotId">Id của timetable slot (tùy chọn) để lọc class cụ thể</param>
         /// <returns>Danh sách lớp</returns>
-        Task<ApiResponse<List<ClassWithTimetableResponse>>> GetClassesWithTimetableByTeacherAsync(string teacherId);
+        Task<ApiResponse<List<ClassWithTimetableResponse>>> GetClassesWithTimetableByTeacherAsync(string teacherId, int? timetableSlotId = null);
     }
 }
