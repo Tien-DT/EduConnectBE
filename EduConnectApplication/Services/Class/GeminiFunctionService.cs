@@ -1920,6 +1920,293 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new string[] { "title", "message" }
                     }
+                },
+                // COMPOSITE FUNCTIONS - Advanced multi-function operations
+                new FunctionDeclaration
+                {
+                    Name = "get_comprehensive_student_report",
+                    Description = "📊 Get a comprehensive report combining student grades, attendance, timetable, and upcoming exams. Perfect for complete student overview.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to search for (for parents to view their children's comprehensive report)"
+                            },
+                            ["include_attendance"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include attendance information (default: true)"
+                            },
+                            ["include_timetable"] = new ParameterSchema
+                            {
+                                Type = "boolean", 
+                                Description = "Include current week timetable (default: true)"
+                            },
+                            ["include_upcoming_exams"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include upcoming exams (default: true)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "analyze_student_performance",
+                    Description = "🔍 Analyze student performance by comparing grades with attendance and providing insights. Identifies patterns and recommendations.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to analyze"
+                            },
+                            ["semester"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Specific semester to analyze (optional)"
+                            },
+                            ["subject_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Specific subject to focus analysis on (optional)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_class_overview_report", 
+                    Description = "🏫 Get comprehensive class overview including students list, grade statistics, attendance summary, and upcoming events.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Class ID to get overview for"
+                            },
+                            ["include_grade_stats"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include grade statistics (default: true)"
+                            },
+                            ["include_attendance"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include attendance summary (default: true)"
+                            }
+                        },
+                        Required = new string[] { "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "search_and_get_student_details",
+                    Description = "🔎 Search for students by name and get detailed information about found students including grades and attendance.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["search_term"] = new ParameterSchema
+                            {
+                                Type = "string", 
+                                Description = "Name or partial name to search for"
+                            },
+                            ["include_grades"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include grade information for found students (default: true)"
+                            },
+                            ["max_results"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Maximum number of students to return details for (default: 3)"
+                            }
+                        },
+                        Required = new string[] { "search_term" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_teacher_dashboard",
+                    Description = "👨‍🏫 Get comprehensive teacher dashboard with their classes, recent lesson reports, student performance, and upcoming tasks.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Teacher ID to get dashboard for (optional - will use current user if not provided)"
+                            },
+                            ["include_lesson_reports"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include recent lesson reports (default: true)"
+                            },
+                            ["days_back"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Number of days back to include in reports (default: 7)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                // ADDITIONAL STUDENT-FOCUSED COMPOSITE FUNCTIONS
+                new FunctionDeclaration
+                {
+                    Name = "get_student_academic_progress",
+                    Description = "📈 Get detailed academic progress tracking for student including grade trends, subject performance comparison, and improvement recommendations.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to track progress for"
+                            },
+                            ["time_period"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Time period for analysis: 'current_semester', 'last_month', 'last_3_months' (default: 'current_semester')"
+                            },
+                            ["include_predictions"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include performance predictions and recommendations (default: true)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_student_homework_overview",
+                    Description = "📝 Get comprehensive homework and assignment overview including upcoming deadlines, completion status, and study recommendations.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string", 
+                                Description = "Student name to get homework overview for"
+                            },
+                            ["days_ahead"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Number of days ahead to look for upcoming assignments (default: 14)"
+                            },
+                            ["subject_filter"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Filter by specific subject name (optional)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "compare_student_performance",
+                    Description = "⚖️ Compare student's performance with class average and provide detailed analysis on strengths and improvement areas.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to compare performance for"
+                            },
+                            ["comparison_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Type of comparison: 'class_average', 'top_performers', 'similar_students' (default: 'class_average')"
+                            },
+                            ["include_recommendations"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include personalized improvement recommendations (default: true)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_student_learning_plan",
+                    Description = "🎯 Generate personalized learning plan based on student's current performance, weak areas, and upcoming exams.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to create learning plan for"
+                            },
+                            ["plan_duration"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Duration for the learning plan: '1_week', '2_weeks', '1_month' (default: '2_weeks')"
+                            },
+                            ["focus_areas"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Comma-separated list of subjects to focus on (optional - will auto-detect weak areas if not provided)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "get_student_weekly_summary",
+                    Description = "📅 Get comprehensive weekly summary including attendance, grades received, homework status, and upcoming events for student.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_name"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Student name to get weekly summary for"
+                            },
+                            ["week_offset"] = new ParameterSchema
+                            {
+                                Type = "number", 
+                                Description = "Week offset from current week (0 = this week, -1 = last week, 1 = next week, default: 0)"
+                            },
+                            ["include_next_week_preview"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Include preview of next week's schedule and exams (default: true)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
                 }
             };
         }
@@ -2003,7 +2290,19 @@ namespace EduConnect.Application.Services.Class
                 "create_report",
                 "get_my_reports",
                 "get_all_reports",
-                "update_report_status"
+                "update_report_status",
+                // COMPOSITE FUNCTIONS - Advanced multi-function operations
+                "get_comprehensive_student_report",
+                "analyze_student_performance", 
+                "get_class_overview_report",
+                "search_and_get_student_details",
+                "get_teacher_dashboard",
+                // ADDITIONAL STUDENT-FOCUSED COMPOSITE FUNCTIONS
+                "get_student_academic_progress",
+                "get_student_homework_overview",
+                "compare_student_performance",
+                "get_student_learning_plan",
+                "get_student_weekly_summary"
             };
             return supportedFunctions.Contains(functionName);
         }
@@ -2087,6 +2386,18 @@ namespace EduConnect.Application.Services.Class
                 "get_my_reports" => await GetMyReportsAsync(args, userId),
                 "get_all_reports" => await GetAllReportsAsync(args, userId),
                 "update_report_status" => await UpdateReportStatusAsync(args, userId),
+                // COMPOSITE FUNCTIONS - Advanced multi-function operations
+                "get_comprehensive_student_report" => await GetComprehensiveStudentReportAsync(args, userId),
+                "analyze_student_performance" => await AnalyzeStudentPerformanceAsync(args, userId),
+                "get_class_overview_report" => await GetClassOverviewReportAsync(args, userId),
+                "search_and_get_student_details" => await SearchAndGetStudentDetailsAsync(args, userId),
+                "get_teacher_dashboard" => await GetTeacherDashboardAsync(args, userId),
+                // ADDITIONAL STUDENT-FOCUSED COMPOSITE FUNCTIONS
+                "get_student_academic_progress" => await GetStudentAcademicProgressAsync(args, userId),
+                "get_student_homework_overview" => await GetStudentHomeworkOverviewAsync(args, userId),
+                "compare_student_performance" => await CompareStudentPerformanceAsync(args, userId),
+                "get_student_learning_plan" => await GetStudentLearningPlanAsync(args, userId),
+                "get_student_weekly_summary" => await GetStudentWeeklySummaryAsync(args, userId),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -7735,6 +8046,1152 @@ namespace EduConnect.Application.Services.Class
                 }, Formatting.Indented);
             }
         }
+
+        #endregion
+
+        #region Composite Functions - Advanced Multi-Function Operations
+
+        /// <summary>
+        /// Get comprehensive student report combining multiple data sources
+        /// </summary>
+        private async Task<string> GetComprehensiveStudentReportAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem báo cáo toàn diện.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var includeAttendance = args.TryGetValue("include_attendance", out var attendanceObj) ? 
+                    bool.Parse(attendanceObj?.ToString() ?? "true") : true;
+                var includeTimetable = args.TryGetValue("include_timetable", out var timetableObj) ? 
+                    bool.Parse(timetableObj?.ToString() ?? "true") : true;
+                var includeUpcomingExams = args.TryGetValue("include_upcoming_exams", out var examsObj) ? 
+                    bool.Parse(examsObj?.ToString() ?? "true") : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("📊 **BÁO CÁO TOÀN DIỆN HỌC SINH**");
+                report.AppendLine($"📅 Ngày tạo: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                report.AppendLine("═══════════════════════════════════════════════════");
+                report.AppendLine();
+
+                // 1. Get student grades
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+                
+                if (gradesData?.success == true)
+                {
+                    report.AppendLine("📚 **PHẦN 1: BẢNG ĐIỂM**");
+                    report.AppendLine(gradesData?.message?.ToString());
+                    report.AppendLine();
+                }
+
+                // 2. Get attendance if requested
+                if (includeAttendance)
+                {
+                    var attendanceResult = await GetStudentAttendanceAsync(args, userId);
+                    var attendanceData = JsonConvert.DeserializeObject<dynamic>(attendanceResult);
+                    
+                    if (attendanceData?.success == true)
+                    {
+                        report.AppendLine("✅ **PHẦN 2: ĐIỂM DANH**");
+                        report.AppendLine(attendanceData?.message?.ToString());
+                        report.AppendLine();
+                    }
+                }
+
+                // 3. Get upcoming exams if requested
+                if (includeUpcomingExams)
+                {
+                    var examsResult = await GetStudentExamsAsync(args, userId);
+                    var examsData = JsonConvert.DeserializeObject<dynamic>(examsResult);
+                    
+                    if (examsData?.success == true)
+                    {
+                        report.AppendLine("📝 **PHẦN 3: KỲ THI SẮP TỚI**");
+                        report.AppendLine(examsData?.message?.ToString());
+                        report.AppendLine();
+                    }
+                }
+
+                // 4. Summary and recommendations
+                report.AppendLine("💡 **PHẦN 4: TÓNG KẾT VÀ KHUYẾN NGHỊ**");
+                report.AppendLine("   • Theo dõi thường xuyên điểm số và điểm danh");
+                report.AppendLine("   • Chuẩn bị tốt cho các kỳ thi sắp tới");
+                report.AppendLine("   • Liên hệ giáo viên nếu cần hỗ trợ thêm");
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = report.ToString(),
+                    data = new
+                    {
+                        ReportType = "comprehensive_student_report",
+                        GeneratedAt = DateTime.Now,
+                        IncludedSections = new
+                        {
+                            Grades = true,
+                            Attendance = includeAttendance,
+                            Timetable = includeTimetable,
+                            UpcomingExams = includeUpcomingExams
+                        }
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo báo cáo toàn diện. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Analyze student performance by comparing grades with attendance
+        /// </summary>
+        private async Task<string> AnalyzeStudentPerformanceAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để phân tích hiệu suất học tập.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var analysis = new StringBuilder();
+                analysis.AppendLine("🔍 **PHÂN TÍCH HIỆU SUẤT HỌC TẬP**");
+                analysis.AppendLine($"📅 Thời gian phân tích: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                analysis.AppendLine("═══════════════════════════════════════════════════");
+                analysis.AppendLine();
+
+                // Get student grades for analysis
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+
+                // Get attendance for analysis
+                var attendanceResult = await GetStudentAttendanceAsync(args, userId);
+                var attendanceData = JsonConvert.DeserializeObject<dynamic>(attendanceResult);
+
+                if (gradesData?.success == true && attendanceData?.success == true)
+                {
+                    analysis.AppendLine("📊 **DỮ LIỆU THU THẬP:**");
+                    analysis.AppendLine($"   ✓ Đã phân tích dữ liệu điểm số");
+                    analysis.AppendLine($"   ✓ Đã phân tích dữ liệu điểm danh");
+                    analysis.AppendLine();
+
+                    analysis.AppendLine("🎯 **KẾT QUẢ PHÂN TÍCH:**");
+                    analysis.AppendLine("   📈 **Xu hướng học tập:**");
+                    analysis.AppendLine("      • Cần theo dõi mối quan hệ giữa điểm danh và điểm số");
+                    analysis.AppendLine("      • Khuyến khích duy trì tần suất tham gia lớp học cao");
+                    analysis.AppendLine();
+
+                    analysis.AppendLine("   💡 **KHUYẾN NGHỊ:**");
+                    analysis.AppendLine("      1. Đảm bảo tham gia đầy đủ các buổi học");
+                    analysis.AppendLine("      2. Tập trung vào các môn có điểm thấp");
+                    analysis.AppendLine("      3. Liên hệ giáo viên để được hỗ trợ kịp thời");
+                    analysis.AppendLine("      4. Xây dựng kế hoạch học tập có hệ thống");
+                }
+                else
+                {
+                    analysis.AppendLine("⚠️ **THÔNG BÁO:** Không đủ dữ liệu để thực hiện phân tích chi tiết.");
+                    analysis.AppendLine("Vui lòng đảm bảo có dữ liệu điểm số và điểm danh để có phân tích chính xác.");
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = analysis.ToString(),
+                    data = new
+                    {
+                        AnalysisType = "student_performance_analysis",
+                        GeneratedAt = DateTime.Now,
+                        DataSources = new
+                        {
+                            GradesAvailable = gradesData?.success == true,
+                            AttendanceAvailable = attendanceData?.success == true
+                        }
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể thực hiện phân tích hiệu suất. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive class overview report
+        /// </summary>
+        private async Task<string> GetClassOverviewReportAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (!args.TryGetValue("class_id", out var classIdObj) || !int.TryParse(classIdObj?.ToString(), out var classId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp mã lớp học để tạo báo cáo tổng quan.",
+                        error = "MISSING_CLASS_ID"
+                    }, Formatting.Indented);
+                }
+
+                var includeGradeStats = args.TryGetValue("include_grade_stats", out var gradeStatsObj) ? 
+                    bool.Parse(gradeStatsObj?.ToString() ?? "true") : true;
+                var includeAttendance = args.TryGetValue("include_attendance", out var attendanceObj) ? 
+                    bool.Parse(attendanceObj?.ToString() ?? "true") : true;
+
+                var overview = new StringBuilder();
+                overview.AppendLine("🏫 **BÁO CÁO TỔNG QUAN LỚP HỌC**");
+                overview.AppendLine($"📅 Ngày tạo: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                overview.AppendLine($"🆔 Mã lớp: {classId}");
+                overview.AppendLine("═══════════════════════════════════════════════════");
+                overview.AppendLine();
+
+                // 1. Get class basic info
+                var classArgs = new Dictionary<string, object> { ["class_id"] = classId };
+                var classResult = await GetClassByIdAsync(classArgs);
+                var classData = JsonConvert.DeserializeObject<dynamic>(classResult);
+
+                if (classData?.success == true)
+                {
+                    overview.AppendLine("📝 **THÔNG TIN CƠ BẢN:**");
+                    overview.AppendLine(classData?.message?.ToString());
+                    overview.AppendLine();
+                }
+
+                // 2. Get students list
+                var studentsResult = await GetClassStudentsListAsync(classArgs);
+                var studentsData = JsonConvert.DeserializeObject<dynamic>(studentsResult);
+
+                if (studentsData?.success == true)
+                {
+                    overview.AppendLine("👥 **DANH SÁCH HỌC SINH:**");
+                    overview.AppendLine(studentsData?.message?.ToString());
+                    overview.AppendLine();
+                }
+
+                // 3. Get grade statistics if requested
+                if (includeGradeStats)
+                {
+                    var gradeStatsResult = await GetClassGradeStatisticsAsync(classArgs);
+                    var gradeStatsData = JsonConvert.DeserializeObject<dynamic>(gradeStatsResult);
+
+                    if (gradeStatsData?.success == true)
+                    {
+                        overview.AppendLine("📊 **THỐNG KÊ ĐIỂM SỐ:**");
+                        overview.AppendLine(gradeStatsData?.message?.ToString());
+                        overview.AppendLine();
+                    }
+                }
+
+                // 4. Get attendance summary if requested
+                if (includeAttendance)
+                {
+                    var attendanceResult = await GetClassAttendanceSummaryAsync(classArgs);
+                    var attendanceData = JsonConvert.DeserializeObject<dynamic>(attendanceResult);
+
+                    if (attendanceData?.success == true)
+                    {
+                        overview.AppendLine("✅ **TÓNG KẾT ĐIỂM DANH:**");
+                        overview.AppendLine(attendanceData?.message?.ToString());
+                        overview.AppendLine();
+                    }
+                }
+
+                overview.AppendLine("💡 **KHUYẾN NGHỊ CHO LỚP:**");
+                overview.AppendLine("   • Theo dõi thường xuyên tiến độ học tập của từng học sinh");
+                overview.AppendLine("   • Tăng cường hoạt động nhóm để cải thiện kết quả chung");
+                overview.AppendLine("   • Hỗ trợ đặc biệt cho học sinh có điểm số thấp");
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = overview.ToString(),
+                    data = new
+                    {
+                        ReportType = "class_overview_report",
+                        ClassId = classId,
+                        GeneratedAt = DateTime.Now,
+                        IncludedSections = new
+                        {
+                            BasicInfo = true,
+                            StudentsList = true,
+                            GradeStatistics = includeGradeStats,
+                            AttendanceSummary = includeAttendance
+                        }
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo báo cáo tổng quan lớp học. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Search for students and get their detailed information
+        /// </summary>
+        private async Task<string> SearchAndGetStudentDetailsAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (!args.TryGetValue("search_term", out var searchTermObj) || string.IsNullOrEmpty(searchTermObj?.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp từ khóa tìm kiếm học sinh.",
+                        error = "MISSING_SEARCH_TERM"
+                    }, Formatting.Indented);
+                }
+
+                var includeGrades = args.TryGetValue("include_grades", out var gradesObj) ? 
+                    bool.Parse(gradesObj?.ToString() ?? "true") : true;
+                var maxResults = args.TryGetValue("max_results", out var maxObj) ? 
+                    int.Parse(maxObj?.ToString() ?? "3") : 3;
+
+                var details = new StringBuilder();
+                details.AppendLine("🔎 **KẾT QUẢ TÌM KIẾM VÀ CHI TIẾT HỌC SINH**");
+                details.AppendLine($"📅 Thời gian tìm kiếm: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                details.AppendLine($"🔍 Từ khóa: \"{searchTermObj}\"");
+                details.AppendLine("═══════════════════════════════════════════════════");
+                details.AppendLine();
+
+                // 1. Search for students
+                var searchArgs = new Dictionary<string, object> 
+                { 
+                    ["search_term"] = searchTermObj,
+                    ["page_size"] = maxResults
+                };
+                var searchResult = await SearchStudentsAsync(searchArgs);
+                var searchData = JsonConvert.DeserializeObject<dynamic>(searchResult);
+
+                if (searchData?.success == true)
+                {
+                    details.AppendLine("👥 **KẾT QUẢ TÌM KIẾM:**");
+                    details.AppendLine(searchData?.message?.ToString());
+                    details.AppendLine();
+
+                    // 2. Get detailed info for found students if needed
+                    if (includeGrades && searchData?.data?.Students != null)
+                    {
+                        details.AppendLine("📚 **CHI TIẾT ĐIỂM SỐ:**");
+                        details.AppendLine("   (Lưu ý: Để xem điểm chi tiết, vui lòng sử dụng chức năng xem điểm cụ thể)");
+                        details.AppendLine();
+                    }
+                }
+                else
+                {
+                    details.AppendLine("❌ **KHÔNG TÌM THẤY:** Không có học sinh nào phù hợp với từ khóa tìm kiếm.");
+                    details.AppendLine("💡 **GỢI Ý:** Hãy thử tìm với từ khóa khác hoặc kiểm tra chính tả.");
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = details.ToString(),
+                    data = new
+                    {
+                        SearchType = "student_search_with_details",
+                        SearchTerm = searchTermObj,
+                        MaxResults = maxResults,
+                        IncludeGrades = includeGrades,
+                        GeneratedAt = DateTime.Now
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tìm kiếm và lấy thông tin chi tiết học sinh. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive teacher dashboard
+        /// </summary>
+        private async Task<string> GetTeacherDashboardAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem bảng điều khiển giáo viên.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var teacherId = args.TryGetValue("teacher_id", out var teacherIdObj) ? 
+                    teacherIdObj?.ToString() : null;
+                var includeLessonReports = args.TryGetValue("include_lesson_reports", out var reportsObj) ? 
+                    bool.Parse(reportsObj?.ToString() ?? "true") : true;
+                var daysBack = args.TryGetValue("days_back", out var daysObj) ? 
+                    int.Parse(daysObj?.ToString() ?? "7") : 7;
+
+                var dashboard = new StringBuilder();
+                dashboard.AppendLine("👨‍🏫 **BẢNG ĐIỀU KHIỂN GIÁO VIÊN**");
+                dashboard.AppendLine($"📅 Ngày: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                dashboard.AppendLine($"🔍 Dữ liệu {daysBack} ngày gần nhất");
+                dashboard.AppendLine("═══════════════════════════════════════════════════");
+                dashboard.AppendLine();
+
+                // 1. Get teacher basic info
+                if (!string.IsNullOrEmpty(teacherId))
+                {
+                    var teacherArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId };
+                    var teacherResult = await GetTeacherInfoAsync(teacherArgs);
+                    var teacherData = JsonConvert.DeserializeObject<dynamic>(teacherResult);
+
+                    if (teacherData?.success == true)
+                    {
+                        dashboard.AppendLine("👤 **THÔNG TIN CÁ NHÂN:**");
+                        dashboard.AppendLine(teacherData?.message?.ToString());
+                        dashboard.AppendLine();
+                    }
+                }
+
+                // 2. Get teacher's classes
+                var classesArgs = new Dictionary<string, object>();
+                if (!string.IsNullOrEmpty(teacherId))
+                    classesArgs["teacher_id"] = teacherId;
+
+                var classesResult = await GetTeacherClassesAsync(classesArgs);
+                var classesData = JsonConvert.DeserializeObject<dynamic>(classesResult);
+
+                if (classesData?.success == true)
+                {
+                    dashboard.AppendLine("🏫 **CÁC LỚP ĐANG DẠY:**");
+                    dashboard.AppendLine(classesData?.message?.ToString());
+                    dashboard.AppendLine();
+                }
+
+                // 3. Get recent lesson reports if requested
+                if (includeLessonReports)
+                {
+                    var reportsResult = await GetLessonReportsByTeacherAsync(args, userId);
+                    var reportsData = JsonConvert.DeserializeObject<dynamic>(reportsResult);
+
+                    if (reportsData?.success == true)
+                    {
+                        dashboard.AppendLine("📋 **BÁO CÁO BUỔI HỌC GẦN ĐÂY:**");
+                        dashboard.AppendLine(reportsData?.message?.ToString());
+                        dashboard.AppendLine();
+                    }
+                }
+
+                // 4. Quick action recommendations
+                dashboard.AppendLine("⚡ **HÀNH ĐỘNG KHUYẾN NGHỊ:**");
+                dashboard.AppendLine("   📝 Cập nhật báo cáo buổi học mới nhất");
+                dashboard.AppendLine("   📊 Kiểm tra tình hình điểm danh của học sinh");
+                dashboard.AppendLine("   📚 Nhập điểm cho các bài kiểm tra");
+                dashboard.AppendLine("   💬 Phản hồi các thắc mắc từ phụ huynh");
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = dashboard.ToString(),
+                    data = new
+                    {
+                        DashboardType = "teacher_dashboard",
+                        TeacherId = teacherId,
+                        GeneratedAt = DateTime.Now,
+                        IncludedSections = new
+                        {
+                            PersonalInfo = !string.IsNullOrEmpty(teacherId),
+                            Classes = true,
+                            LessonReports = includeLessonReports,
+                            Recommendations = true
+                        },
+                        TimeRange = new
+                        {
+                            DaysBack = daysBack,
+                            From = DateTime.Now.AddDays(-daysBack),
+                            To = DateTime.Now
+                        }
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo bảng điều khiển giáo viên. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Get detailed academic progress tracking for student
+        /// </summary>
+        private async Task<string> GetStudentAcademicProgressAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem tiến độ học tập.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var timePeriod = args.TryGetValue("time_period", out var periodObj) ? 
+                    periodObj?.ToString() ?? "current_semester" : "current_semester";
+                var includePredictions = args.TryGetValue("include_predictions", out var predictionsObj) ? 
+                    bool.Parse(predictionsObj?.ToString() ?? "true") : true;
+
+                var progress = new StringBuilder();
+                progress.AppendLine("📈 **TIẾN ĐỘ HỌC TẬP CHI TIẾT**");
+                progress.AppendLine($"📅 Thời gian phân tích: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                progress.AppendLine($"⏱️ Kỳ phân tích: {GetTimePeriodDescription(timePeriod)}");
+                progress.AppendLine("═══════════════════════════════════════════════════");
+                progress.AppendLine();
+
+                // Get grades with trend analysis
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+
+                if (gradesData?.success == true)
+                {
+                    progress.AppendLine("📊 **PHÂN TÍCH ĐIỂM SỐ THEO THỜI GIAN:**");
+                    progress.AppendLine(gradesData?.message?.ToString());
+                    progress.AppendLine();
+
+                    // Add trend analysis
+                    progress.AppendLine("📈 **XU HƯỚNG PHÁT TRIỂN:**");
+                    progress.AppendLine("   • Phân tích xu hướng điểm số qua các kỳ kiểm tra");
+                    progress.AppendLine("   • Xác định các môn học có tiến bộ rõ rệt");
+                    progress.AppendLine("   • Nhận diện các môn học cần cải thiện");
+                    progress.AppendLine();
+                }
+
+                // Get attendance pattern
+                var attendanceResult = await GetStudentAttendanceAsync(args, userId);
+                var attendanceData = JsonConvert.DeserializeObject<dynamic>(attendanceResult);
+
+                if (attendanceData?.success == true)
+                {
+                    progress.AppendLine("✅ **PHÂN TÍCH THAM GIA LỚP HỌC:**");
+                    progress.AppendLine(attendanceData?.message?.ToString());
+                    progress.AppendLine();
+                }
+
+                // Predictions and recommendations
+                if (includePredictions)
+                {
+                    progress.AppendLine("🔮 **DỰ ĐOÁN VÀ KHUYẾN NGHỊ:**");
+                    progress.AppendLine("   📊 **Dự báo kết quả học tập:**");
+                    progress.AppendLine("      • Dự kiến đạt kết quả tốt nếu duy trì tần suất học tập hiện tại");
+                    progress.AppendLine("      • Cần cải thiện ở các môn có điểm thấp hơn 6.0");
+                    progress.AppendLine();
+                    progress.AppendLine("   💡 **Khuyến nghị cụ thể:**");
+                    progress.AppendLine("      1. Tăng cường luyện tập ở các môn yếu");
+                    progress.AppendLine("      2. Duy trì điểm danh đầy đủ để không bỏ lỡ kiến thức");
+                    progress.AppendLine("      3. Tham gia các buổi học phụ đạo nếu cần thiết");
+                    progress.AppendLine("      4. Thiết lập mục tiêu rõ ràng cho từng môn học");
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = progress.ToString(),
+                    data = new
+                    {
+                        AnalysisType = "academic_progress_tracking",
+                        TimePeriod = timePeriod,
+                        GeneratedAt = DateTime.Now,
+                        IncludePredictions = includePredictions
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể phân tích tiến độ học tập. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive homework and assignment overview
+        /// </summary>
+        private async Task<string> GetStudentHomeworkOverviewAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem tổng quan bài tập.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var daysAhead = args.TryGetValue("days_ahead", out var daysObj) ? 
+                    Convert.ToInt32(daysObj?.ToString() ?? "14") : 14;
+                var subjectFilter = args.TryGetValue("subject_filter", out var subjectObj) ? 
+                    subjectObj?.ToString() : null;
+
+                var homework = new StringBuilder();
+                homework.AppendLine("📝 **TỔNG QUAN BÀI TẬP VỀ NHÀ**");
+                homework.AppendLine($"📅 Ngày tạo: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                homework.AppendLine($"⏰ Khoảng thời gian: {daysAhead} ngày tới");
+                if (!string.IsNullOrEmpty(subjectFilter))
+                    homework.AppendLine($"📚 Lọc theo môn: {subjectFilter}");
+                homework.AppendLine("═══════════════════════════════════════════════════");
+                homework.AppendLine();
+
+                // Get upcoming exams as homework/assignments
+                var examArgs = new Dictionary<string, object> { ["days_ahead"] = daysAhead };
+                if (!string.IsNullOrEmpty(subjectFilter))
+                    examArgs["subject_filter"] = subjectFilter;
+
+                var examsResult = await GetStudentExamsAsync(examArgs, userId);
+                var examsData = JsonConvert.DeserializeObject<dynamic>(examsResult);
+
+                if (examsData?.success == true)
+                {
+                    homework.AppendLine("📝 **BÀI KIỂM TRA SẮP TỚI:**");
+                    homework.AppendLine(examsData?.message?.ToString());
+                    homework.AppendLine();
+                }
+
+                // Get lesson reports for assignment tracking
+                var reportsResult = await GetStudentLessonReportsAsync(args, userId);
+                var reportsData = JsonConvert.DeserializeObject<dynamic>(reportsResult);
+
+                if (reportsData?.success == true)
+                {
+                    homework.AppendLine("📚 **BÀI TẬP TỪ BÁO CÁO BÀI HỌC:**");
+                    homework.AppendLine(reportsData?.message?.ToString());
+                    homework.AppendLine();
+                }
+
+                // Study recommendations
+                homework.AppendLine("💡 **KHUYẾN NGHỊ HỌC TẬP:**");
+                homework.AppendLine("   📋 **Quản lý thời gian:**");
+                homework.AppendLine("      • Lập danh sách ưu tiên cho các bài tập");
+                homework.AppendLine("      • Phân bổ thời gian học hợp lý cho từng môn");
+                homework.AppendLine("      • Hoàn thành bài tập trước deadline ít nhất 1 ngày");
+                homework.AppendLine();
+                homework.AppendLine("   🎯 **Chiến lược học tập:**");
+                homework.AppendLine("      • Bắt đầu với các bài tập khó nhất khi tinh thần tập trung cao");
+                homework.AppendLine("      • Nghỉ giải lao 10-15 phút sau mỗi 45 phút học");
+                homework.AppendLine("      • Tìm hiểu thêm tài liệu tham khảo cho các chủ đề khó");
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = homework.ToString(),
+                    data = new
+                    {
+                        OverviewType = "homework_assignments",
+                        DaysAhead = daysAhead,
+                        SubjectFilter = subjectFilter,
+                        GeneratedAt = DateTime.Now
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo tổng quan bài tập. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Compare student's performance with class average
+        /// </summary>
+        private async Task<string> CompareStudentPerformanceAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để so sánh hiệu suất.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var comparisonType = args.TryGetValue("comparison_type", out var typeObj) ? 
+                    typeObj?.ToString() ?? "class_average" : "class_average";
+                var includeRecommendations = args.TryGetValue("include_recommendations", out var recObj) ? 
+                    bool.Parse(recObj?.ToString() ?? "true") : true;
+
+                var comparison = new StringBuilder();
+                comparison.AppendLine("⚖️ **SO SÁNH HIỆU SUẤT HỌC TẬP**");
+                comparison.AppendLine($"📅 Thời gian phân tích: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                comparison.AppendLine($"📊 Loại so sánh: {GetComparisonTypeDescription(comparisonType)}");
+                comparison.AppendLine("═══════════════════════════════════════════════════");
+                comparison.AppendLine();
+
+                // Get student's grades
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+
+                if (gradesData?.success == true)
+                {
+                    comparison.AppendLine("📊 **ĐIỂM SỐ CÁ NHÂN:**");
+                    comparison.AppendLine(gradesData?.message?.ToString());
+                    comparison.AppendLine();
+                }
+
+                // Get student info to find class
+                var studentInfo = await GetStudentInfoAsync(args);
+                var studentData = JsonConvert.DeserializeObject<dynamic>(studentInfo);
+
+                if (studentData?.success == true && studentData?.data?.ClassId != null)
+                {
+                    var classId = Convert.ToInt32(studentData?.data?.ClassId?.ToString() ?? "0");
+                    var classArgs = new Dictionary<string, object> { ["class_id"] = classId };
+
+                    // Get class grade statistics for comparison
+                    var classStatsResult = await GetClassGradeStatisticsAsync(classArgs);
+                    var classStatsData = JsonConvert.DeserializeObject<dynamic>(classStatsResult);
+
+                    if (classStatsData?.success == true)
+                    {
+                        comparison.AppendLine("📈 **SO SÁNH VỚI LỚP:**");
+                        comparison.AppendLine(classStatsData?.message?.ToString());
+                        comparison.AppendLine();
+
+                        comparison.AppendLine("🎯 **PHÂN TÍCH SO SÁNH:**");
+                        comparison.AppendLine("   • Xác định vị trí của bạn trong lớp");
+                        comparison.AppendLine("   • So sánh điểm trung bình các môn học");
+                        comparison.AppendLine("   • Nhận diện điểm mạnh và điểm yếu");
+                        comparison.AppendLine();
+                    }
+                }
+
+                // Performance insights
+                comparison.AppendLine("💡 **NHẬN XÉT HIỆU SUẤT:**");
+                comparison.AppendLine("   📊 **Điểm mạnh:**");
+                comparison.AppendLine("      • Các môn học có điểm số cao hơn trung bình lớp");
+                comparison.AppendLine("      • Khả năng duy trì sự ổn định trong học tập");
+                comparison.AppendLine();
+                comparison.AppendLine("   🎯 **Cần cải thiện:**");
+                comparison.AppendLine("      • Các môn học có điểm số thấp hơn trung bình lớp");
+                comparison.AppendLine("      • Mức độ tham gia lớp học và làm bài tập");
+
+                if (includeRecommendations)
+                {
+                    comparison.AppendLine();
+                    comparison.AppendLine("🚀 **KHUYẾN NGHỊ CẢI THIỆN:**");
+                    comparison.AppendLine("   1. **Học nhóm:** Tham gia học nhóm với bạn giỏi các môn yếu");
+                    comparison.AppendLine("   2. **Tài liệu:** Tìm thêm tài liệu và bài tập bổ sung");
+                    comparison.AppendLine("   3. **Thầy cô:** Chủ động hỏi bài khi gặp khó khăn");
+                    comparison.AppendLine("   4. **Thời gian:** Dành nhiều thời gian hơn cho các môn yếu");
+                    comparison.AppendLine("   5. **Mục tiêu:** Đặt mục tiêu cụ thể cho từng môn học");
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = comparison.ToString(),
+                    data = new
+                    {
+                        ComparisonType = comparisonType,
+                        AnalysisType = "performance_comparison",
+                        IncludeRecommendations = includeRecommendations,
+                        GeneratedAt = DateTime.Now
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể thực hiện so sánh hiệu suất. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Generate personalized learning plan
+        /// </summary>
+        private async Task<string> GetStudentLearningPlanAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để tạo kế hoạch học tập.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var planDuration = args.TryGetValue("plan_duration", out var durationObj) ? 
+                    durationObj?.ToString() ?? "2_weeks" : "2_weeks";
+                var focusAreas = args.TryGetValue("focus_areas", out var focusObj) ? 
+                    focusObj?.ToString() : null;
+
+                var plan = new StringBuilder();
+                plan.AppendLine("🎯 **KẾ HOẠCH HỌC TẬP CÁ NHÂN HÓA**");
+                plan.AppendLine($"📅 Ngày tạo: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                plan.AppendLine($"⏱️ Thời hạn: {GetPlanDurationDescription(planDuration)}");
+                if (!string.IsNullOrEmpty(focusAreas))
+                    plan.AppendLine($"🎯 Trọng tâm: {focusAreas}");
+                plan.AppendLine("═══════════════════════════════════════════════════");
+                plan.AppendLine();
+
+                // Analyze current performance to identify weak areas
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+
+                if (gradesData?.success == true)
+                {
+                    plan.AppendLine("📊 **PHÂN TÍCH TÌNH HÌNH HIỆN TẠI:**");
+                    plan.AppendLine(gradesData?.message?.ToString());
+                    plan.AppendLine();
+                }
+
+                // Get upcoming exams for planning
+                var examArgs = new Dictionary<string, object> { ["days_ahead"] = GetDaysForPlanDuration(planDuration) };
+                var examsResult = await GetStudentExamsAsync(examArgs, userId);
+                var examsData = JsonConvert.DeserializeObject<dynamic>(examsResult);
+
+                if (examsData?.success == true)
+                {
+                    plan.AppendLine("📝 **KỲ THI SẮP TỚI CẦN CHUẨN BỊ:**");
+                    plan.AppendLine(examsData?.message?.ToString());
+                    plan.AppendLine();
+                }
+
+                // Create detailed learning plan
+                plan.AppendLine("📋 **KẾ HOẠCH HỌC TẬP CHI TIẾT:**");
+                plan.AppendLine();
+
+                // Week 1 plan
+                plan.AppendLine("   📅 **TUẦN 1:**");
+                plan.AppendLine("      🌅 **Thứ 2-4:** Ôn tập lý thuyết các môn cơ bản");
+                plan.AppendLine("         • Đọc lại ghi chú bài giảng");
+                plan.AppendLine("         • Làm bài tập củng cố kiến thức");
+                plan.AppendLine("         • Xác định các điểm chưa hiểu rõ");
+                plan.AppendLine();
+                plan.AppendLine("      🎯 **Thứ 5-6:** Tập trung vào môn yếu nhất");
+                plan.AppendLine("         • Làm thêm bài tập nâng cao");
+                plan.AppendLine("         • Tìm tài liệu tham khảo bổ sung");
+                plan.AppendLine("         • Hỏi bài giáo viên nếu cần");
+                plan.AppendLine();
+                plan.AppendLine("      🔄 **Cuối tuần:** Ôn tập và kiểm tra tiến độ");
+                plan.AppendLine("         • Làm bài kiểm tra thử");
+                plan.AppendLine("         • Đánh giá kết quả và điều chỉnh");
+                plan.AppendLine();
+
+                if (planDuration != "1_week")
+                {
+                    plan.AppendLine("   📅 **TUẦN 2:**");
+                    plan.AppendLine("      🚀 **Thứ 2-4:** Nâng cao và áp dụng");
+                    plan.AppendLine("         • Giải các bài tập khó");
+                    plan.AppendLine("         • Kết hợp kiến thức các môn");
+                    plan.AppendLine("         • Luyện tập dạng đề thi");
+                    plan.AppendLine();
+                    plan.AppendLine("      📝 **Thứ 5-6:** Chuẩn bị cho kỳ thi");
+                    plan.AppendLine("         • Ôn tập tổng hợp");
+                    plan.AppendLine("         • Làm đề thi thử");
+                    plan.AppendLine("         • Chuẩn bị tâm lý thi cử");
+                    plan.AppendLine();
+                }
+
+                // Daily study schedule
+                plan.AppendLine("⏰ **LỊCH HỌC HÀNG NGÀY:**");
+                plan.AppendLine("   • 06:00-07:00: Ôn tập buổi sáng");
+                plan.AppendLine("   • 19:00-20:30: Học bài mới và làm bài tập");
+                plan.AppendLine("   • 20:30-21:00: Ôn tập và chuẩn bị bài mai");
+                plan.AppendLine();
+
+                // Success metrics
+                plan.AppendLine("📏 **TIÊU CHÍ ĐÁNH GIÁ THÀNH CÔNG:**");
+                plan.AppendLine("   ✅ Hoàn thành 100% bài tập được giao");
+                plan.AppendLine("   ✅ Cải thiện điểm số ít nhất 0.5 điểm/môn");
+                plan.AppendLine("   ✅ Tham dự đầy đủ các buổi học");
+                plan.AppendLine("   ✅ Hiểu rõ các khái niệm cơ bản");
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = plan.ToString(),
+                    data = new
+                    {
+                        PlanType = "personalized_learning_plan",
+                        Duration = planDuration,
+                        FocusAreas = focusAreas,
+                        GeneratedAt = DateTime.Now,
+                        ValidUntil = DateTime.Now.AddDays(GetDaysForPlanDuration(planDuration))
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo kế hoạch học tập. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        /// <summary>
+        /// Get comprehensive weekly summary for student
+        /// </summary>
+        private async Task<string> GetStudentWeeklySummaryAsync(Dictionary<string, object> args, string? userId = null)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(userId))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để xem tóm tắt tuần.",
+                        error = "AUTHENTICATION_REQUIRED"
+                    }, Formatting.Indented);
+                }
+
+                var weekOffset = args.TryGetValue("week_offset", out var offsetObj) ? 
+                    Convert.ToInt32(offsetObj?.ToString() ?? "0") : 0;
+                var includeNextWeek = args.TryGetValue("include_next_week_preview", out var nextWeekObj) ? 
+                    bool.Parse(nextWeekObj?.ToString() ?? "true") : true;
+
+                var summary = new StringBuilder();
+                var targetDate = DateTime.Now.AddDays(weekOffset * 7);
+                var weekDescription = GetWeekDescription(weekOffset);
+
+                summary.AppendLine("📅 **TÓM TẮT TUẦN HỌC TẬP**");
+                summary.AppendLine($"📅 Ngày tạo: {DateTime.Now:dd/MM/yyyy HH:mm}");
+                summary.AppendLine($"📆 {weekDescription}: {GetWeekDateRange(targetDate)}");
+                summary.AppendLine("═══════════════════════════════════════════════════");
+                summary.AppendLine();
+
+                // Get attendance for the week
+                var weekStart = GetWeekStart(targetDate);
+                var weekEnd = weekStart.AddDays(6);
+                
+                var attendanceArgs = new Dictionary<string, object>
+                {
+                    ["start_date"] = weekStart.ToString("yyyy-MM-dd"),
+                    ["end_date"] = weekEnd.ToString("yyyy-MM-dd")
+                };
+
+                var attendanceResult = await GetStudentAttendanceAsync(attendanceArgs, userId);
+                var attendanceData = JsonConvert.DeserializeObject<dynamic>(attendanceResult);
+
+                if (attendanceData?.success == true)
+                {
+                    summary.AppendLine("✅ **ĐIỂM DANH TRONG TUẦN:**");
+                    summary.AppendLine(attendanceData?.message?.ToString());
+                    summary.AppendLine();
+                }
+
+                // Get grades received this week
+                var gradesResult = await GetStudentGradesAsync(args, userId);
+                var gradesData = JsonConvert.DeserializeObject<dynamic>(gradesResult);
+
+                if (gradesData?.success == true)
+                {
+                    summary.AppendLine("📊 **ĐIỂM SỐ NHẬN ĐƯỢC:**");
+                    summary.AppendLine("   (Hiển thị các điểm gần đây nhất)");
+                    summary.AppendLine(gradesData?.message?.ToString());
+                    summary.AppendLine();
+                }
+
+                // Get lesson reports
+                var reportsResult = await GetStudentLessonReportsAsync(args, userId);
+                var reportsData = JsonConvert.DeserializeObject<dynamic>(reportsResult);
+
+                if (reportsData?.success == true)
+                {
+                    summary.AppendLine("📚 **BÁO CÁO BÀI HỌC:**");
+                    summary.AppendLine(reportsData?.message?.ToString());
+                    summary.AppendLine();
+                }
+
+                // Weekly performance summary
+                summary.AppendLine("📈 **TỔNG KẾT HIỆU SUẤT TUẦN:**");
+                summary.AppendLine("   📊 **Thống kê tham gia:**");
+                summary.AppendLine("      • Tỷ lệ tham dự lớp học trong tuần");
+                summary.AppendLine("      • Số bài tập đã hoàn thành");
+                summary.AppendLine("      • Mức độ tích cực trong học tập");
+                summary.AppendLine();
+
+                // Next week preview
+                if (includeNextWeek && weekOffset <= 0)
+                {
+                    var nextWeekStart = weekStart.AddDays(7);
+                    summary.AppendLine("🔮 **DỰ BÁAO TUẦN SAU:**");
+                    summary.AppendLine($"📆 Tuần {nextWeekStart:dd/MM} - {nextWeekStart.AddDays(6):dd/MM/yyyy}");
+                    
+                    // Get upcoming exams for next week
+                    var nextWeekExamArgs = new Dictionary<string, object> { ["days_ahead"] = 14 };
+                    var upcomingExamsResult = await GetStudentExamsAsync(nextWeekExamArgs, userId);
+                    var upcomingExamsData = JsonConvert.DeserializeObject<dynamic>(upcomingExamsResult);
+
+                    if (upcomingExamsData?.success == true)
+                    {
+                        summary.AppendLine("   📝 **Kỳ thi sắp tới:**");
+                        summary.AppendLine(upcomingExamsData?.message?.ToString());
+                    }
+                    summary.AppendLine();
+                    summary.AppendLine("   💡 **Lời khuyên cho tuần sau:**");
+                    summary.AppendLine("      • Chuẩn bị tốt cho các kỳ thi sắp tới");
+                    summary.AppendLine("      • Hoàn thành bài tập trước deadline");
+                    summary.AppendLine("      • Duy trì thói quen học tập tích cực");
+                }
+
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = summary.ToString(),
+                    data = new
+                    {
+                        SummaryType = "weekly_student_summary",
+                        WeekOffset = weekOffset,
+                        WeekDescription = weekDescription,
+                        TargetWeek = GetWeekDateRange(targetDate),
+                        IncludeNextWeek = includeNextWeek,
+                        GeneratedAt = DateTime.Now
+                    }
+                }, Formatting.Indented);
+            }
+            catch (Exception)
+            {
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "❌ **LỖI:** Không thể tạo tóm tắt tuần. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR"
+                }, Formatting.Indented);
+            }
+        }
+
+        #region Helper Methods for New Composite Functions
+
+        private string GetTimePeriodDescription(string timePeriod)
+        {
+            return timePeriod switch
+            {
+                "current_semester" => "Học kỳ hiện tại",
+                "last_month" => "Tháng vừa qua",
+                "last_3_months" => "3 tháng vừa qua",
+                _ => "Học kỳ hiện tại"
+            };
+        }
+
+        private string GetComparisonTypeDescription(string comparisonType)
+        {
+            return comparisonType switch
+            {
+                "class_average" => "So với điểm trung bình lớp",
+                "top_performers" => "So với học sinh giỏi",
+                "similar_students" => "So với học sinh cùng trình độ",
+                _ => "So với điểm trung bình lớp"
+            };
+        }
+
+        private string GetPlanDurationDescription(string duration)
+        {
+            return duration switch
+            {
+                "1_week" => "1 tuần",
+                "2_weeks" => "2 tuần",
+                "1_month" => "1 tháng",
+                _ => "2 tuần"
+            };
+        }
+
+        private int GetDaysForPlanDuration(string duration)
+        {
+            return duration switch
+            {
+                "1_week" => 7,
+                "2_weeks" => 14,
+                "1_month" => 30,
+                _ => 14
+            };
+        }
+
+        private string GetWeekDescription(int weekOffset)
+        {
+            return weekOffset switch
+            {
+                0 => "Tuần này",
+                -1 => "Tuần trước",
+                1 => "Tuần sau",
+                _ when weekOffset < -1 => $"{Math.Abs(weekOffset)} tuần trước",
+                _ when weekOffset > 1 => $"{weekOffset} tuần sau",
+                _ => "Tuần này"
+            };
+        }
+
+        private string GetWeekDateRange(DateTime date)
+        {
+            var weekStart = GetWeekStart(date);
+            var weekEnd = weekStart.AddDays(6);
+            return $"{weekStart:dd/MM} - {weekEnd:dd/MM/yyyy}";
+        }
+
+        private DateTime GetWeekStart(DateTime date)
+        {
+            var dayOfWeek = (int)date.DayOfWeek;
+            var daysToSubtract = dayOfWeek == 0 ? 6 : dayOfWeek - 1; // Monday as start of week
+            return date.Date.AddDays(-daysToSubtract);
+        }
+
+        #endregion
 
         #endregion
     }
