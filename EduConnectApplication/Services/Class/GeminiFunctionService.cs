@@ -2763,7 +2763,7 @@ namespace EduConnect.Application.Services.Class
                     }, Formatting.Indented)
                 };
 
-                // Validate result is not null or empty
+                // Validate result is not null or empty and ensure JSON format
                 if (string.IsNullOrEmpty(result))
                 {
                     result = CreateErrorResponse(
@@ -2771,13 +2771,10 @@ namespace EduConnect.Application.Services.Class
                         "EMPTY_RESULT"
                     );
                 }
-                else if (!IsValidJsonResponse(result))
+                else
                 {
-                    result = CreateErrorResponse(
-                        "Chức năng trả về dữ liệu không hợp lệ. Vui lòng thử lại sau.",
-                        "INVALID_JSON_RESPONSE",
-                        "Response is not valid JSON format"
-                    );
+                    // Ensure response is in JSON format
+                    result = EnsureJsonResponse(result);
                 }
 
                 // Gửi notification cho user sau mỗi lần chat (không await để không block)
@@ -5808,13 +5805,25 @@ namespace EduConnect.Application.Services.Class
             {
                 if (string.IsNullOrEmpty(userId))
                 {
-                    return "🔒 **LỖI XÁC THỰC:** Vui lòng đăng nhập để gửi thông báo.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Cần đăng nhập để gửi thông báo.",
+                        error = "AUTHENTICATION_REQUIRED",
+                        data = (object?)null
+                    }, Formatting.Indented);
                 }
 
                 var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
                 if (teacher == null)
                 {
-                    return "⛔ **KHÔNG CÓ QUYỀN:** Chỉ giáo viên mới có thể gửi thông báo cho phụ huynh.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Chỉ giáo viên mới có thể gửi thông báo cho phụ huynh.",
+                        error = "PERMISSION_DENIED",
+                        data = (object?)null
+                    }, Formatting.Indented);
                 }
 
                 var parentId = "";
@@ -5828,13 +5837,25 @@ namespace EduConnect.Application.Services.Class
 
                 if (string.IsNullOrEmpty(parentId) || string.IsNullOrEmpty(title) || string.IsNullOrEmpty(message))
                 {
-                    return "⚠️ **THIẾU THÔNG TIN:** Vui lòng cung cấp đầy đủ: Mã phụ huynh, tiêu đề và nội dung thông báo.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Vui lòng cung cấp đầy đủ: Mã phụ huynh, tiêu đề và nội dung thông báo.",
+                        error = "MISSING_PARAMETERS",
+                        data = (object?)null
+                    }, Formatting.Indented);
                 }
 
                 var parent = await _context.Parents.FindAsync(parentId);
                 if (parent == null)
                 {
-                    return "❌ **KHÔNG TÌM THẤY:** Phụ huynh với mã này không tồn tại trong hệ thống.";
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Phụ huynh với mã này không tồn tại trong hệ thống.",
+                        error = "PARENT_NOT_FOUND",
+                        data = (object?)null
+                    }, Formatting.Indented);
                 }
 
                 var notification = new Notification
@@ -5850,20 +5871,32 @@ namespace EduConnect.Application.Services.Class
 
                 await _notificationRepository.CreateAsync(notification);
 
-                var successMessage = new StringBuilder();
-                successMessage.AppendLine("✅ **GỬI THÔNG BÁO THÀNH CÔNG**");
-                successMessage.AppendLine();
-                successMessage.AppendLine($"📧 **Người nhận:** {parent.FullName}");
-                successMessage.AppendLine($"📄 **Tiêu đề:** {title}");
-                successMessage.AppendLine($"📝 **Nội dung:** {message}");
-                successMessage.AppendLine($"⏰ **Thời gian gửi:** {notification.CreatedAt:dd/MM/yyyy HH:mm}");
-                successMessage.AppendLine($"🆔 **Mã thông báo:** #{notification.NotificationId}");
-                
-                return successMessage.ToString();
+                return JsonConvert.SerializeObject(new
+                {
+                    success = true,
+                    message = "✅ Đã gửi thông báo thành công cho phụ huynh.",
+                    error = (string?)null,
+                    data = new
+                    {
+                        NotificationId = notification.NotificationId,
+                        ParentName = parent.FullName,
+                        Title = title,
+                        Message = message,
+                        SentAt = notification.CreatedAt.ToString("dd/MM/yyyy HH:mm"),
+                        TeacherName = $"{teacher.Account?.FirstName} {teacher.Account?.LastName}".Trim()
+                    }
+                }, Formatting.Indented);
             }
-            catch (Exception)
+            catch (Exception ex)
             {
-                return "❌ **LỖI:** Không thể gửi thông báo. Vui lòng thử lại sau.";
+                return JsonConvert.SerializeObject(new
+                {
+                    success = false,
+                    message = "Không thể gửi thông báo. Vui lòng thử lại sau.",
+                    error = "INTERNAL_ERROR",
+                    data = (object?)null,
+                    errorDetails = ex.Message
+                }, Formatting.Indented);
             }
         }
 
@@ -6351,6 +6384,21 @@ namespace EduConnect.Application.Services.Class
             {
                 return false;
             }
+        }
+
+        private string EnsureJsonResponse(string response)
+        {
+            if (IsValidJsonResponse(response))
+                return response;
+
+            // If it's a plain string, convert to JSON format
+            return JsonConvert.SerializeObject(new
+            {
+                success = true,
+                message = response,
+                error = (string?)null,
+                data = (object?)null
+            }, Formatting.Indented);
         }
 
         private string CreateErrorResponse(string message, string errorCode, string? details = null)
