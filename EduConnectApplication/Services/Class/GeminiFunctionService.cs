@@ -30,6 +30,7 @@ namespace EduConnect.Application.Services.Class
         private readonly ILessonReportService _lessonReportService;
         private readonly INotificationRepository _notificationRepository;
         private readonly ITimetableRepository _timetableRepository;
+        private readonly ITimetableSlotRepository _timetableSlotRepository;
         private readonly IClassRepository _classRepository;
         private readonly ISubjectRepository _subjectRepository;
         private readonly INotificationService _notificationService;
@@ -53,6 +54,7 @@ namespace EduConnect.Application.Services.Class
             ILessonReportService lessonReportService,
             INotificationRepository notificationRepository,
             ITimetableRepository timetableRepository,
+            ITimetableSlotRepository timetableSlotRepository,
             IClassRepository classRepository,
             ISubjectRepository subjectRepository,
             INotificationService notificationService,
@@ -75,6 +77,7 @@ namespace EduConnect.Application.Services.Class
             _lessonReportService = lessonReportService;
             _notificationRepository = notificationRepository;
             _timetableRepository = timetableRepository;
+            _timetableSlotRepository = timetableSlotRepository;
             _classRepository = classRepository;
             _subjectRepository = subjectRepository;
             _notificationService = notificationService;
@@ -7591,25 +7594,34 @@ namespace EduConnect.Application.Services.Class
                 var teacherId = args["teacher_id"].ToString();
                 var includeSubjects = !args.ContainsKey("include_subjects") || Convert.ToBoolean(args["include_subjects"]);
 
-                var classes = await _context.ClassTeachers
-                    .Include(ct => ct.Class)
-                    .Include(ct => ct.Teacher)
-                    .Where(ct => ct.TeacherID == teacherId)
-                    .GroupBy(ct => ct.Class)
-                    .Select(g => new
-                    {
-                        ClassId = g.Key.ClassID,
-                        ClassName = g.Key.ClassName,
-                        StudentCount = _context.Students.Count(s => s.ClassID == g.Key.ClassID),
-                        Subjects = includeSubjects ? g.Select(ct => new
-                        {
-                            TeacherId = ct.TeacherID,
-                            TeacherName = ct.Teacher.FullName
-                        }).Cast<object>().ToList() : new List<object>()
-                    })
-                    .ToListAsync();
+                // Lấy các slot mà giáo viên dạy
+                var timetableSlots = await _timetableSlotRepository.GetTimetableSlotsByTeacherIdAsync(teacherId);
+                if (timetableSlots == null || !timetableSlots.Any())
+                {
+                    return JsonConvert.SerializeObject(new { success = true, message = "Không có lớp nào trong thời khóa biểu của giáo viên.", classes = new List<object>() }, Formatting.Indented);
+                }
 
-                return JsonConvert.SerializeObject(new { success = true, message = $"🏫 Danh sách lớp đang dạy ({classes.Count} lớp)", classes }, Formatting.Indented);
+                // Lấy danh sách lớp mà giáo viên dạy qua slot
+                var classes = await _timetableSlotRepository.GetClassesByTeacherIdAsync(teacherId);
+                if (classes == null || !classes.Any())
+                {
+                    return JsonConvert.SerializeObject(new { success = true, message = "Không tìm thấy thông tin lớp học.", classes = new List<object>() }, Formatting.Indented);
+                }
+
+                var classList = classes.Select(c => new
+                {
+                    ClassId = c.ClassID,
+                    ClassName = c.ClassName,
+                    StudentCount = _context.Students.Count(s => s.ClassID == c.ClassID),
+                    Subjects = includeSubjects ? timetableSlots.Where(ts => ts.Timetable?.ClassID == c.ClassID).Select(ts => new
+                    {
+                        SubjectId = ts.SubjectId,
+                        SubjectName = ts.Subject?.SubjectName ?? "",
+                        SlotId = ts.TimetableSlotID
+                    }).Distinct().Cast<object>().ToList() : new List<object>()
+                }).ToList();
+
+                return JsonConvert.SerializeObject(new { success = true, message = $"🏫 Danh sách lớp đang dạy ({classList.Count} lớp)", classes = classList }, Formatting.Indented);
             }
             catch (Exception)
             {
@@ -9589,19 +9601,17 @@ namespace EduConnect.Application.Services.Class
             {
                 // Extract parameters - Get actual teacherId from database using userId
                 var teacherId = args.GetValueOrDefault("teacher_id")?.ToString();
-                
                 // If no teacherId provided, get it from userId
                 if (string.IsNullOrEmpty(teacherId) && !string.IsNullOrEmpty(userId))
                 {
                     var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
                     teacherId = teacher?.TeacherID;
                 }
-                
                 if (string.IsNullOrEmpty(teacherId))
                 {
                     return "❌ Không thể xác định giáo viên. Vui lòng cung cấp teacher_id hoặc đảm bảo tài khoản đã được liên kết với thông tin giáo viên.";
                 }
-                
+
                 var classId = args.GetValueOrDefault("class_id") != null ? Convert.ToInt32(args["class_id"]) : (int?)null;
                 var subjectId = args.GetValueOrDefault("subject_id") != null ? Convert.ToInt32(args["subject_id"]) : (int?)null;
                 var semester = args.GetValueOrDefault("semester")?.ToString() ?? "Học kỳ hiện tại";
@@ -9617,55 +9627,65 @@ namespace EduConnect.Application.Services.Class
                 // Step 1: Get teacher's classes
                 var teacherClassesArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId, ["include_subjects"] = true };
                 var teacherClassesResult = await GetTeacherClassesAsync(teacherClassesArgs);
-                
                 if (string.IsNullOrEmpty(teacherClassesResult))
                 {
                     return "❌ Không tìm thấy lớp học nào cho giáo viên này.";
                 }
-
-                // Step 2: Get students and their grades for each class
-                var totalStudents = 0;
-                var gradeAnalysis = new List<string>();
-
-                // Parse teacher classes result to get class information
                 report.AppendLine("📚 **Bước 1: Danh sách lớp học**\n");
                 report.AppendLine(teacherClassesResult);
                 report.AppendLine("\n");
 
-                // For demonstration, let's get students from a specific class if provided
+                // Parse teacherClassesResult to get class list
+                dynamic classesObj = null;
+                try { classesObj = Newtonsoft.Json.JsonConvert.DeserializeObject(teacherClassesResult); } catch { }
+                var classList = classesObj?.classes;
+
+                // Step 2: For each class, get students and grades
                 if (classId.HasValue)
                 {
+                    // Only report for specific class
                     report.AppendLine($"👥 **Bước 2: Danh sách học sinh lớp {classId}**\n");
-                    
-                    var studentsArgs = new Dictionary<string, object> 
-                    { 
-                        ["class_id"] = classId.Value, 
-                        ["include_grades"] = true 
-                    };
+                    var studentsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value, ["include_grades"] = true };
                     var studentsResult = await GetClassStudentsListAsync(studentsArgs);
                     report.AppendLine(studentsResult);
                     report.AppendLine("\n");
-
-                    // Step 3: Get detailed grade analysis
                     if (includeAnalysis)
                     {
                         report.AppendLine("📈 **Bước 3: Phân tích điểm số**\n");
-                        
-                        // Get grade statistics for the class
                         var gradeStatsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value };
-                        if (subjectId.HasValue)
-                        {
-                            gradeStatsArgs["subject_id"] = subjectId.Value;
-                        }
-                        
+                        if (subjectId.HasValue) gradeStatsArgs["subject_id"] = subjectId.Value;
                         var gradeStatsResult = await GetClassGradeStatisticsAsync(gradeStatsArgs);
                         report.AppendLine(gradeStatsResult);
                         report.AppendLine("\n");
                     }
                 }
+                else if (classList != null)
+                {
+                    foreach (var classItem in classList)
+                    {
+                        int cid = classItem.ClassId;
+                        string cname = classItem.ClassName;
+                        report.AppendLine($"🏫 **Lớp: {cname} (ID: {cid})**");
+                        // Students and grades
+                        var studentsArgs = new Dictionary<string, object> { ["class_id"] = cid, ["include_grades"] = true };
+                        var studentsResult = await GetClassStudentsListAsync(studentsArgs);
+                        report.AppendLine("👥 **Danh sách học sinh và điểm:**");
+                        report.AppendLine(studentsResult);
+                        // Grade analysis
+                        if (includeAnalysis)
+                        {
+                            var gradeStatsArgs = new Dictionary<string, object> { ["class_id"] = cid };
+                            if (subjectId.HasValue) gradeStatsArgs["subject_id"] = subjectId.Value;
+                            var gradeStatsResult = await GetClassGradeStatisticsAsync(gradeStatsArgs);
+                            report.AppendLine("📈 **Thống kê điểm số:**");
+                            report.AppendLine(gradeStatsResult);
+                        }
+                        report.AppendLine();
+                    }
+                }
                 else
                 {
-                    report.AppendLine("💡 **Lưu ý**: Để có báo cáo chi tiết hơn, vui lòng cung cấp class_id cụ thể.\n");
+                    report.AppendLine("💡 **Lưu ý**: Không có lớp nào để thống kê.\n");
                 }
 
                 // Step 4: Recommendations
@@ -9693,45 +9713,61 @@ namespace EduConnect.Application.Services.Class
             {
                 var workflowDescription = args.GetValueOrDefault("workflow_description")?.ToString() ?? "";
                 var teacherId = args.GetValueOrDefault("teacher_id")?.ToString();
-                
-                // If no teacherId provided, get it from userId
                 if (string.IsNullOrEmpty(teacherId) && !string.IsNullOrEmpty(userId))
                 {
                     var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
                     teacherId = teacher?.TeacherID;
                 }
-                
-                var targetClassId = args.GetValueOrDefault("target_class_id") != null ? Convert.ToInt32(args["target_class_id"]) : (int?)null;
-                var targetSubjectId = args.GetValueOrDefault("target_subject_id") != null ? Convert.ToInt32(args["target_subject_id"]) : (int?)null;
                 var outputFormat = args.GetValueOrDefault("output_format")?.ToString() ?? "detailed";
                 var includeAnalysis = args.GetValueOrDefault("include_analysis") != null ? Convert.ToBoolean(args["include_analysis"]) : true;
 
                 var report = new StringBuilder();
-                report.AppendLine("🔄 **THỰC HIỆN QUY TRÌNH TUẦN TỰ**");
-                report.AppendLine($"📝 Mô tả: {workflowDescription}");
+                report.AppendLine("📊 **BÁO CÁO ĐIỂM TOÀN DIỆN**");
+                report.AppendLine($"📅 Thời gian: Học kỳ hiện tại");
                 report.AppendLine($"👨‍🏫 Mã giáo viên: {teacherId}");
-                report.AppendLine("=====================================\n");
+                report.AppendLine("=====================================");
 
-                // Phân tích workflow description để xác định các bước
-                var steps = ParseWorkflowSteps(workflowDescription);
-                
-                for (int i = 0; i < steps.Count; i++)
+                // Bước 1: Lấy danh sách lớp mà giáo viên dạy
+                var classesArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId, ["include_subjects"] = true };
+                var classesJson = await GetTeacherClassesAsync(classesArgs);
+                dynamic classesObj = JsonConvert.DeserializeObject(classesJson);
+                var classList = classesObj?.classes;
+                report.AppendLine("\n📚 **Bước 1: Danh sách lớp học**\n");
+                report.AppendLine(classesJson);
+
+                if (classList != null)
                 {
-                    var step = steps[i];
-                    report.AppendLine($"📋 **Bước {i + 1}: {step.Title}**");
-                    
-                    var stepResult = await ExecuteWorkflowStep(step, teacherId, targetClassId, targetSubjectId, userId);
-                    report.AppendLine(stepResult);
-                    report.AppendLine("\n");
+                    foreach (var classItem in classList)
+                    {
+                        int classId = classItem.ClassId;
+                        string className = classItem.ClassName;
+                        report.AppendLine($"\n🏫 **Lớp: {className} (ID: {classId})**");
+
+                        // Bước 2: Lấy danh sách học sinh và điểm
+                        var studentsArgs = new Dictionary<string, object> { ["class_id"] = classId, ["include_grades"] = true };
+                        var studentsJson = await GetClassStudentsListAsync(studentsArgs);
+                        report.AppendLine("\n👥 **Danh sách học sinh và điểm:**\n");
+                        report.AppendLine(studentsJson);
+
+                        // Bước 3: Phân tích điểm số
+                        var gradeStatsArgs = new Dictionary<string, object> { ["class_id"] = classId };
+                        var gradeStatsJson = await GetClassGradeStatisticsAsync(gradeStatsArgs);
+                        report.AppendLine("\n📈 **Thống kê điểm số:**\n");
+                        report.AppendLine(gradeStatsJson);
+                    }
+                }
+                else
+                {
+                    report.AppendLine("Không có lớp nào để thống kê.");
                 }
 
-                // Tổng kết và phân tích (nếu được yêu cầu)
-                if (includeAnalysis)
-                {
-                    report.AppendLine("🔍 **TỔNG KẾT VÀ PHÂN TÍCH**\n");
-                    var analysis = GenerateWorkflowAnalysis(steps, outputFormat);
-                    report.AppendLine(analysis);
-                }
+                // Tổng kết và khuyến nghị
+                report.AppendLine("\n💡 **Bước 4: Khuyến nghị cải thiện**");
+                report.AppendLine("• Theo dõi học sinh có điểm thấp và tạo kế hoạch hỗ trợ");
+                report.AppendLine("• Tạo báo cáo định kỳ để phụ huynh nắm bắt tình hình học tập");
+                report.AppendLine("• Tổ chức các buổi ôn tập cho học sinh yếu kém");
+                report.AppendLine("• Khuyến khích học sinh giỏi hỗ trợ bạn bè");
+                report.AppendLine("• Sử dụng phương pháp đánh giá đa dạng để phát huy thế mạnh của từng học sinh");
 
                 return report.ToString();
             }
