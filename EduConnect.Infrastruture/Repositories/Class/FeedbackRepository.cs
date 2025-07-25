@@ -65,14 +65,21 @@ namespace EduConnect.Infrastruture.Repositories.Class
             return (items, totalCount);
         }
 
-        public async Task<List<Feedback>> GetFeedbacksByParentIdAsync(string parentId)
+        public async Task<(List<Feedback> items, int totalCount)> GetFeedbacksByParentIdAsync(string parentId, int pageIndex = 0, int pageSize = 10)
         {
-            return await _context.Feedbacks
+            var query = _context.Feedbacks
                 .Include(f => f.Parent)
                     .ThenInclude(p => p.Account)
-                .Where(f => f.ParentID == parentId && f.IsDeleted != true)
+                .Where(f => f.ParentID == parentId && f.IsDeleted != true);
+
+            var totalCount = await query.CountAsync();
+            var items = await query
                 .OrderByDescending(f => f.DateTime)
+                .Skip(pageIndex * pageSize)
+                .Take(pageSize)
                 .ToListAsync();
+
+            return (items, totalCount);
         }
 
         public async Task<List<Feedback>> GetFeedbacksByTargetAsync(string target)

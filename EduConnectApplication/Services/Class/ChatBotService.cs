@@ -284,7 +284,7 @@ namespace EduConnect.Application.Services.Class
                         Data = new ChatMessageResponse
                         {
                             Role = "bot",
-                            Message = $"Kết quả từ function {functionCallPart.FunctionCall.Name}:\n\n{functionResult}"
+                            Message = functionResult
                         }
                     };
                 }

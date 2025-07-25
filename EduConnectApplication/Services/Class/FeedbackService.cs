@@ -188,22 +188,27 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId)
+        public async Task<PagedApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId, int pageIndex = 0, int pageSize = 10)
         {
             try
             {
-                var feedbacks = await _feedbackRepository.GetFeedbacksByParentIdAsync(parentId);
+                var (feedbacks, totalCount) = await _feedbackRepository.GetFeedbacksByParentIdAsync(parentId, pageIndex, pageSize);
                 var responses = feedbacks.Select(MapToFeedbackResponse).ToList();
 
-                return ApiResponse<List<FeedbackResponse>>.SuccessResponse(
+                return PagedApiResponse<List<FeedbackResponse>>.SuccessPagedResponse(
                     responses,
-                    "Feedbacks retrieved successfully");
+                    "Feedbacks retrieved successfully",
+                    totalCount,
+                    pageIndex,
+                    pageSize);
             }
             catch (Exception ex)
             {
-                return ApiResponse<List<FeedbackResponse>>.ErrorResponse(
+                return PagedApiResponse<List<FeedbackResponse>>.ErrorPagedResponse(
                     new List<string> { ex.Message },
-                    "Error retrieving feedbacks");
+                    "Error retrieving feedbacks",
+                    pageIndex,
+                    pageSize);
             }
         }
 

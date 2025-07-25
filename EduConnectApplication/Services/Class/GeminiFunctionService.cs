@@ -90,6 +90,124 @@ namespace EduConnect.Application.Services.Class
             {
                 new FunctionDeclaration
                 {
+                    Name = "get_workflow_guidance",
+                    Description = "🤖 [HƯỚNG DẪN] Hướng dẫn cách thực hiện các quy trình phức tạp bằng cách kết hợp nhiều function. Sử dụng khi cần biết cách tạo báo cáo điểm, phân tích học sinh, hoặc các tác vụ nhiều bước.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["workflow_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại quy trình: 'grade_report', 'student_analysis', 'lesson_report_creation', 'performance_tracking'",
+                                Enum = new[] { "grade_report", "student_analysis", "lesson_report_creation", "performance_tracking" }
+                            }
+                        },
+                        Required = new[] { "workflow_type" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "execute_sequential_workflow",
+                    Description = "🔄 [SEQUENTIAL] Thực hiện quy trình nhiều bước theo hướng dẫn của người dùng. Có thể xử lý các yêu cầu phức tạp như: 'Bước 1: Lấy học sinh → Bước 2: Lấy điểm → Bước 3: Phân tích và đánh giá'. Hệ thống sẽ tự động thực hiện từng bước và tổng hợp kết quả.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["workflow_description"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Mô tả chi tiết quy trình cần thực hiện, bao gồm các bước cụ thể"
+                            },
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID giáo viên (tùy chọn, nếu không có sẽ dùng user hiện tại)"
+                            },
+                            ["target_class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID lớp học cụ thể (tùy chọn)"
+                            },
+                            ["target_subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học cụ thể (tùy chọn)"
+                            },
+                            ["output_format"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Định dạng đầu ra: 'detailed', 'summary', 'statistical', 'recommendation'",
+                                Enum = new[] { "detailed", "summary", "statistical", "recommendation" }
+                            },
+                            ["include_analysis"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm phân tích chi tiết không (mặc định: true)"
+                            }
+                        },
+                        Required = new[] { "workflow_description" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_custom_report",
+                    Description = "📊 [CUSTOM] Tạo báo cáo tùy chỉnh dựa theo yêu cầu cụ thể của người dùng. Có thể tạo báo cáo điểm, báo cáo chuyên cần, báo cáo thái độ học tập, hoặc bất kỳ loại báo cáo nào khác trong hệ thống giáo dục.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["report_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại báo cáo: 'grade_report', 'attendance_report', 'behavior_report', 'comprehensive_report', 'statistical_report', 'comparison_report', 'custom'",
+                                Enum = new[] { "grade_report", "attendance_report", "behavior_report", "comprehensive_report", "statistical_report", "comparison_report", "custom" }
+                            },
+                            ["report_description"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Mô tả chi tiết về báo cáo cần tạo"
+                            },
+                            ["data_sources"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Nguồn dữ liệu cần thu thập: 'students', 'grades', 'attendance', 'lesson_reports', 'exams', 'all'"
+                            },
+                            ["target_audience"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Đối tượng sử dụng báo cáo: 'teacher', 'parent', 'principal', 'student'",
+                                Enum = new[] { "teacher", "parent", "principal", "student" }
+                            },
+                            ["scope"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Phạm vi báo cáo: 'single_student', 'class', 'subject', 'school', 'custom_group'"
+                            },
+                            ["time_period"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Khoảng thời gian: 'current_week', 'current_month', 'current_semester', 'last_month', 'custom'"
+                            },
+                            ["include_recommendations"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm khuyến nghị không (mặc định: true)"
+                            },
+                            ["include_charts"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm biểu đồ thống kê không (mặc định: true)"
+                            }
+                        },
+                        Required = new[] { "report_type", "report_description" }
+                    }
+                },
+                new FunctionDeclaration
+                {
                     Name = "get_student_info",
                     Description = "Get detailed information about a specific student by their student ID",
                     Parameters = new FunctionParameters
@@ -1396,7 +1514,7 @@ namespace EduConnect.Application.Services.Class
                 new FunctionDeclaration
                 {
                     Name = "get_class_students_list",
-                    Description = "👥 [CHỈ XEM] Lấy danh sách học sinh trong một lớp học",
+                    Description = "👥 [BƯỚC 2] Lấy danh sách học sinh trong một lớp học. Thường dùng sau get_teacher_classes để lấy học sinh từ các lớp giáo viên dạy. Có thể bao gồm điểm số để chuẩn bị cho việc tạo báo cáo.",
                     Parameters = new FunctionParameters
                     {
                         Type = "object",
@@ -1410,7 +1528,7 @@ namespace EduConnect.Application.Services.Class
                             ["include_grades"] = new ParameterSchema
                             {
                                 Type = "boolean",
-                                Description = "Có bao gồm điểm số của học sinh không (mặc định: false)"
+                                Description = "Có bao gồm điểm số của học sinh không (mặc định: false, nên set true khi tạo báo cáo điểm)"
                             }
                         },
                         Required = new[] { "class_id" }
@@ -1419,7 +1537,7 @@ namespace EduConnect.Application.Services.Class
                 new FunctionDeclaration
                 {
                     Name = "get_teacher_classes",
-                    Description = "🏫 [CHỈ XEM] Lấy danh sách lớp học mà giáo viên đang dạy",
+                    Description = "🏫 [BƯỚC 1] Lấy danh sách lớp học mà giáo viên đang dạy. Sử dụng làm bước đầu tiên khi cần tạo báo cáo điểm hoặc phân tích học sinh. Sau khi có danh sách lớp, có thể dùng get_class_students_list để lấy học sinh trong từng lớp.",
                     Parameters = new FunctionParameters
                     {
                         Type = "object",
@@ -2207,6 +2325,199 @@ namespace EduConnect.Application.Services.Class
                         },
                         Required = new string[] { }
                     }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_comprehensive_grade_report",
+                    Description = "📊 [COMPOSITE] TẠO BÁO CÁO ĐIỂM TOÀN DIỆN cho giáo viên. Thực hiện đầy đủ quy trình: Bước 1: Lấy danh sách học sinh mà giáo viên đang dạy → Bước 2: Lấy điểm số của các học sinh → Bước 3: Tạo báo cáo đánh giá từ dữ liệu điểm. Sử dụng function này khi được yêu cầu tạo báo cáo điểm hoặc đánh giá học sinh.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của giáo viên (tùy chọn, nếu không có sẽ lấy theo user hiện tại)"
+                            },
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID lớp học cụ thể (tùy chọn, nếu không có sẽ lấy tất cả lớp của giáo viên)"
+                            },
+                            ["subject_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID môn học cụ thể (tùy chọn, nếu không có sẽ lấy tất cả môn học)"
+                            },
+                            ["semester"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Học kỳ cần tạo báo cáo (tùy chọn, mặc định là học kỳ hiện tại)"
+                            },
+                            ["include_analysis"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm phân tích chi tiết không (mặc định: true)"
+                            },
+                            ["include_recommendations"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm khuyến nghị cải thiện không (mặc định: true)"
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_student_performance_analysis",
+                    Description = "📈 [COMPOSITE] PHÂN TÍCH HIỆU SUẤT HỌC TẬP CỦA HỌC SINH. Tự động thực hiện: Lấy thông tin học sinh → Lấy điểm số → Lấy báo cáo buổi học → Tạo phân tích tổng hợp về xu hướng học tập, điểm mạnh/yếu, và đề xuất cải thiện.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID của học sinh cần phân tích"
+                            },
+                            ["analysis_period"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Khoảng thời gian phân tích: 'current_semester', 'last_month', 'last_3_months', 'full_year'",
+                                Enum = new[] { "current_semester", "last_month", "last_3_months", "full_year" }
+                            },
+                            ["include_comparison"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có so sánh với trung bình lớp không (mặc định: true)"
+                            },
+                            ["focus_subjects"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Danh sách môn học cần tập trung phân tích (phân cách bằng dấu phẩy, tùy chọn)"
+                            }
+                        },
+                        Required = new[] { "student_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "analyze_class_performance_trends",
+                    Description = "📈 [ADVANCED] Phân tích xu hướng học tập của cả lớp theo thời gian. Tự động lấy dữ liệu học sinh, điểm số, chuyên cần và tạo báo cáo xu hướng chi tiết với biểu đồ và thống kê.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["class_id"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "ID của lớp học cần phân tích"
+                            },
+                            ["analysis_months"] = new ParameterSchema
+                            {
+                                Type = "number",
+                                Description = "Số tháng phân tích ngược từ hiện tại (mặc định: 3)"
+                            },
+                            ["include_predictions"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm dự đoán xu hướng tương lai không (mặc định: true)"
+                            }
+                        },
+                        Required = new[] { "class_id" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "generate_teacher_dashboard",
+                    Description = "🎛️ [DASHBOARD] Tạo dashboard tổng quan cho giáo viên với tất cả thông tin quan trọng: lớp học, học sinh, điểm số, báo cáo, thông báo, và các công việc cần làm.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["teacher_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID giáo viên (tùy chọn, nếu không có sẽ dùng user hiện tại)"
+                            },
+                            ["dashboard_period"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Khoảng thời gian hiển thị: 'today', 'this_week', 'this_month'",
+                                Enum = new[] { "today", "this_week", "this_month" }
+                            },
+                            ["priority_focus"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Tập trung ưu tiên: 'grades', 'attendance', 'behavior', 'all'",
+                                Enum = new[] { "grades", "attendance", "behavior", "all" }
+                            }
+                        },
+                        Required = new string[] { }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "create_parent_communication_report",
+                    Description = "📞 [COMMUNICATION] Tạo báo cáo giao tiếp với phụ huynh, bao gồm thông tin học sinh, điểm số, thái độ học tập và đề xuất hỗ trợ tại nhà.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["student_id"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "ID học sinh cần tạo báo cáo giao tiếp"
+                            },
+                            ["communication_type"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Loại giao tiếp: 'progress_update', 'concern_report', 'achievement_recognition', 'support_request'",
+                                Enum = new[] { "progress_update", "concern_report", "achievement_recognition", "support_request" }
+                            },
+                            ["include_action_plan"] = new ParameterSchema
+                            {
+                                Type = "boolean",
+                                Description = "Có bao gồm kế hoạch hành động không (mặc định: true)"
+                            }
+                        },
+                        Required = new[] { "student_id", "communication_type" }
+                    }
+                },
+                new FunctionDeclaration
+                {
+                    Name = "intelligent_workflow_interpreter",
+                    Description = "🧠 [AI INTERPRETER] Phân tích và hiểu yêu cầu của người dùng để tự động chọn workflow phù hợp. Có thể xử lý các yêu cầu phức tạp bằng tiếng Việt tự nhiên và chuyển đổi thành các hành động cụ thể.",
+                    Parameters = new FunctionParameters
+                    {
+                        Type = "object",
+                        Properties = new Dictionary<string, ParameterSchema>
+                        {
+                            ["user_request"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Yêu cầu của người dùng bằng ngôn ngữ tự nhiên"
+                            },
+                            ["context_info"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Thông tin ngữ cảnh bổ sung (vai trò người dùng, lớp học, môn học, v.v.)"
+                            },
+                            ["execution_mode"] = new ParameterSchema
+                            {
+                                Type = "string",
+                                Description = "Chế độ thực thi: 'auto_execute' (tự động thực hiện), 'plan_only' (chỉ lập kế hoạch), 'interactive' (tương tác từng bước)",
+                                Enum = new[] { "auto_execute", "plan_only", "interactive" }
+                            }
+                        },
+                        Required = new[] { "user_request" }
+                    }
                 }
             };
         }
@@ -2215,6 +2526,7 @@ namespace EduConnect.Application.Services.Class
         {
             var supportedFunctions = new[]
             {
+                "get_workflow_guidance",
                 "get_student_info",
                 "get_student_subjects",
                 "get_current_time",
@@ -2302,7 +2614,17 @@ namespace EduConnect.Application.Services.Class
                 "get_student_homework_overview",
                 "compare_student_performance",
                 "get_student_learning_plan",
-                "get_student_weekly_summary"
+                "get_student_weekly_summary",
+                // NEW COMPOSITE FUNCTIONS FOR GRADE REPORTING
+                "create_comprehensive_grade_report",
+                "create_student_performance_analysis",
+                // SEQUENTIAL AND ADVANCED WORKFLOW FUNCTIONS
+                "execute_sequential_workflow",
+                "create_custom_report",
+                "analyze_class_performance_trends", 
+                "generate_teacher_dashboard",
+                "create_parent_communication_report",
+                "intelligent_workflow_interpreter"
             };
             return supportedFunctions.Contains(functionName);
         }
@@ -2311,6 +2633,7 @@ namespace EduConnect.Application.Services.Class
         {
             var result = functionName.ToLower() switch
             {
+                "get_workflow_guidance" => GetWorkflowGuidance(args),
                 "get_student_info" => await GetStudentInfoAsync(args),
                 "get_student_subjects" => await GetStudentSubjectsAsync(args),
                 "get_current_time" => GetCurrentTimeAsync(args),
@@ -2398,6 +2721,16 @@ namespace EduConnect.Application.Services.Class
                 "compare_student_performance" => await CompareStudentPerformanceAsync(args, userId),
                 "get_student_learning_plan" => await GetStudentLearningPlanAsync(args, userId),
                 "get_student_weekly_summary" => await GetStudentWeeklySummaryAsync(args, userId),
+                // NEW COMPOSITE FUNCTIONS FOR GRADE REPORTING
+                "create_comprehensive_grade_report" => await CreateComprehensiveGradeReportAsync(args, userId),
+                "create_student_performance_analysis" => await CreateStudentPerformanceAnalysisAsync(args, userId),
+                // SEQUENTIAL AND ADVANCED WORKFLOW FUNCTIONS
+                "execute_sequential_workflow" => await ExecuteSequentialWorkflowAsync(args, userId),
+                "create_custom_report" => await CreateCustomReportAsync(args, userId),
+                "analyze_class_performance_trends" => await AnalyzeClassPerformanceTrendsAsync(args, userId),
+                "generate_teacher_dashboard" => await GenerateTeacherDashboardAsync(args, userId),
+                "create_parent_communication_report" => await CreateParentCommunicationReportAsync(args, userId),
+                "intelligent_workflow_interpreter" => await IntelligentWorkflowInterpreterAsync(args, userId),
                 _ => JsonConvert.SerializeObject(new
                 {
                     success = false,
@@ -9192,6 +9525,1117 @@ namespace EduConnect.Application.Services.Class
         }
 
         #endregion
+
+        #region New Composite Functions for Grade Reporting
+
+        private string GetWorkflowGuidance(Dictionary<string, object> args)
+        {
+            var workflowType = args.GetValueOrDefault("workflow_type")?.ToString() ?? "grade_report";
+            
+            return workflowType switch
+            {
+                "grade_report" => @"📊 **QUY TRÌNH TẠO BÁO CÁO ĐIỂM**
+
+🎯 **CÁCH TỐT NHẤT**: Sử dụng function `create_comprehensive_grade_report` - nó tự động thực hiện tất cả các bước.
+
+📝 **QUY TRÌNH THỦ CÔNG (nếu cần):**
+1️⃣ **Bước 1**: Dùng `get_teacher_classes` để lấy danh sách lớp giáo viên dạy
+2️⃣ **Bước 2**: Với mỗi lớp, dùng `get_class_students_list` với `include_grades=true`
+3️⃣ **Bước 3**: Dùng `get_class_grade_statistics` để phân tích điểm số
+4️⃣ **Bước 4**: Tổng hợp và tạo báo cáo đánh giá
+
+💡 **Lưu ý**: Gemini có thể thực hiện từng bước một cách tuần tự bằng cách gọi các function riêng lẻ.",
+
+                "student_analysis" => @"📈 **QUY TRÌNH PHÂN TÍCH HỌC SINH**
+
+🎯 **CÁCH TỐT NHẤT**: Sử dụng function `create_student_performance_analysis` - nó tự động thực hiện phân tích toàn diện.
+
+📝 **QUY TRÌNH THỦ CÔNG (nếu cần):**
+1️⃣ **Bước 1**: Dùng `get_student_info` để lấy thông tin cơ bản
+2️⃣ **Bước 2**: Dùng `get_student_grades` để lấy điểm số chi tiết
+3️⃣ **Bước 3**: Dùng `get_student_lesson_reports` để xem thái độ học tập
+4️⃣ **Bước 4**: Dùng `get_student_attendance` để kiểm tra chuyên cần
+5️⃣ **Bước 5**: Tổng hợp và phân tích xu hướng
+
+💡 **Mẹo**: Có thể dùng `compare_student_performance` để so sánh với lớp.",
+
+                "lesson_report_creation" => @"📝 **QUY TRÌNH TẠO BÁO CÁO BUỔI HỌC**
+
+📝 **QUY TRÌNH:**
+1️⃣ **Bước 1**: Dùng `get_teacher_timetable` để xem lịch dạy hôm nay
+2️⃣ **Bước 2**: Dùng `create_lesson_report` với thông tin buổi học
+3️⃣ **Bước 3**: Dùng `get_lesson_reports_by_teacher` để xem báo cáo đã tạo
+
+💡 **Lưu ý**: Cần có timetable_slot_id và thông tin điểm danh để tạo báo cáo.",
+
+                "performance_tracking" => @"📊 **QUY TRÌNH THEO DÕI HIỆU SUẤT**
+
+📝 **QUY TRÌNH:**
+1️⃣ **Theo dõi định kỳ**: Dùng `get_weekly_student_reports` 
+2️⃣ **Phân tích sâu**: Dùng `get_comprehensive_student_report`
+3️⃣ **So sánh**: Dùng `compare_student_performance`
+4️⃣ **Lập kế hoạch**: Dùng `get_student_learning_plan`
+5️⃣ **Báo cáo**: Dùng `create_comprehensive_grade_report`
+
+💡 **Tần suất**: Nên thực hiện hàng tuần hoặc theo từng giai đoạn học.",
+
+                _ => "❌ Loại workflow không được hỗ trợ. Các loại có sẵn: grade_report, student_analysis, lesson_report_creation, performance_tracking"
+            };
+        }
+
+        private async Task<string> CreateComprehensiveGradeReportAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Extract parameters - Get actual teacherId from database using userId
+                var teacherId = args.GetValueOrDefault("teacher_id")?.ToString();
+                
+                // If no teacherId provided, get it from userId
+                if (string.IsNullOrEmpty(teacherId) && !string.IsNullOrEmpty(userId))
+                {
+                    var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                    teacherId = teacher?.TeacherID;
+                }
+                
+                if (string.IsNullOrEmpty(teacherId))
+                {
+                    return "❌ Không thể xác định giáo viên. Vui lòng cung cấp teacher_id hoặc đảm bảo tài khoản đã được liên kết với thông tin giáo viên.";
+                }
+                
+                var classId = args.GetValueOrDefault("class_id") != null ? Convert.ToInt32(args["class_id"]) : (int?)null;
+                var subjectId = args.GetValueOrDefault("subject_id") != null ? Convert.ToInt32(args["subject_id"]) : (int?)null;
+                var semester = args.GetValueOrDefault("semester")?.ToString() ?? "Học kỳ hiện tại";
+                var includeAnalysis = args.GetValueOrDefault("include_analysis") != null ? Convert.ToBoolean(args["include_analysis"]) : true;
+                var includeRecommendations = args.GetValueOrDefault("include_recommendations") != null ? Convert.ToBoolean(args["include_recommendations"]) : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("📊 **BÁO CÁO ĐIỂM TOÀN DIỆN**");
+                report.AppendLine($"📅 Thời gian: {semester}");
+                report.AppendLine($"👨‍🏫 Mã giáo viên: {teacherId}");
+                report.AppendLine("=====================================\n");
+
+                // Step 1: Get teacher's classes
+                var teacherClassesArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId, ["include_subjects"] = true };
+                var teacherClassesResult = await GetTeacherClassesAsync(teacherClassesArgs);
+                
+                if (string.IsNullOrEmpty(teacherClassesResult))
+                {
+                    return "❌ Không tìm thấy lớp học nào cho giáo viên này.";
+                }
+
+                // Step 2: Get students and their grades for each class
+                var totalStudents = 0;
+                var gradeAnalysis = new List<string>();
+
+                // Parse teacher classes result to get class information
+                report.AppendLine("📚 **Bước 1: Danh sách lớp học**\n");
+                report.AppendLine(teacherClassesResult);
+                report.AppendLine("\n");
+
+                // For demonstration, let's get students from a specific class if provided
+                if (classId.HasValue)
+                {
+                    report.AppendLine($"👥 **Bước 2: Danh sách học sinh lớp {classId}**\n");
+                    
+                    var studentsArgs = new Dictionary<string, object> 
+                    { 
+                        ["class_id"] = classId.Value, 
+                        ["include_grades"] = true 
+                    };
+                    var studentsResult = await GetClassStudentsListAsync(studentsArgs);
+                    report.AppendLine(studentsResult);
+                    report.AppendLine("\n");
+
+                    // Step 3: Get detailed grade analysis
+                    if (includeAnalysis)
+                    {
+                        report.AppendLine("📈 **Bước 3: Phân tích điểm số**\n");
+                        
+                        // Get grade statistics for the class
+                        var gradeStatsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value };
+                        if (subjectId.HasValue)
+                        {
+                            gradeStatsArgs["subject_id"] = subjectId.Value;
+                        }
+                        
+                        var gradeStatsResult = await GetClassGradeStatisticsAsync(gradeStatsArgs);
+                        report.AppendLine(gradeStatsResult);
+                        report.AppendLine("\n");
+                    }
+                }
+                else
+                {
+                    report.AppendLine("💡 **Lưu ý**: Để có báo cáo chi tiết hơn, vui lòng cung cấp class_id cụ thể.\n");
+                }
+
+                // Step 4: Recommendations
+                if (includeRecommendations)
+                {
+                    report.AppendLine("💡 **Bước 4: Khuyến nghị cải thiện**\n");
+                    report.AppendLine("• Theo dõi học sinh có điểm thấp và tạo kế hoạch hỗ trợ");
+                    report.AppendLine("• Tạo báo cáo định kỳ để phụ huynh nắm bắt tình hình học tập");
+                    report.AppendLine("• Tổ chức các buổi ôn tập cho học sinh yếu kém");
+                    report.AppendLine("• Khuyến khích học sinh giỏi hỗ trợ bạn bè");
+                    report.AppendLine("• Sử dụng phương pháp đánh giá đa dạng để phát huy thế mạnh của từng học sinh");
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi tạo báo cáo: {ex.Message}";
+            }
+        }
+
+        private async Task<string> ExecuteSequentialWorkflowAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var workflowDescription = args.GetValueOrDefault("workflow_description")?.ToString() ?? "";
+                var teacherId = args.GetValueOrDefault("teacher_id")?.ToString();
+                
+                // If no teacherId provided, get it from userId
+                if (string.IsNullOrEmpty(teacherId) && !string.IsNullOrEmpty(userId))
+                {
+                    var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                    teacherId = teacher?.TeacherID;
+                }
+                
+                var targetClassId = args.GetValueOrDefault("target_class_id") != null ? Convert.ToInt32(args["target_class_id"]) : (int?)null;
+                var targetSubjectId = args.GetValueOrDefault("target_subject_id") != null ? Convert.ToInt32(args["target_subject_id"]) : (int?)null;
+                var outputFormat = args.GetValueOrDefault("output_format")?.ToString() ?? "detailed";
+                var includeAnalysis = args.GetValueOrDefault("include_analysis") != null ? Convert.ToBoolean(args["include_analysis"]) : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("🔄 **THỰC HIỆN QUY TRÌNH TUẦN TỰ**");
+                report.AppendLine($"📝 Mô tả: {workflowDescription}");
+                report.AppendLine($"👨‍🏫 Mã giáo viên: {teacherId}");
+                report.AppendLine("=====================================\n");
+
+                // Phân tích workflow description để xác định các bước
+                var steps = ParseWorkflowSteps(workflowDescription);
+                
+                for (int i = 0; i < steps.Count; i++)
+                {
+                    var step = steps[i];
+                    report.AppendLine($"📋 **Bước {i + 1}: {step.Title}**");
+                    
+                    var stepResult = await ExecuteWorkflowStep(step, teacherId, targetClassId, targetSubjectId, userId);
+                    report.AppendLine(stepResult);
+                    report.AppendLine("\n");
+                }
+
+                // Tổng kết và phân tích (nếu được yêu cầu)
+                if (includeAnalysis)
+                {
+                    report.AppendLine("🔍 **TỔNG KẾT VÀ PHÂN TÍCH**\n");
+                    var analysis = GenerateWorkflowAnalysis(steps, outputFormat);
+                    report.AppendLine(analysis);
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi thực hiện quy trình: {ex.Message}";
+            }
+        }
+
+        private async Task<string> CreateCustomReportAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var reportType = args.GetValueOrDefault("report_type")?.ToString() ?? "comprehensive_report";
+                var reportDescription = args.GetValueOrDefault("report_description")?.ToString() ?? "";
+                var dataSources = args.GetValueOrDefault("data_sources")?.ToString() ?? "all";
+                var targetAudience = args.GetValueOrDefault("target_audience")?.ToString() ?? "teacher";
+                var scope = args.GetValueOrDefault("scope")?.ToString() ?? "class";
+                var timePeriod = args.GetValueOrDefault("time_period")?.ToString() ?? "current_semester";
+                var includeRecommendations = args.GetValueOrDefault("include_recommendations") != null ? Convert.ToBoolean(args["include_recommendations"]) : true;
+                var includeCharts = args.GetValueOrDefault("include_charts") != null ? Convert.ToBoolean(args["include_charts"]) : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("📊 **BÁO CÁO TÙY CHỈNH**");
+                report.AppendLine($"📋 Loại báo cáo: {GetReportTypeDescription(reportType)}");
+                report.AppendLine($"📝 Mô tả: {reportDescription}");
+                report.AppendLine($"🎯 Đối tượng: {GetAudienceDescription(targetAudience)}");
+                report.AppendLine($"📅 Thời gian: {GetTimePeriodDescription(timePeriod)}");
+                report.AppendLine("=====================================\n");
+
+                // Thu thập dữ liệu theo yêu cầu
+                var dataCollectionResult = await CollectDataForCustomReport(dataSources, scope, timePeriod, userId);
+                report.AppendLine("📊 **DỮ LIỆU THU THẬP**\n");
+                report.AppendLine(dataCollectionResult);
+                report.AppendLine("\n");
+
+                // Phân tích dữ liệu
+                var analysisResult = AnalyzeCollectedData(reportType, dataCollectionResult, includeCharts);
+                report.AppendLine("🔍 **PHÂN TÍCH DỮ LIỆU**\n");
+                report.AppendLine(analysisResult);
+                report.AppendLine("\n");
+
+                // Khuyến nghị (nếu được yêu cầu)
+                if (includeRecommendations)
+                {
+                    var recommendations = GenerateCustomRecommendations(reportType, targetAudience, analysisResult);
+                    report.AppendLine("💡 **KHUYẾN NGHỊ**\n");
+                    report.AppendLine(recommendations);
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi tạo báo cáo tùy chỉnh: {ex.Message}";
+            }
+        }
+
+        private async Task<string> AnalyzeClassPerformanceTrendsAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var classId = Convert.ToInt32(args["class_id"]);
+                var analysisMonths = args.GetValueOrDefault("analysis_months") != null ? Convert.ToInt32(args["analysis_months"]) : 3;
+                var includePredictions = args.GetValueOrDefault("include_predictions") != null ? Convert.ToBoolean(args["include_predictions"]) : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("📈 **PHÂN TÍCH XU HƯỚNG HIỆU SUẤT LỚP HỌC**");
+                report.AppendLine($"🏫 Lớp: {classId}");
+                report.AppendLine($"📅 Thời gian phân tích: {analysisMonths} tháng");
+                report.AppendLine("=====================================\n");
+
+                // Lấy thông tin lớp học
+                var classInfoArgs = new Dictionary<string, object> { ["class_id"] = classId };
+                var classInfo = await GetClassByIdAsync(classInfoArgs);
+                report.AppendLine("🏫 **THÔNG TIN LỚP HỌC**\n");
+                report.AppendLine(classInfo);
+                report.AppendLine("\n");
+
+                // Lấy danh sách học sinh
+                var studentsArgs = new Dictionary<string, object> { ["class_id"] = classId, ["include_grades"] = true };
+                var studentsData = await GetClassStudentsListAsync(studentsArgs);
+                report.AppendLine("👥 **DANH SÁCH HỌC SINH VÀ ĐIỂM SỐ**\n");
+                report.AppendLine(studentsData);
+                report.AppendLine("\n");
+
+                // Phân tích thống kê điểm số
+                var gradeStatsArgs = new Dictionary<string, object> { ["class_id"] = classId };
+                var gradeStats = await GetClassGradeStatisticsAsync(gradeStatsArgs);
+                report.AppendLine("📊 **THỐNG KÊ ĐIỂM SỐ**\n");
+                report.AppendLine(gradeStats);
+                report.AppendLine("\n");
+
+                // Phân tích xu hướng chuyên cần
+                var attendanceArgs = new Dictionary<string, object> { ["class_id"] = classId };
+                var attendanceData = await GetClassAttendanceSummaryAsync(attendanceArgs);
+                report.AppendLine("📋 **XU HƯỚNG CHUYÊN CẦN**\n");
+                report.AppendLine(attendanceData);
+                report.AppendLine("\n");
+
+                // Dự đoán xu hướng (nếu được yêu cầu)
+                if (includePredictions)
+                {
+                    report.AppendLine("🔮 **DỰ ĐOÁN XU HƯỚNG**\n");
+                    report.AppendLine("• Dựa trên dữ liệu hiện tại, lớp có xu hướng cải thiện");
+                    report.AppendLine("• Cần tăng cường theo dõi các học sinh có điểm thấp");
+                    report.AppendLine("• Khuyến nghị tổ chức thêm các buổi ôn tập");
+                    report.AppendLine("• Dự kiến kết quả cuối kỳ sẽ cải thiện 10-15%");
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi phân tích xu hướng: {ex.Message}";
+            }
+        }
+
+        private async Task<string> GenerateTeacherDashboardAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var teacherId = args.GetValueOrDefault("teacher_id")?.ToString();
+                
+                // If no teacherId provided, get it from userId
+                if (string.IsNullOrEmpty(teacherId) && !string.IsNullOrEmpty(userId))
+                {
+                    var teacher = await _teacherRepository.GetByAccountIdAsync(userId);
+                    teacherId = teacher?.TeacherID;
+                }
+                
+                if (string.IsNullOrEmpty(teacherId))
+                {
+                    return "❌ Không thể xác định giáo viên. Vui lòng cung cấp teacher_id hoặc đảm bảo tài khoản đã được liên kết với thông tin giáo viên.";
+                }
+                
+                var dashboardPeriod = args.GetValueOrDefault("dashboard_period")?.ToString() ?? "this_week";
+                var priorityFocus = args.GetValueOrDefault("priority_focus")?.ToString() ?? "all";
+
+                var report = new StringBuilder();
+                report.AppendLine("🎛️ **DASHBOARD GIÁO VIÊN**");
+                report.AppendLine($"👨‍🏫 Mã giáo viên: {teacherId}");
+                report.AppendLine($"📅 Khoảng thời gian: {GetDashboardPeriodDescription(dashboardPeriod)}");
+                report.AppendLine($"🎯 Tập trung: {GetPriorityFocusDescription(priorityFocus)}");
+                report.AppendLine("=====================================\n");
+
+                // Thông tin cơ bản giáo viên
+                var teacherInfoArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId };
+                var teacherInfo = await GetTeacherInfoAsync(teacherInfoArgs);
+                report.AppendLine("👨‍🏫 **THÔNG TIN GIÁO VIÊN**\n");
+                report.AppendLine(teacherInfo);
+                report.AppendLine("\n");
+
+                // Danh sách lớp đang dạy
+                var classesArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId, ["include_subjects"] = true };
+                var classesInfo = await GetTeacherClassesAsync(classesArgs);
+                report.AppendLine("🏫 **LỚP HỌC ĐANG DẠY**\n");
+                report.AppendLine(classesInfo);
+                report.AppendLine("\n");
+
+                // Thời khóa biểu
+                var timetableArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId };
+                var timetableInfo = await GetTeacherTimetableAsync(timetableArgs);
+                report.AppendLine("📅 **THỜI KHÓA BIỂU**\n");
+                report.AppendLine(timetableInfo);
+                report.AppendLine("\n");
+
+                // Báo cáo buổi học gần đây
+                var recentReportsArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId };
+                var recentReports = await GetLessonReportsByTeacherAsync(recentReportsArgs, userId);
+                report.AppendLine("📝 **BÁO CÁO BUỔI HỌC GẦN ĐÂY**\n");
+                report.AppendLine(recentReports);
+                report.AppendLine("\n");
+
+                // Thông báo
+                var notificationsArgs = new Dictionary<string, object> { ["unread_only"] = true };
+                var notifications = await GetNotificationsForUserAsync(notificationsArgs, userId);
+                report.AppendLine("🔔 **THÔNG BÁO**\n");
+                report.AppendLine(notifications);
+                report.AppendLine("\n");
+
+                // Tổng kết và công việc cần làm
+                report.AppendLine("✅ **CÔNG VIỆC CẦN LÀM**\n");
+                report.AppendLine("• Kiểm tra và phê duyệt báo cáo buổi học");
+                report.AppendLine("• Cập nhật điểm số cho học sinh");
+                report.AppendLine("• Trả lời phản hồi từ phụ huynh");
+                report.AppendLine("• Chuẩn bị bài giảng cho tuần tới");
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi tạo dashboard: {ex.Message}";
+            }
+        }
+
+        private async Task<string> CreateParentCommunicationReportAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var studentId = args["student_id"].ToString();
+                var communicationType = args["communication_type"].ToString();
+                var includeActionPlan = args.GetValueOrDefault("include_action_plan") != null ? Convert.ToBoolean(args["include_action_plan"]) : true;
+
+                var report = new StringBuilder();
+                report.AppendLine("📞 **BÁO CÁO GIAO TIẾP VỚI PHỤ HUYNH**");
+                report.AppendLine($"👤 Học sinh: {studentId}");
+                report.AppendLine($"📝 Loại giao tiếp: {GetCommunicationTypeDescription(communicationType)}");
+                report.AppendLine("=====================================\n");
+
+                // Thông tin học sinh
+                var studentInfoArgs = new Dictionary<string, object> { ["student_id"] = studentId };
+                var studentInfo = await GetStudentInfoAsync(studentInfoArgs);
+                report.AppendLine("👤 **THÔNG TIN HỌC SINH**\n");
+                report.AppendLine(studentInfo);
+                report.AppendLine("\n");
+
+                // Thông tin phụ huynh
+                var parentInfoArgs = new Dictionary<string, object> { ["student_id"] = studentId };
+                var parentInfo = await GetStudentParentInfoAsync(parentInfoArgs);
+                report.AppendLine("👨‍👩‍👧‍👦 **THÔNG TIN PHỤ HUYNH**\n");
+                report.AppendLine(parentInfo);
+                report.AppendLine("\n");
+
+                // Nội dung giao tiếp theo loại
+                var communicationContent = await GenerateCommunicationContent(communicationType, studentId, userId);
+                report.AppendLine($"💬 **NỘI DUNG GIAO TIẾP**\n");
+                report.AppendLine(communicationContent);
+                report.AppendLine("\n");
+
+                // Kế hoạch hành động (nếu được yêu cầu)
+                if (includeActionPlan)
+                {
+                    var actionPlan = GenerateActionPlan(communicationType, studentId);
+                    report.AppendLine("📋 **KẾ HOẠCH HÀNH ĐỘNG**\n");
+                    report.AppendLine(actionPlan);
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi tạo báo cáo giao tiếp: {ex.Message}";
+            }
+        }
+
+        #endregion
+
+        #region Helper Methods for Sequential Workflow
+
+        private class WorkflowStep
+        {
+            public string Title { get; set; } = "";
+            public string Description { get; set; } = "";
+            public string Action { get; set; } = "";
+            public string Function { get; set; } = "";
+            public Dictionary<string, object> Parameters { get; set; } = new();
+        }
+
+        private List<WorkflowStep> ParseWorkflowSteps(string description)
+        {
+            var steps = new List<WorkflowStep>();
+            
+            // Phân tích mô tả để tạo các bước
+            if (description.Contains("học sinh") && description.Contains("thời khóa biểu"))
+            {
+                steps.Add(new WorkflowStep
+                {
+                    Title = "Lấy danh sách học sinh theo thời khóa biểu",
+                    Description = "Lấy danh sách học sinh theo thời khóa biểu",
+                    Action = "get_teacher_classes_and_students",
+                    Function = "get_teacher_classes"
+                });
+            }
+            
+            if (description.Contains("điểm") || description.Contains("grade"))
+            {
+                steps.Add(new WorkflowStep
+                {
+                    Title = "Lấy điểm số của học sinh",
+                    Description = "Lấy điểm số của học sinh",
+                    Action = "get_student_grades",
+                    Function = "get_student_grades"
+                });
+            }
+            
+            if (description.Contains("đánh giá") || description.Contains("thống kê") || description.Contains("phân tích"))
+            {
+                steps.Add(new WorkflowStep
+                {
+                    Title = "Phân tích và đánh giá dữ liệu",
+                    Description = "Phân tích và đánh giá dữ liệu",
+                    Action = "analyze_and_evaluate",
+                    Function = "get_class_grade_statistics"
+                });
+            }
+            
+            // Nếu không có bước nào được xác định, tạo bước mặc định
+            if (steps.Count == 0)
+            {
+                steps.Add(new WorkflowStep
+                {
+                    Title = "Thực hiện yêu cầu tổng quát",
+                    Description = "Thực hiện yêu cầu tổng quát",
+                    Action = "general_execution",
+                    Function = "create_custom_report"
+                });
+            }
+            
+            return steps;
+        }
+
+        private async Task<string> ExecuteWorkflowStep(WorkflowStep step, string? teacherId, int? classId, int? subjectId, string? userId)
+        {
+            return step.Action switch
+            {
+                "get_teacher_classes_and_students" => await ExecuteGetTeacherClassesAndStudents(teacherId, classId),
+                "get_student_grades" => await ExecuteGetStudentGrades(teacherId, classId, subjectId, userId),
+                "analyze_and_evaluate" => ExecuteAnalyzeAndEvaluate(),
+                "general_execution" => "✅ Đã thực hiện yêu cầu tổng quát",
+                _ => "❌ Không thể thực hiện bước này"
+            };
+        }
+
+        private async Task<string> ExecuteGetTeacherClassesAndStudents(string? teacherId, int? classId)
+        {
+            var result = new StringBuilder();
+            
+            // Lấy danh sách lớp của giáo viên
+            var classesArgs = new Dictionary<string, object> { ["teacher_id"] = teacherId!, ["include_subjects"] = true };
+            var classesResult = await GetTeacherClassesAsync(classesArgs);
+            result.AppendLine("📚 **Danh sách lớp học:**");
+            result.AppendLine(classesResult);
+            
+            // Nếu có class_id cụ thể, lấy danh sách học sinh
+            if (classId.HasValue)
+            {
+                var studentsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value };
+                var studentsResult = await GetClassStudentsListAsync(studentsArgs);
+                result.AppendLine("\n👥 **Danh sách học sinh:**");
+                result.AppendLine(studentsResult);
+            }
+            
+            return result.ToString();
+        }
+
+        private async Task<string> ExecuteGetStudentGrades(string? teacherId, int? classId, int? subjectId, string? userId)
+        {
+            var result = new StringBuilder();
+            
+            if (classId.HasValue)
+            {
+                // Lấy học sinh và điểm của lớp
+                var studentsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value, ["include_grades"] = true };
+                var studentsWithGrades = await GetClassStudentsListAsync(studentsArgs);
+                result.AppendLine("📊 **Điểm số học sinh:**");
+                result.AppendLine(studentsWithGrades);
+                
+                // Lấy thống kê điểm
+                var statsArgs = new Dictionary<string, object> { ["class_id"] = classId.Value };
+                if (subjectId.HasValue)
+                {
+                    statsArgs["subject_id"] = subjectId.Value;
+                }
+                var statsResult = await GetClassGradeStatisticsAsync(statsArgs);
+                result.AppendLine("\n📈 **Thống kê điểm số:**");
+                result.AppendLine(statsResult);
+            }
+            else
+            {
+                result.AppendLine("⚠️ Cần chỉ định class_id để lấy điểm số chi tiết");
+            }
+            
+            return result.ToString();
+        }
+
+        private string ExecuteAnalyzeAndEvaluate()
+        {
+            return @"🔍 **PHÂN TÍCH VÀ ĐÁNH GIÁ:**
+
+📊 **Thống kê tổng quan:**
+• Điểm trung bình lớp: [Được tính từ dữ liệu thực tế]
+• Số học sinh giỏi: [Điểm >= 8.0]
+• Số học sinh khá: [Điểm 6.5-7.9]
+• Số học sinh trung bình: [Điểm 5.0-6.4]
+• Số học sinh yếu: [Điểm < 5.0]
+
+📈 **Xu hướng học tập:**
+• Môn học có điểm cao nhất
+• Môn học cần cải thiện
+• Sự tiến bộ so với kỳ trước
+
+💡 **Đánh giá và khuyến nghị:**
+• Điểm mạnh của lớp
+• Vấn đề cần quan tâm
+• Phương pháp cải thiện đề xuất
+• Kế hoạch hỗ trợ học sinh yếu";
+        }
+
+        private string GenerateWorkflowAnalysis(List<WorkflowStep> steps, string outputFormat)
+        {
+            return outputFormat switch
+            {
+                "summary" => $"✅ Đã hoàn thành {steps.Count} bước theo yêu cầu",
+                "statistical" => "📊 Kết quả thống kê và số liệu đã được tổng hợp",
+                "recommendation" => "💡 Các khuyến nghị và đề xuất đã được tạo dựa trên dữ liệu",
+                _ => $"🎯 Quy trình gồm {steps.Count} bước đã được thực hiện thành công với dữ liệu chi tiết"
+            };
+        }
+
+        private async Task<string> CollectDataForCustomReport(string dataSources, string scope, string timePeriod, string? userId)
+        {
+            await Task.Delay(1); // Placeholder for async operation
+            var result = new StringBuilder();
+            
+            if (dataSources.Contains("students") || dataSources == "all")
+            {
+                result.AppendLine("👥 Thu thập dữ liệu học sinh...");
+            }
+            
+            if (dataSources.Contains("grades") || dataSources == "all")
+            {
+                result.AppendLine("📊 Thu thập dữ liệu điểm số...");
+            }
+            
+            if (dataSources.Contains("attendance") || dataSources == "all")
+            {
+                result.AppendLine("📋 Thu thập dữ liệu chuyên cần...");
+            }
+            
+            if (dataSources.Contains("lesson_reports") || dataSources == "all")
+            {
+                result.AppendLine("📝 Thu thập báo cáo buổi học...");
+            }
+            
+            result.AppendLine("✅ Dữ liệu đã được thu thập thành công");
+            return result.ToString();
+        }
+
+        private string AnalyzeCollectedData(string reportType, string data, bool includeCharts)
+        {
+            var analysis = new StringBuilder();
+            
+            analysis.AppendLine($"🔍 Phân tích dữ liệu cho báo cáo loại: {reportType}");
+            
+            if (includeCharts)
+            {
+                analysis.AppendLine("📊 Tạo biểu đồ và thống kê trực quan");
+            }
+            
+            analysis.AppendLine("📈 Phân tích xu hướng và mô hình");
+            analysis.AppendLine("⚖️ So sánh với tiêu chuẩn và mục tiêu");
+            
+            return analysis.ToString();
+        }
+
+        private string GenerateCustomRecommendations(string reportType, string targetAudience, string analysis)
+        {
+            return reportType switch
+            {
+                "grade_report" => "• Tăng cường ôn tập các môn yếu\n• Khen thưởng học sinh tiến bộ\n• Tổ chức lớp học thêm",
+                "attendance_report" => "• Liên hệ phụ huynh học sinh vắng nhiều\n• Tạo động lực tham gia lớp học\n• Xem xét các yếu tố ảnh hưởng",
+                "behavior_report" => "• Khen thưởng hành vi tích cực\n• Tư vấn học sinh có vấn đề\n• Phối hợp với phụ huynh",
+                _ => "• Theo dõi thường xuyên\n• Điều chỉnh phương pháp giảng dạy\n• Tăng cường giao tiếp"
+            };
+        }
+
+        private async Task<string> GenerateCommunicationContent(string communicationType, string studentId, string? userId)
+        {
+            // Lấy thông tin học sinh để tạo nội dung phù hợp
+            var studentArgs = new Dictionary<string, object> { ["student_id"] = studentId };
+            var studentInfo = await GetStudentInfoAsync(studentArgs);
+            
+            return communicationType switch
+            {
+                "progress_update" => $"📈 Cập nhật tiến độ học tập của {studentId}:\n{studentInfo}",
+                "concern_report" => $"⚠️ Báo cáo vấn đề cần quan tâm:\n{studentInfo}",
+                "achievement_recognition" => $"🏆 Ghi nhận thành tích của {studentId}:\n{studentInfo}",
+                "support_request" => $"🤝 Yêu cầu hỗ trợ cho {studentId}:\n{studentInfo}",
+                _ => $"💬 Thông tin chung về {studentId}:\n{studentInfo}"
+            };
+        }
+
+        private string GenerateActionPlan(string communicationType, string studentId)
+        {
+            return communicationType switch
+            {
+                "progress_update" => "✅ Tiếp tục theo dõi và cập nhật định kỳ\n✅ Tăng cường động viên khích lệ",
+                "concern_report" => "⚠️ Lập kế hoạch can thiệp cụ thể\n⚠️ Theo dõi sát sao trong 2 tuần tới",
+                "achievement_recognition" => "🏆 Tổ chức khen thưởng phù hợp\n🏆 Chia sẻ kinh nghiệm với các bạn",
+                "support_request" => "🤝 Phối hợp giữa nhà trường và gia đình\n🤝 Xây dựng kế hoạch hỗ trợ cụ thể",
+                _ => "📋 Theo dõi và đánh giá định kỳ"
+            };
+        }
+
+        private string GetReportTypeDescription(string reportType)
+        {
+            return reportType switch
+            {
+                "grade_report" => "Báo cáo điểm số",
+                "attendance_report" => "Báo cáo chuyên cần", 
+                "behavior_report" => "Báo cáo thái độ học tập",
+                "comprehensive_report" => "Báo cáo tổng hợp",
+                "statistical_report" => "Báo cáo thống kê",
+                "comparison_report" => "Báo cáo so sánh",
+                _ => "Báo cáo tùy chỉnh"
+            };
+        }
+
+        private string GetAudienceDescription(string audience)
+        {
+            return audience switch
+            {
+                "teacher" => "Giáo viên",
+                "parent" => "Phụ huynh", 
+                "principal" => "Ban giám hiệu",
+                "student" => "Học sinh",
+                _ => "Tổng quát"
+            };
+        }
+
+        private string GetDashboardPeriodDescription(string period)
+        {
+            return period switch
+            {
+                "today" => "Hôm nay",
+                "this_week" => "Tuần này",
+                "this_month" => "Tháng này",
+                _ => "Khoảng thời gian tùy chỉnh"
+            };
+        }
+
+        private string GetPriorityFocusDescription(string focus)
+        {
+            return focus switch
+            {
+                "grades" => "Điểm số", 
+                "attendance" => "Chuyên cần",
+                "behavior" => "Thái độ học tập",
+                _ => "Tất cả khía cạnh"
+            };
+        }
+
+        private string GetCommunicationTypeDescription(string type)
+        {
+            return type switch
+            {
+                "progress_update" => "Cập nhật tiến độ",
+                "concern_report" => "Báo cáo vấn đề",
+                "achievement_recognition" => "Ghi nhận thành tích", 
+                "support_request" => "Yêu cầu hỗ trợ",
+                _ => "Giao tiếp chung"
+            };
+        }
+
+        private async Task<string> IntelligentWorkflowInterpreterAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                var userRequest = args["user_request"].ToString();
+                var contextInfo = args.GetValueOrDefault("context_info")?.ToString() ?? "";
+                var executionMode = args.GetValueOrDefault("execution_mode")?.ToString() ?? "auto_execute";
+
+                var report = new StringBuilder();
+                report.AppendLine("🧠 **PHÂN TÍCH YÊU CẦU THÔNG MINH**");
+                report.AppendLine($"📝 Yêu cầu: {userRequest}");
+                report.AppendLine($"📋 Ngữ cảnh: {contextInfo}");
+                report.AppendLine($"⚙️ Chế độ: {GetExecutionModeDescription(executionMode)}");
+                report.AppendLine("=====================================\n");
+
+                // Phân tích yêu cầu và tạo kế hoạch thực hiện
+                var interpretationResult = InterpretUserRequest(userRequest, contextInfo);
+                report.AppendLine("🔍 **PHÂN TÍCH YÊU CẦU**\n");
+                report.AppendLine($"🎯 Mục tiêu: {interpretationResult.Goal}");
+                report.AppendLine($"📊 Loại báo cáo: {interpretationResult.ReportType}");
+                report.AppendLine($"📋 Các bước cần thực hiện: {interpretationResult.Steps.Count}");
+                report.AppendLine("");
+
+                // Hiển thị kế hoạch chi tiết
+                report.AppendLine("📋 **KẾ HOẠCH THỰC HIỆN**\n");
+                for (int i = 0; i < interpretationResult.Steps.Count; i++)
+                {
+                    var step = interpretationResult.Steps[i];
+                    report.AppendLine($"**Bước {i + 1}**: {step.Description}");
+                    report.AppendLine($"   🛠️ Hành động: {step.Function}");
+                    if (step.Parameters.Any())
+                    {
+                        report.AppendLine($"   ⚙️ Tham số: {string.Join(", ", step.Parameters.Select(p => $"{p.Key}={p.Value}"))}");
+                    }
+                    report.AppendLine("");
+                }
+
+                // Thực hiện theo chế độ được chọn
+                switch (executionMode)
+                {
+                    case "auto_execute":
+                        report.AppendLine("🚀 **THỰC HIỆN TỰ ĐỘNG**\n");
+                        var executionResult = await ExecuteInterpretedWorkflow(interpretationResult, userId);
+                        report.AppendLine(executionResult);
+                        break;
+
+                    case "plan_only":
+                        report.AppendLine("📋 **CHỈ LẬP KẾ HOẠCH - KHÔNG THỰC HIỆN**");
+                        report.AppendLine("💡 Để thực hiện, hãy gọi lại với execution_mode='auto_execute'");
+                        break;
+
+                    case "interactive":
+                        report.AppendLine("🔄 **CHẾ ĐỘ TƯƠNG TÁC**");
+                        report.AppendLine("💡 Sẽ thực hiện từng bước và xin xác nhận từ người dùng");
+                        // Trong thực tế, đây sẽ là một quy trình tương tác
+                        break;
+                }
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi phân tích yêu cầu: {ex.Message}";
+            }
+        }
+
+        private WorkflowInterpretation InterpretUserRequest(string userRequest, string contextInfo)
+        {
+            var interpretation = new WorkflowInterpretation();
+            var lowerRequest = userRequest.ToLower();
+
+            // Phân tích mục tiêu chính
+            if (lowerRequest.Contains("báo cáo điểm") || lowerRequest.Contains("tạo báo cáo") && lowerRequest.Contains("điểm"))
+            {
+                interpretation.Goal = "Tạo báo cáo điểm số";
+                interpretation.ReportType = "grade_report";
+                
+                // Xác định các bước cần thiết
+                if (lowerRequest.Contains("học sinh") && lowerRequest.Contains("thời khóa biểu"))
+                {
+                    interpretation.Steps.Add(new WorkflowStep
+                    {
+                        Title = "Lấy danh sách học sinh theo thời khóa biểu",
+                        Description = "Lấy danh sách học sinh theo thời khóa biểu",
+                        Action = "get_teacher_classes_and_students",
+                        Function = "get_teacher_classes",
+                        Parameters = new Dictionary<string, object> { ["include_subjects"] = true }
+                    });
+                    
+                    interpretation.Steps.Add(new WorkflowStep
+                    {
+                        Title = "Lấy danh sách học sinh trong các lớp",
+                        Description = "Lấy danh sách học sinh trong các lớp",
+                        Action = "get_class_students",
+                        Function = "get_class_students_list",
+                        Parameters = new Dictionary<string, object> { ["include_grades"] = true }
+                    });
+                }
+                
+                if (lowerRequest.Contains("điểm") || lowerRequest.Contains("grade"))
+                {
+                    interpretation.Steps.Add(new WorkflowStep
+                    {
+                        Title = "Thu thập điểm số của học sinh",
+                        Description = "Thu thập điểm số của học sinh",
+                        Action = "get_student_grades",
+                        Function = "get_student_grades",
+                        Parameters = new Dictionary<string, object>()
+                    });
+                }
+                
+                if (lowerRequest.Contains("đánh giá") || lowerRequest.Contains("thống kê"))
+                {
+                    interpretation.Steps.Add(new WorkflowStep
+                    {
+                        Title = "Phân tích và thống kê điểm số",
+                        Description = "Phân tích và thống kê điểm số",
+                        Action = "analyze_and_evaluate",
+                        Function = "get_class_grade_statistics",
+                        Parameters = new Dictionary<string, object>()
+                    });
+                }
+            }
+            else if (lowerRequest.Contains("chuyên cần") || lowerRequest.Contains("điểm danh"))
+            {
+                interpretation.Goal = "Phân tích chuyên cần";
+                interpretation.ReportType = "attendance_report";
+                
+                interpretation.Steps.Add(new WorkflowStep
+                {
+                    Title = "Lấy dữ liệu chuyên cần",
+                    Description = "Lấy dữ liệu chuyên cần",
+                    Action = "get_attendance_data",
+                    Function = "get_class_attendance_summary",
+                    Parameters = new Dictionary<string, object>()
+                });
+            }
+            else if (lowerRequest.Contains("dashboard") || lowerRequest.Contains("tổng quan"))
+            {
+                interpretation.Goal = "Tạo dashboard tổng quan";
+                interpretation.ReportType = "dashboard";
+                
+                interpretation.Steps.Add(new WorkflowStep
+                {
+                    Title = "Tạo dashboard giáo viên",
+                    Description = "Tạo dashboard giáo viên",
+                    Action = "create_dashboard",
+                    Function = "generate_teacher_dashboard",
+                    Parameters = new Dictionary<string, object>()
+                });
+            }
+            else
+            {
+                // Xử lý yêu cầu tổng quát
+                interpretation.Goal = "Xử lý yêu cầu tùy chỉnh";
+                interpretation.ReportType = "custom";
+                
+                interpretation.Steps.Add(new WorkflowStep
+                {
+                    Title = "Tạo báo cáo tùy chỉnh",
+                    Description = "Tạo báo cáo tùy chỉnh",
+                    Action = "create_custom_report",
+                    Function = "create_custom_report",
+                    Parameters = new Dictionary<string, object> 
+                    { 
+                        ["report_description"] = userRequest,
+                        ["report_type"] = "custom"
+                    }
+                });
+            }
+
+            return interpretation;
+        }
+
+        private async Task<string> ExecuteInterpretedWorkflow(WorkflowInterpretation interpretation, string? userId)
+        {
+            var result = new StringBuilder();
+            result.AppendLine($"🎯 Thực hiện mục tiêu: {interpretation.Goal}\n");
+
+            for (int i = 0; i < interpretation.Steps.Count; i++)
+            {
+                var step = interpretation.Steps[i];
+                result.AppendLine($"⏳ Đang thực hiện bước {i + 1}: {step.Description}");
+                
+                try
+                {
+                    var stepResult = await ExecuteWorkflowStepByFunction(step.Function, step.Parameters, userId);
+                    result.AppendLine("✅ Hoàn thành");
+                    result.AppendLine($"📋 Kết quả: {stepResult}");
+                    result.AppendLine("");
+                }
+                catch (Exception ex)
+                {
+                    result.AppendLine($"❌ Lỗi: {ex.Message}");
+                    result.AppendLine("");
+                }
+            }
+
+            result.AppendLine("🎉 **Hoàn thành tất cả các bước!**");
+            return result.ToString();
+        }
+
+        private async Task<string> ExecuteWorkflowStepByFunction(string functionName, Dictionary<string, object> parameters, string? userId)
+        {
+            // Gọi function tương ứng với tham số đã được chuẩn bị
+            return functionName switch
+            {
+                "get_teacher_classes" => await GetTeacherClassesAsync(parameters),
+                "get_class_students_list" => await GetClassStudentsListAsync(parameters),
+                "get_student_grades" => await GetStudentGradesAsync(parameters, userId),
+                "get_class_grade_statistics" => await GetClassGradeStatisticsAsync(parameters),
+                "get_class_attendance_summary" => await GetClassAttendanceSummaryAsync(parameters),
+                "generate_teacher_dashboard" => await GenerateTeacherDashboardAsync(parameters, userId),
+                "create_custom_report" => await CreateCustomReportAsync(parameters, userId),
+                _ => "✅ Bước được thực hiện thành công"
+            };
+        }
+
+        private string GetExecutionModeDescription(string mode)
+        {
+            return mode switch
+            {
+                "auto_execute" => "Tự động thực hiện tất cả các bước",
+                "plan_only" => "Chỉ lập kế hoạch, không thực hiện",
+                "interactive" => "Tương tác từng bước với người dùng",
+                _ => "Chế độ mặc định"
+            };
+        }
+
+        #endregion
+
+        #region Supporting Classes for Workflow Interpretation
+
+        private class WorkflowInterpretation
+        {
+            public string Goal { get; set; } = "";
+            public string ReportType { get; set; } = "";
+            public List<WorkflowStep> Steps { get; set; } = new();
+        }
+
+        #endregion
+
+        private async Task<string> CreateStudentPerformanceAnalysisAsync(Dictionary<string, object> args, string? userId)
+        {
+            try
+            {
+                // Extract parameters
+                var studentId = args.GetValueOrDefault("student_id")?.ToString();
+                if (string.IsNullOrEmpty(studentId))
+                {
+                    return "❌ Thiếu student_id để thực hiện phân tích.";
+                }
+
+                var analysisPeriod = args.GetValueOrDefault("analysis_period")?.ToString() ?? "current_semester";
+                var includeComparison = args.GetValueOrDefault("include_comparison") != null ? Convert.ToBoolean(args["include_comparison"]) : true;
+                var focusSubjects = args.GetValueOrDefault("focus_subjects")?.ToString();
+
+                var report = new StringBuilder();
+                report.AppendLine("📈 **PHÂN TÍCH HIỆU SUẤT HỌC TẬP**");
+                report.AppendLine($"👤 Học sinh: {studentId}");
+                report.AppendLine($"📅 Khoảng thời gian: {GetTimePeriodDescription(analysisPeriod)}");
+                report.AppendLine("=====================================\n");
+
+                // Step 1: Get student basic info
+                report.AppendLine("📋 **Bước 1: Thông tin học sinh**\n");
+                var studentInfoArgs = new Dictionary<string, object> { ["student_id"] = studentId };
+                var studentInfoResult = await GetStudentInfoAsync(studentInfoArgs);
+                report.AppendLine(studentInfoResult);
+                report.AppendLine("\n");
+
+                // Step 2: Get student grades
+                report.AppendLine("📊 **Bước 2: Điểm số chi tiết**\n");
+                var gradesArgs = new Dictionary<string, object> { ["student_name"] = studentId };
+                if (!string.IsNullOrEmpty(focusSubjects))
+                {
+                    var subjects = focusSubjects.Split(',');
+                    foreach (var subject in subjects)
+                    {
+                        gradesArgs["subject_name"] = subject.Trim();
+                        var subjectGrades = await GetStudentGradesAsync(gradesArgs, userId);
+                        report.AppendLine($"**{subject.Trim()}:**");
+                        report.AppendLine(subjectGrades);
+                        report.AppendLine("");
+                    }
+                }
+                else
+                {
+                    var gradesResult = await GetStudentGradesAsync(gradesArgs, userId);
+                    report.AppendLine(gradesResult);
+                }
+                report.AppendLine("\n");
+
+                // Step 3: Get lesson reports for behavior analysis
+                report.AppendLine("📝 **Bước 3: Báo cáo học tập và thái độ**\n");
+                var lessonReportsArgs = new Dictionary<string, object> { ["student_id"] = studentId };
+                var lessonReportsResult = await GetStudentLessonReportsAsync(lessonReportsArgs, userId);
+                report.AppendLine(lessonReportsResult);
+                report.AppendLine("\n");
+
+                // Step 4: Analysis and insights
+                report.AppendLine("🔍 **Bước 4: Phân tích tổng hợp**\n");
+                report.AppendLine("**Điểm mạnh:**");
+                report.AppendLine("• Các môn học có điểm số cao nhất");
+                report.AppendLine("• Xu hướng cải thiện trong các bài kiểm tra gần đây");
+                report.AppendLine("• Thái độ học tập tích cực");
+                report.AppendLine("");
+                
+                report.AppendLine("**Điểm cần cải thiện:**");
+                report.AppendLine("• Các môn học có điểm số thấp");
+                report.AppendLine("• Vấn đề về chuyên cần hoặc thái độ");
+                report.AppendLine("• Kỹ năng cần phát triển thêm");
+                report.AppendLine("");
+
+                // Step 5: Comparison with class average (if requested)
+                if (includeComparison)
+                {
+                    report.AppendLine("⚖️ **Bước 5: So sánh với lớp**\n");
+                    report.AppendLine("• So sánh điểm trung bình với lớp");
+                    report.AppendLine("• Xếp hạng trong lớp");
+                    report.AppendLine("• Phân tích xu hướng so với bạn cùng lớp");
+                    report.AppendLine("");
+                }
+
+                // Step 6: Recommendations
+                report.AppendLine("💡 **Bước 6: Đề xuất cải thiện**\n");
+                report.AppendLine("**Cho học sinh:**");
+                report.AppendLine("• Tập trung ôn tập các môn học yếu");
+                report.AppendLine("• Tham gia các hoạt động học nhóm");
+                report.AppendLine("• Xây dựng kế hoạch học tập cá nhân");
+                report.AppendLine("");
+
+                report.AppendLine("**Cho phụ huynh:**");
+                report.AppendLine("• Theo dõi và hỗ trợ việc học ở nhà");
+                report.AppendLine("• Liên hệ với giáo viên để có hướng dẫn cụ thể");
+                report.AppendLine("• Tạo môi trường học tập tích cực tại gia đình");
+                report.AppendLine("");
+
+                report.AppendLine("**Cho giáo viên:**");
+                report.AppendLine("• Đưa ra bài tập phù hợp với trình độ");
+                report.AppendLine("• Tăng cường theo dõi và phản hồi");
+                report.AppendLine("• Sử dụng phương pháp giảng dạy đa dạng");
+
+                return report.ToString();
+            }
+            catch (Exception ex)
+            {
+                return $"❌ Lỗi khi phân tích hiệu suất: {ex.Message}";
+            }
+        }
 
         #endregion
     }

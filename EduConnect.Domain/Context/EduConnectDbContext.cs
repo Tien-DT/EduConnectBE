@@ -271,6 +271,18 @@ namespace EduConnect.Data
             modelBuilder.Entity<Prompt>()
                 .HasIndex(p => p.Status)
                 .HasDatabaseName("IX_Prompt_Status");
+
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Student)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.StudentID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Subject)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.SubjectID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }
