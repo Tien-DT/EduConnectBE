@@ -11,6 +11,7 @@ using Microsoft.AspNetCore.Identity;
 using Newtonsoft.Json;
 using System.Globalization;
 using System.Text;
+using System.Threading;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -2634,148 +2635,203 @@ namespace EduConnect.Application.Services.Class
 
         public async Task<string> ExecuteFunctionAsync(string functionName, Dictionary<string, object> args, string? userId = null)
         {
-            var result = functionName.ToLower() switch
-            {
-                "get_workflow_guidance" => GetWorkflowGuidance(args),
-                "get_student_info" => await GetStudentInfoAsync(args),
-                "get_student_subjects" => await GetStudentSubjectsAsync(args),
-                "get_current_time" => GetCurrentTimeAsync(args),
-                "format_vietnam_time" => FormatVietnamTimeAsync(args),
-                "calculate_sum" => CalculateSumAsync(args),
-                "get_student_timetable" => await GetStudentTimetableAsync(args),
-                "get_teacher_info" => await GetTeacherInfoAsync(args),
-                "get_teacher_timetable" => await GetTeacherTimetableAsync(args),
-                "search_students" => await SearchStudentsAsync(args),
-                "search_teachers" => await SearchTeachersAsync(args),
-                "get_all_classes" => await GetAllClassesAsync(args),
-                "get_timetable_by_class" => await GetTimetableByClassAsync(args),
-                "create_parent_feedback" => await CreateParentFeedbackAsync(args, userId),
-                "get_student_grades" => await GetStudentGradesAsync(args, userId),
-                "get_student_lesson_reports" => await GetStudentLessonReportsAsync(args, userId),
-                "get_student_attendance" => await GetStudentAttendanceAsync(args, userId),
-                "add_student_attendance" => await AddStudentAttendanceAsync(args, userId),
-                "get_all_subjects" => await GetAllSubjectsAsync(args),
-                "get_subject_by_id" => await GetSubjectByIdAsync(args),
-                "get_student_exams" => await GetStudentExamsAsync(args, userId),
-                "get_class_students" => await GetClassStudentsAsync(args),
-                "get_class_by_id" => await GetClassByIdAsync(args),
-                "get_student_grade_report" => await GetStudentGradeReportAsync(args, userId),
-                "get_all_students_grade_report" => await GetAllStudentsGradeReportAsync(args),
-                "create_lesson_report" => await CreateLessonReportAsync(args, userId),
-                "get_lesson_reports_by_teacher" => await GetLessonReportsByTeacherAsync(args, userId),
-                "send_notification_to_parent" => await SendNotificationToParentAsync(args, userId),
-                "get_all_feedbacks" => await GetAllFeedbacksAsync(args),
-                "get_feedbacks_by_parent" => await GetFeedbacksByParentAsync(args),
-                "get_feedback_by_id" => await GetFeedbackByIdAsync(args),
-                "get_notifications_for_user" => await GetNotificationsForUserAsync(args, userId),
-                "mark_notifications_as_read" => await MarkNotificationsAsReadAsync(args, userId),
-                // New functions
-                "get_student_parent_info" => await GetStudentParentInfoAsync(args),
-                "get_subject_teachers" => await GetSubjectTeachersAsync(args),
-                "get_class_students_list" => await GetClassStudentsListAsync(args),
-                "get_teacher_classes" => await GetTeacherClassesAsync(args),
-                "get_class_attendance_summary" => await GetClassAttendanceSummaryAsync(args),
-                "get_exam_results_by_class" => await GetExamResultsByClassAsync(args),
-                "get_student_exam_history" => await GetStudentExamHistoryAsync(args),
-                "get_parent_children_info" => await GetParentChildrenInfoAsync(args),
-                "get_recent_lesson_reports" => await GetRecentLessonReportsAsync(args),
-                "get_user_role_info" => await GetUserRoleInfoAsync(args),
-                "search_notifications" => await SearchNotificationsAsync(args),
-                "get_class_grade_statistics" => await GetClassGradeStatisticsAsync(args),
-                "get_upcoming_exams" => await GetUpcomingExamsAsync(args),
-                "create_timetable" => await CreateTimetableAsync(args),
-                "get_weekly_student_reports" => await GetWeeklyStudentReportsAsync(args, userId),
-                // Principal Functions
-                "send_broadcast_notification" => await SendBroadcastNotificationAsync(args, userId),
-                "send_notification_to_teachers" => await SendNotificationToTeachersAsync(args, userId),
-                "send_notification_to_students" => await SendNotificationToStudentsAsync(args, userId),
-                "send_notification_to_parents" => await SendNotificationToParentsAsync(args, userId),
-                "create_user_account" => JsonConvert.SerializeObject(await CreateUserAccountAsync(args, userId), Formatting.Indented),
-                "assign_user_roles" => JsonConvert.SerializeObject(await AssignUserRolesAsync(args, userId), Formatting.Indented),
-                "delete_user_account" => JsonConvert.SerializeObject(await DeleteUserAccountAsync(args, userId), Formatting.Indented),
-                "get_all_users" => JsonConvert.SerializeObject(await GetAllUsersAsync(args, userId), Formatting.Indented),
-                // Teacher Functions - Exam Management
-                "create_class_exam" => JsonConvert.SerializeObject(await CreateClassExamAsync(args, userId), Formatting.Indented),
-                "update_exam" => JsonConvert.SerializeObject(await UpdateExamAsync(args, userId), Formatting.Indented),
-                "delete_exam" => JsonConvert.SerializeObject(await DeleteExamAsync(args, userId), Formatting.Indented),
-                "get_class_exams" => JsonConvert.SerializeObject(await GetClassExamsAsync(args, userId), Formatting.Indented),
-                // Teacher Functions - Grade Management
-                "create_grade" => JsonConvert.SerializeObject(await CreateGradeAsync(args, userId), Formatting.Indented),
-                "update_grade" => JsonConvert.SerializeObject(await UpdateGradeAsync(args, userId), Formatting.Indented),
-                "delete_grade" => JsonConvert.SerializeObject(await DeleteGradeAsync(args, userId), Formatting.Indented),
-                "get_students_for_grading" => JsonConvert.SerializeObject(await GetStudentsForGradingAsync(args, userId), Formatting.Indented),
-                // Student Functions
-                "get_my_info" => JsonConvert.SerializeObject(await GetMyInfoAsync(args, userId), Formatting.Indented),
-                "get_my_exams" => JsonConvert.SerializeObject(await GetMyExamsAsync(args, userId), Formatting.Indented),
-                // Report Functions
-                "create_report" => await CreateReportAsync(args, userId),
-                "get_my_reports" => await GetMyReportsAsync(args, userId),
-                "get_all_reports" => await GetAllReportsAsync(args, userId),
-                "update_report_status" => await UpdateReportStatusAsync(args, userId),
-                // COMPOSITE FUNCTIONS - Advanced multi-function operations
-                "get_comprehensive_student_report" => await GetComprehensiveStudentReportAsync(args, userId),
-                "analyze_student_performance" => await AnalyzeStudentPerformanceAsync(args, userId),
-                "get_class_overview_report" => await GetClassOverviewReportAsync(args, userId),
-                "search_and_get_student_details" => await SearchAndGetStudentDetailsAsync(args, userId),
-                "get_teacher_dashboard" => await GetTeacherDashboardAsync(args, userId),
-                // ADDITIONAL STUDENT-FOCUSED COMPOSITE FUNCTIONS
-                "get_student_academic_progress" => await GetStudentAcademicProgressAsync(args, userId),
-                "get_student_homework_overview" => await GetStudentHomeworkOverviewAsync(args, userId),
-                "compare_student_performance" => await CompareStudentPerformanceAsync(args, userId),
-                "get_student_learning_plan" => await GetStudentLearningPlanAsync(args, userId),
-                "get_student_weekly_summary" => await GetStudentWeeklySummaryAsync(args, userId),
-                // NEW COMPOSITE FUNCTIONS FOR GRADE REPORTING
-                "create_comprehensive_grade_report" => await CreateComprehensiveGradeReportAsync(args, userId),
-                "create_student_performance_analysis" => await CreateStudentPerformanceAnalysisAsync(args, userId),
-                // SEQUENTIAL AND ADVANCED WORKFLOW FUNCTIONS
-                "execute_sequential_workflow" => await ExecuteSequentialWorkflowAsync(args, userId),
-                "create_custom_report" => await CreateCustomReportAsync(args, userId),
-                "analyze_class_performance_trends" => await AnalyzeClassPerformanceTrendsAsync(args, userId),
-                "generate_teacher_dashboard" => await GenerateTeacherDashboardAsync(args, userId),
-                "create_parent_communication_report" => await CreateParentCommunicationReportAsync(args, userId),
-                "intelligent_workflow_interpreter" => await IntelligentWorkflowInterpreterAsync(args, userId),
-                _ => JsonConvert.SerializeObject(new
-                {
-                    success = false,
-                    message = $"Chức năng '{functionName}' không được hỗ trợ. Vui lòng kiểm tra lại tên chức năng hoặc liên hệ bộ phận kỹ thuật.",
-                    error = "FUNCTION_NOT_SUPPORTED",
-                    data = (object?)null
-                }, Formatting.Indented)
-            };
-
-            // Gửi notification cho user sau mỗi lần chat
-            if (!string.IsNullOrEmpty(userId))
-            {
-                await SendChatNotificationAsync(userId, functionName, result);
-            }
-
-            return result;
-        }
-
-        private async Task<string> GetStudentInfoAsync(Dictionary<string, object> args)
-        {
-            if (!args.TryGetValue("student_id", out var studentIdObj) || 
-                string.IsNullOrEmpty(studentIdObj.ToString()))
-            {
-                return JsonConvert.SerializeObject(new
-                {
-                    success = false,
-                    message = "Bạn cần cung cấp mã học sinh để tôi có thể tìm kiếm thông tin. Vui lòng nhập mã học sinh hợp lệ.",
-                    error = "MISSING_STUDENT_ID",
-                    data = (object?)null,
-                    errorDetails = "Tham số student_id là bắt buộc và không được để trống"
-                }, Formatting.Indented);
-            }
-
-            var studentId = studentIdObj.ToString()!;
-
             try
             {
+                // Add input validation
+                if (string.IsNullOrWhiteSpace(functionName))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Tên chức năng không được để trống.",
+                        error = "INVALID_FUNCTION_NAME",
+                        data = (object?)null
+                    }, Formatting.Indented);
+                }
+
+                if (args == null)
+                {
+                    args = new Dictionary<string, object>();
+                }
+
+                var result = functionName.ToLower() switch
+                {
+                    "get_workflow_guidance" => GetWorkflowGuidance(args),
+                    "get_student_info" => await GetStudentInfoAsync(args),
+                    "get_student_subjects" => await GetStudentSubjectsAsync(args),
+                    "get_current_time" => GetCurrentTimeAsync(args),
+                    "format_vietnam_time" => FormatVietnamTimeAsync(args),
+                    "calculate_sum" => CalculateSumAsync(args),
+                    "get_student_timetable" => await GetStudentTimetableAsync(args),
+                    "get_teacher_info" => await GetTeacherInfoAsync(args),
+                    "get_teacher_timetable" => await GetTeacherTimetableAsync(args),
+                    "search_students" => await SearchStudentsAsync(args),
+                    "search_teachers" => await SearchTeachersAsync(args),
+                    "get_all_classes" => await GetAllClassesAsync(args),
+                    "get_timetable_by_class" => await GetTimetableByClassAsync(args),
+                    "create_parent_feedback" => await CreateParentFeedbackAsync(args, userId),
+                    "get_student_grades" => await GetStudentGradesAsync(args, userId),
+                    "get_student_lesson_reports" => await GetStudentLessonReportsAsync(args, userId),
+                    "get_student_attendance" => await GetStudentAttendanceAsync(args, userId),
+                    "add_student_attendance" => await AddStudentAttendanceAsync(args, userId),
+                    "get_all_subjects" => await GetAllSubjectsAsync(args),
+                    "get_subject_by_id" => await GetSubjectByIdAsync(args),
+                    "get_student_exams" => await GetStudentExamsAsync(args, userId),
+                    "get_class_students" => await GetClassStudentsAsync(args),
+                    "get_class_by_id" => await GetClassByIdAsync(args),
+                    "get_student_grade_report" => await GetStudentGradeReportAsync(args, userId),
+                    "get_all_students_grade_report" => await GetAllStudentsGradeReportAsync(args),
+                    "create_lesson_report" => await CreateLessonReportAsync(args, userId),
+                    "get_lesson_reports_by_teacher" => await GetLessonReportsByTeacherAsync(args, userId),
+                    "send_notification_to_parent" => await SendNotificationToParentAsync(args, userId),
+                    "get_all_feedbacks" => await GetAllFeedbacksAsync(args),
+                    "get_feedbacks_by_parent" => await GetFeedbacksByParentAsync(args),
+                    "get_feedback_by_id" => await GetFeedbackByIdAsync(args),
+                    "get_notifications_for_user" => await GetNotificationsForUserAsync(args, userId),
+                    "mark_notifications_as_read" => await MarkNotificationsAsReadAsync(args, userId),
+                    // New functions
+                    "get_student_parent_info" => await GetStudentParentInfoAsync(args),
+                    "get_subject_teachers" => await GetSubjectTeachersAsync(args),
+                    "get_class_students_list" => await GetClassStudentsListAsync(args),
+                    "get_teacher_classes" => await GetTeacherClassesAsync(args),
+                    "get_class_attendance_summary" => await GetClassAttendanceSummaryAsync(args),
+                    "get_exam_results_by_class" => await GetExamResultsByClassAsync(args),
+                    "get_student_exam_history" => await GetStudentExamHistoryAsync(args),
+                    "get_parent_children_info" => await GetParentChildrenInfoAsync(args),
+                    "get_recent_lesson_reports" => await GetRecentLessonReportsAsync(args),
+                    "get_user_role_info" => await GetUserRoleInfoAsync(args),
+                    "search_notifications" => await SearchNotificationsAsync(args),
+                    "get_class_grade_statistics" => await GetClassGradeStatisticsAsync(args),
+                    "get_upcoming_exams" => await GetUpcomingExamsAsync(args),
+                    "create_timetable" => await CreateTimetableAsync(args),
+                    "get_weekly_student_reports" => await GetWeeklyStudentReportsAsync(args, userId),
+                    // Principal Functions
+                    "send_broadcast_notification" => await SendBroadcastNotificationAsync(args, userId),
+                    "send_notification_to_teachers" => await SendNotificationToTeachersAsync(args, userId),
+                    "send_notification_to_students" => await SendNotificationToStudentsAsync(args, userId),
+                    "send_notification_to_parents" => await SendNotificationToParentsAsync(args, userId),
+                    "create_user_account" => JsonConvert.SerializeObject(await CreateUserAccountAsync(args, userId), Formatting.Indented),
+                    "assign_user_roles" => JsonConvert.SerializeObject(await AssignUserRolesAsync(args, userId), Formatting.Indented),
+                    "delete_user_account" => JsonConvert.SerializeObject(await DeleteUserAccountAsync(args, userId), Formatting.Indented),
+                    "get_all_users" => JsonConvert.SerializeObject(await GetAllUsersAsync(args, userId), Formatting.Indented),
+                    // Teacher Functions - Exam Management
+                    "create_class_exam" => JsonConvert.SerializeObject(await CreateClassExamAsync(args, userId), Formatting.Indented),
+                    "update_exam" => JsonConvert.SerializeObject(await UpdateExamAsync(args, userId), Formatting.Indented),
+                    "delete_exam" => JsonConvert.SerializeObject(await DeleteExamAsync(args, userId), Formatting.Indented),
+                    "get_class_exams" => JsonConvert.SerializeObject(await GetClassExamsAsync(args, userId), Formatting.Indented),
+                    // Teacher Functions - Grade Management
+                    "create_grade" => JsonConvert.SerializeObject(await CreateGradeAsync(args, userId), Formatting.Indented),
+                    "update_grade" => JsonConvert.SerializeObject(await UpdateGradeAsync(args, userId), Formatting.Indented),
+                    "delete_grade" => JsonConvert.SerializeObject(await DeleteGradeAsync(args, userId), Formatting.Indented),
+                    "get_students_for_grading" => JsonConvert.SerializeObject(await GetStudentsForGradingAsync(args, userId), Formatting.Indented),
+                    // Student Functions
+                    "get_my_info" => JsonConvert.SerializeObject(await GetMyInfoAsync(args, userId), Formatting.Indented),
+                    "get_my_exams" => JsonConvert.SerializeObject(await GetMyExamsAsync(args, userId), Formatting.Indented),
+                    // Report Functions
+                    "create_report" => await CreateReportAsync(args, userId),
+                    "get_my_reports" => await GetMyReportsAsync(args, userId),
+                    "get_all_reports" => await GetAllReportsAsync(args, userId),
+                    "update_report_status" => await UpdateReportStatusAsync(args, userId),
+                    // COMPOSITE FUNCTIONS - Advanced multi-function operations
+                    "get_comprehensive_student_report" => await GetComprehensiveStudentReportAsync(args, userId),
+                    "analyze_student_performance" => await AnalyzeStudentPerformanceAsync(args, userId),
+                    "get_class_overview_report" => await GetClassOverviewReportAsync(args, userId),
+                    "search_and_get_student_details" => await SearchAndGetStudentDetailsAsync(args, userId),
+                    "get_teacher_dashboard" => await GetTeacherDashboardAsync(args, userId),
+                    // ADDITIONAL STUDENT-FOCUSED COMPOSITE FUNCTIONS
+                    "get_student_academic_progress" => await GetStudentAcademicProgressAsync(args, userId),
+                    "get_student_homework_overview" => await GetStudentHomeworkOverviewAsync(args, userId),
+                    "compare_student_performance" => await CompareStudentPerformanceAsync(args, userId),
+                    "get_student_learning_plan" => await GetStudentLearningPlanAsync(args, userId),
+                    "get_student_weekly_summary" => await GetStudentWeeklySummaryAsync(args, userId),
+                    // NEW COMPOSITE FUNCTIONS FOR GRADE REPORTING
+                    "create_comprehensive_grade_report" => await CreateComprehensiveGradeReportAsync(args, userId),
+                    "create_student_performance_analysis" => await CreateStudentPerformanceAnalysisAsync(args, userId),
+                    // SEQUENTIAL AND ADVANCED WORKFLOW FUNCTIONS
+                    "execute_sequential_workflow" => await ExecuteSequentialWorkflowAsync(args, userId),
+                    "create_custom_report" => await CreateCustomReportAsync(args, userId),
+                    "analyze_class_performance_trends" => await AnalyzeClassPerformanceTrendsAsync(args, userId),
+                    "generate_teacher_dashboard" => await GenerateTeacherDashboardAsync(args, userId),
+                    "create_parent_communication_report" => await CreateParentCommunicationReportAsync(args, userId),
+                    "intelligent_workflow_interpreter" => await IntelligentWorkflowInterpreterAsync(args, userId),
+                    _ => JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = $"Chức năng '{functionName}' không được hỗ trợ. Vui lòng kiểm tra lại tên chức năng hoặc liên hệ bộ phận kỹ thuật.",
+                        error = "FUNCTION_NOT_SUPPORTED",
+                        data = (object?)null
+                    }, Formatting.Indented)
+                };
+
+                // Validate result is not null or empty
+                if (string.IsNullOrEmpty(result))
+                {
+                    result = CreateErrorResponse(
+                        "Chức năng đã thực thi nhưng không trả về kết quả. Vui lòng thử lại sau.",
+                        "EMPTY_RESULT"
+                    );
+                }
+                else if (!IsValidJsonResponse(result))
+                {
+                    result = CreateErrorResponse(
+                        "Chức năng trả về dữ liệu không hợp lệ. Vui lòng thử lại sau.",
+                        "INVALID_JSON_RESPONSE",
+                        "Response is not valid JSON format"
+                    );
+                }
+
+                // Gửi notification cho user sau mỗi lần chat (không await để không block)
+                if (!string.IsNullOrEmpty(userId))
+                {
+                    _ = Task.Run(async () =>
+                    {
+                        try
+                        {
+                            await SendChatNotificationAsync(userId, functionName, result);
+                        }
+                        catch (Exception ex)
+                        {
+                            // Log error but don't throw
+                            Console.WriteLine($"Error sending notification: {ex.Message}");
+                        }
+                    });
+                }
+
+                return result;
+            }
+            catch (Exception ex)
+            {
+                // Global exception handler
+                return CreateErrorResponse(
+                    "Có lỗi hệ thống xảy ra. Vui lòng thử lại sau hoặc liên hệ bộ phận kỹ thuật.",
+                    "SYSTEM_ERROR",
+                    $"Function: {functionName}, Error: {ex.Message}"
+                );
+            }
+        }        private async Task<string> GetStudentInfoAsync(Dictionary<string, object> args)
+        {
+            try
+            {
+                if (!args.TryGetValue("student_id", out var studentIdObj) || 
+                    string.IsNullOrEmpty(studentIdObj.ToString()))
+                {
+                    return JsonConvert.SerializeObject(new
+                    {
+                        success = false,
+                        message = "Bạn cần cung cấp mã học sinh để tôi có thể tìm kiếm thông tin. Vui lòng nhập mã học sinh hợp lệ.",
+                        error = "MISSING_STUDENT_ID",
+                        data = (object?)null,
+                        errorDetails = "Tham số student_id là bắt buộc và không được để trống"
+                    }, Formatting.Indented);
+                }
+
+                var studentId = studentIdObj.ToString()!;
+
                 var student = await _context.Students
                     .Include(s => s.Account)
                     .Include(s => s.Parent)
                         .ThenInclude(p => p.Account)
-                    .FirstOrDefaultAsync(s => s.StudentID == studentId);
+                    .FirstOrDefaultAsync(s => s.StudentID == studentId && s.IsDeleted != true);
 
                 if (student == null)
                 {
@@ -3880,8 +3936,8 @@ namespace EduConnect.Application.Services.Class
         }
 
         // Get other filters
-        var semesterFilter = args.TryGetValue("semester", out var semesterObj) ? semesterObj?.ToString() : null;
-        var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? subjectNameObj?.ToString() : null;
+        var semesterFilter = args.TryGetValue("semester", out var semesterObj) ? semesterObj?.ToString()?.Trim() : null;
+        var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? subjectNameObj?.ToString()?.Trim() : null;
         var studentIds = students.Select(s => s.StudentID).ToList();
 
         // Get grades query
@@ -3890,25 +3946,29 @@ namespace EduConnect.Application.Services.Class
 
         if (!string.IsNullOrEmpty(semesterFilter))
         {
-            gradesQuery = gradesQuery.Where(g => g.Semester == semesterFilter);
+            var normalizedSemester = semesterFilter.ToLower().Replace(" ", "");
+            if (normalizedSemester.Contains("1") || normalizedSemester.Contains("i"))
+            {
+                gradesQuery = gradesQuery.Where(g => g.Semester.Contains("1") || g.Semester.ToLower().Contains("i"));
+            }
+            else if (normalizedSemester.Contains("2") || normalizedSemester.Contains("ii"))
+            {
+                gradesQuery = gradesQuery.Where(g => g.Semester.Contains("2") || g.Semester.ToLower().Contains("ii"));
+            }
+            else
+            {
+                gradesQuery = gradesQuery.Where(g => g.Semester.Equals(semesterFilter, StringComparison.OrdinalIgnoreCase));
+            }
         }
 
         if (!string.IsNullOrEmpty(subjectNameFilter))
         {
-            var filteredSubjectIds = await _context.Subjects
-                .Where(s => s.SubjectName.Contains(subjectNameFilter))
-                .Select(s => s.SubjectId)
-                .ToListAsync();
-            gradesQuery = gradesQuery.Where(g => filteredSubjectIds.Contains(g.SubjectID));
+            gradesQuery = gradesQuery.Where(g => g.Subject.SubjectName.Contains(subjectNameFilter, StringComparison.OrdinalIgnoreCase));
         }
 
-        var grades = await gradesQuery.ToListAsync();
-
-        // Get subject names
-        var subjectIds = grades.Select(g => g.SubjectID).Distinct().ToList();
-        var subjects = await _context.Subjects
-            .Where(s => subjectIds.Contains(s.SubjectId))
-            .ToDictionaryAsync(s => s.SubjectId, s => s.SubjectName);
+        var grades = await gradesQuery
+            .Include(g => g.Subject)
+            .ToListAsync();
 
         // Build the structured data object
         var gradeSummary = students.Select(student => new
@@ -3922,10 +3982,10 @@ namespace EduConnect.Application.Services.Class
             },
             Grades = grades
                 .Where(g => g.StudentID == student.StudentID)
-                .GroupBy(g => new { g.SubjectID, g.Semester })
+                .GroupBy(g => new { g.SubjectID, g.Semester, g.Subject.SubjectName })
                 .Select(group => new
                 {
-                    SubjectName = subjects.GetValueOrDefault(group.Key.SubjectID, "N/A"),
+                    SubjectName = group.Key.SubjectName,
                     group.Key.Semester,
                     Scores = group.Select(g => new { g.GradeType, g.Score, g.Evaluation }).ToList(),
                     AverageScore = group.Any(g => g.Score.HasValue) ? group.Where(g => g.Score.HasValue).Average(g => g.Score) : (double?)null
@@ -6247,6 +6307,12 @@ namespace EduConnect.Application.Services.Class
         {
             try
             {
+                // Validate inputs
+                if (string.IsNullOrEmpty(userId) || string.IsNullOrEmpty(functionName))
+                {
+                    return;
+                }
+
                 // Tạo title và body notification dựa trên function name
                 var title = GetNotificationTitle(functionName);
                 var body = GetNotificationBody(functionName, result);
@@ -6260,15 +6326,44 @@ namespace EduConnect.Application.Services.Class
                     ["userId"] = userId
                 };
 
-                // Gửi notification qua Firebase
+                // Gửi notification qua Firebase với timeout
+                using var cts = new CancellationTokenSource(TimeSpan.FromSeconds(5));
                 await _notificationService.SendNotificationToAllDevicesAsync(userId, title, body, data);
             }
             catch (Exception ex)
             {
                 // Log error nhưng không throw để không ảnh hưởng đến function chính
-                // Có thể thêm logger ở đây nếu cần
-                Console.WriteLine($"Error sending chat notification: {ex.Message}");
+                Console.WriteLine($"Error sending chat notification for function {functionName}: {ex.Message}");
             }
+        }
+
+        private bool IsValidJsonResponse(string jsonString)
+        {
+            try
+            {
+                if (string.IsNullOrEmpty(jsonString))
+                    return false;
+
+                var obj = JsonConvert.DeserializeObject(jsonString);
+                return obj != null;
+            }
+            catch
+            {
+                return false;
+            }
+        }
+
+        private string CreateErrorResponse(string message, string errorCode, string? details = null)
+        {
+            return JsonConvert.SerializeObject(new
+            {
+                success = false,
+                message = message,
+                error = errorCode,
+                data = (object?)null,
+                errorDetails = details,
+                timestamp = DateTime.UtcNow.ToString("yyyy-MM-ddTHH:mm:ssZ")
+            }, Formatting.Indented);
         }
 
         private string GetNotificationTitle(string functionName)
