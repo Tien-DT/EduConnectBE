@@ -3841,802 +3841,430 @@ namespace EduConnect.Application.Services.Class
         }
 
         private async Task<string> GetStudentGradesAsync(Dictionary<string, object> args, string? userId = null)
+{
+    try
+    {
+        if (string.IsNullOrEmpty(userId))
         {
-            try
+            return JsonConvert.SerializeObject(new { success = false, message = "Cần đăng nhập.", error = "AUTHENTICATION_REQUIRED" });
+        }
+
+        // Get parent information
+        var parent = await _parentRepository.GetByAccountIdAsync(userId);
+        if (parent == null)
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Không tìm thấy thông tin phụ huynh.", error = "PARENT_NOT_FOUND" });
+        }
+
+        // Get all students of this parent
+        var students = await _context.Students
+            .Include(s => s.Account)
+            .Include(s => s.Class)
+            .Where(s => s.ParentID == parent.ParentID)
+            .ToListAsync();
+
+        if (!students.Any())
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Tài khoản của bạn chưa liên kết với học sinh nào.", error = "NO_STUDENTS_FOUND" });
+        }
+
+        // Filter by student name if provided
+        var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? studentNameObj?.ToString() : null;
+        if (!string.IsNullOrEmpty(studentNameFilter))
+        {
+            students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            if (!students.Any())
             {
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Cần đăng nhập để xem điểm của con",
-                        error = "AUTHENTICATION_REQUIRED"
-                    }, Formatting.Indented);
-                }
-
-                // Get parent information
-                var parent = await _parentRepository.GetByAccountIdAsync(userId);
-                if (parent == null)
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin phụ huynh. Vui lòng đảm bảo bạn đã đăng nhập với tài khoản phụ huynh.",
-                        error = "PARENT_NOT_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Get all students of this parent
-                var students = await _context.Students
-                    .Include(s => s.Account)
-                    .Include(s => s.Class)
-                    .Where(s => s.ParentID == parent.ParentID)
-                    .ToListAsync();
-
-                if (!students.Any())
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin học sinh nào trong tài khoản của bạn",
-                        error = "NO_STUDENTS_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Filter by student name if provided
-                var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? 
-                    studentNameObj?.ToString() : null;
-
-                if (!string.IsNullOrEmpty(studentNameFilter))
-                {
-                    students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
-                    if (!students.Any())
-                    {
-                        return JsonConvert.SerializeObject(new
-                        {
-                            success = false,
-                            message = $"Không tìm thấy học sinh nào có tên '{studentNameFilter}' trong gia đình",
-                            error = "STUDENT_NOT_FOUND"
-                        }, Formatting.Indented);
-                    }
-                }
-
-                // Get semester filter
-                var semesterFilter = args.TryGetValue("semester", out var semesterObj) ? 
-                    semesterObj?.ToString() : null;
-
-                // Get subject name filter
-                var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? 
-                    subjectNameObj?.ToString() : null;
-
-                var studentIds = students.Select(s => s.StudentID).ToList();
-                
-                // Get grades for all students
-                var gradesQuery = _context.Grades
-                    .Where(g => studentIds.Contains(g.StudentID) && g.IsDeleted != true);
-
-                if (!string.IsNullOrEmpty(semesterFilter))
-                {
-                    gradesQuery = gradesQuery.Where(g => g.Semester == semesterFilter);
-                }
-
-                if (!string.IsNullOrEmpty(subjectNameFilter))
-                {
-                    var filteredSubjectIds = await _context.Subjects
-                        .Where(s => s.SubjectName.Contains(subjectNameFilter))
-                        .Select(s => s.SubjectId)
-                        .ToListAsync();
-                    gradesQuery = gradesQuery.Where(g => filteredSubjectIds.Contains(g.SubjectID));
-                }
-
-                var grades = await gradesQuery
-                    .OrderBy(g => g.StudentID)
-                    .ThenBy(g => g.SubjectID)
-                    .ThenBy(g => g.Semester)
-                    .ToListAsync();
-
-                // Get subject names
-                var subjectIds = grades.Select(g => g.SubjectID).Distinct().ToList();
-                var subjects = await _context.Subjects
-                    .Where(s => subjectIds.Contains(s.SubjectId))
-                    .ToDictionaryAsync(s => s.SubjectId, s => s.SubjectName);
-
-                // Group grades by student
-                var gradeSummary = students.Select(student => new
-                {
-                    StudentInfo = new
-                    {
-                        StudentId = student.StudentID,
-                        StudentName = student.FullName,
-                        DateOfBirth = student.DateOfBirth?.ToString("dd/MM/yyyy"),
-                        ClassName = student.Class?.ClassName
-                    },
-                    Grades = grades.Where(g => g.StudentID == student.StudentID)
-                        .GroupBy(g => new { g.SubjectID, g.Semester })
-                        .Select(group => new
-                        {
-                            SubjectName = subjects.ContainsKey(group.Key.SubjectID) ? subjects[group.Key.SubjectID] : "N/A",
-                            Semester = group.Key.Semester,
-                            Scores = group.Select(g => new
-                            {
-                                GradeType = g.GradeType,
-                                Score = g.Score,
-                                GradeLevel = g.GradeLevel,
-                                Evaluation = g.Evaluation
-                            }).ToList(),
-                            AverageScore = group.Where(g => g.Score.HasValue).Average(g => g.Score)
-                        }).ToList()
-                }).ToList();
-
-                var totalGrades = grades.Count;
-                var studentsWithGrades = gradeSummary.Where(s => s.Grades.Any()).Count();
-
-                // Format dữ liệu thành bảng đẹp
-                var formattedMessage = new System.Text.StringBuilder();
-                formattedMessage.AppendLine($"📊 **BẢNG ĐIỂM HỌC SINH**");
-                formattedMessage.AppendLine($"Tìm thấy điểm của {studentsWithGrades}/{students.Count} học sinh" + 
-                                          (string.IsNullOrEmpty(semesterFilter) ? "" : $" cho học kỳ {semesterFilter}") +
-                                          (string.IsNullOrEmpty(subjectNameFilter) ? "" : $" môn {subjectNameFilter}"));
-                formattedMessage.AppendLine();
-
-                foreach (var student in gradeSummary.Where(s => s.Grades.Any()))
-                {
-                    formattedMessage.AppendLine($"👨‍🎓 **{student.StudentInfo.StudentName}** (ID: {student.StudentInfo.StudentId})");
-                    formattedMessage.AppendLine($"   📅 Sinh ngày: {student.StudentInfo.DateOfBirth ?? "N/A"}");
-                    formattedMessage.AppendLine($"   🏫 Lớp: {student.StudentInfo.ClassName ?? "N/A"}");
-                    formattedMessage.AppendLine();
-
-                    if (student.Grades.Any())
-                    {
-                        formattedMessage.AppendLine("   📚 **BẢNG ĐIỂM CHI TIẾT:**");
-                        formattedMessage.AppendLine("   ┌─────────────────────────────────────────────────────────────────┐");
-                        formattedMessage.AppendLine("   │ MÔN HỌC               │ HỌC KỲ    │ ĐIỂM SỐ     │ ĐÁNH GIÁ     │");
-                        formattedMessage.AppendLine("   ├─────────────────────────────────────────────────────────────────┤");
-
-                        foreach (var grade in student.Grades.OrderBy(g => g.SubjectName).ThenBy(g => g.Semester))
-                        {
-                            var subjectName = (grade.SubjectName ?? "N/A").Length > 20 
-                                ? (grade.SubjectName ?? "N/A").Substring(0, 17) + "..." 
-                                : (grade.SubjectName ?? "N/A").PadRight(20);
-                            
-                            var semester = (grade.Semester ?? "N/A").PadRight(10);
-                            var avgScore = grade.AverageScore.HasValue 
-                                ? grade.AverageScore.Value.ToString("F1").PadRight(12)
-                                : "N/A".PadRight(12);
-
-                            formattedMessage.AppendLine($"   │ {subjectName} │ {semester} │ {avgScore} │              │");
-
-                            // Hiển thị chi tiết các điểm
-                            foreach (var score in grade.Scores.Where(s => s.Score.HasValue))
-                            {
-                                var gradeType = (score.GradeType ?? "Khác").PadRight(10);
-                                var scoreValue = (score.Score?.ToString("F1") ?? "N/A").PadRight(6);
-                                var evaluation = (score.Evaluation ?? "").Length > 12 
-                                    ? (score.Evaluation ?? "").Substring(0, 9) + "..."
-                                    : (score.Evaluation ?? "").PadRight(12);
-                                
-                                formattedMessage.AppendLine($"   │      ↳ {gradeType}     │           │ {scoreValue}      │ {evaluation} │");
-                            }
-                        }
-
-                        formattedMessage.AppendLine("   └─────────────────────────────────────────────────────────────────┘");
-                    }
-                    else
-                    {
-                        formattedMessage.AppendLine("   📝 Chưa có điểm nào được ghi nhận");
-                    }
-                    
-                    formattedMessage.AppendLine();
-                }
-
-                if (studentsWithGrades == 0)
-                {
-                    formattedMessage.AppendLine("📝 Không có điểm nào được tìm thấy cho các tiêu chí đã chọn.");
-                    if (!string.IsNullOrEmpty(studentNameFilter) || !string.IsNullOrEmpty(semesterFilter) || !string.IsNullOrEmpty(subjectNameFilter))
-                    {
-                        formattedMessage.AppendLine("💡 Gợi ý: Thử bỏ bớt điều kiện lọc để xem nhiều kết quả hơn.");
-                    }
-                }
-
-                // Thống kê
-                formattedMessage.AppendLine("📈 **THỐNG KÊ:**");
-                formattedMessage.AppendLine($"   • Tổng số học sinh: {students.Count}");
-                formattedMessage.AppendLine($"   • Số học sinh có điểm: {studentsWithGrades}");
-                formattedMessage.AppendLine($"   • Tổng số điểm: {totalGrades}");
-
-                if (!string.IsNullOrEmpty(studentNameFilter) || !string.IsNullOrEmpty(semesterFilter) || !string.IsNullOrEmpty(subjectNameFilter))
-                {
-                    formattedMessage.AppendLine();
-                    formattedMessage.AppendLine("🔍 **BỘ LỌC ĐÃ ÁP DỤNG:**");
-                    if (!string.IsNullOrEmpty(studentNameFilter))
-                        formattedMessage.AppendLine($"   • Tên học sinh: {studentNameFilter}");
-                    if (!string.IsNullOrEmpty(semesterFilter))
-                        formattedMessage.AppendLine($"   • Học kỳ: {semesterFilter}");
-                    if (!string.IsNullOrEmpty(subjectNameFilter))
-                        formattedMessage.AppendLine($"   • Môn học: {subjectNameFilter}");
-                }
-
-                return JsonConvert.SerializeObject(new
-                {
-                    success = true,
-                    message = formattedMessage.ToString(),
-                    data = new
-                    {
-                        TotalStudents = students.Count,
-                        StudentsWithGrades = studentsWithGrades,
-                        TotalGrades = totalGrades,
-                        FilterApplied = new
-                        {
-                            StudentName = studentNameFilter,
-                            Semester = semesterFilter,
-                            SubjectName = subjectNameFilter
-                        },
-                        Students = gradeSummary
-                    }
-                }, Formatting.Indented);
-            }
-            catch (Exception ex)
-            {
-                return JsonConvert.SerializeObject(new
-                {
-                    success = false,
-                    message = "❌ Có lỗi xảy ra khi lấy điểm học sinh. Vui lòng thử lại sau.",
-                    error = "INTERNAL_ERROR",
-                    errorDetails = ex.Message
-                }, Formatting.Indented);
+                return JsonConvert.SerializeObject(new { success = false, message = $"Không tìm thấy học sinh '{studentNameFilter}'.", error = "STUDENT_NOT_FOUND" });
             }
         }
+
+        // Get other filters
+        var semesterFilter = args.TryGetValue("semester", out var semesterObj) ? semesterObj?.ToString() : null;
+        var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? subjectNameObj?.ToString() : null;
+        var studentIds = students.Select(s => s.StudentID).ToList();
+
+        // Get grades query
+        var gradesQuery = _context.Grades
+            .Where(g => studentIds.Contains(g.StudentID) && g.IsDeleted != true);
+
+        if (!string.IsNullOrEmpty(semesterFilter))
+        {
+            gradesQuery = gradesQuery.Where(g => g.Semester == semesterFilter);
+        }
+
+        if (!string.IsNullOrEmpty(subjectNameFilter))
+        {
+            var filteredSubjectIds = await _context.Subjects
+                .Where(s => s.SubjectName.Contains(subjectNameFilter))
+                .Select(s => s.SubjectId)
+                .ToListAsync();
+            gradesQuery = gradesQuery.Where(g => filteredSubjectIds.Contains(g.SubjectID));
+        }
+
+        var grades = await gradesQuery.ToListAsync();
+
+        // Get subject names
+        var subjectIds = grades.Select(g => g.SubjectID).Distinct().ToList();
+        var subjects = await _context.Subjects
+            .Where(s => subjectIds.Contains(s.SubjectId))
+            .ToDictionaryAsync(s => s.SubjectId, s => s.SubjectName);
+
+        // Build the structured data object
+        var gradeSummary = students.Select(student => new
+        {
+            StudentInfo = new
+            {
+                student.StudentID,
+                student.FullName,
+                DateOfBirth = student.DateOfBirth?.ToString("dd/MM/yyyy"),
+                ClassName = student.Class?.ClassName
+            },
+            Grades = grades
+                .Where(g => g.StudentID == student.StudentID)
+                .GroupBy(g => new { g.SubjectID, g.Semester })
+                .Select(group => new
+                {
+                    SubjectName = subjects.GetValueOrDefault(group.Key.SubjectID, "N/A"),
+                    group.Key.Semester,
+                    Scores = group.Select(g => new { g.GradeType, g.Score, g.Evaluation }).ToList(),
+                    AverageScore = group.Any(g => g.Score.HasValue) ? group.Where(g => g.Score.HasValue).Average(g => g.Score) : (double?)null
+                })
+                .OrderBy(g => g.SubjectName)
+                .ToList()
+        }).ToList();
+
+        // Return the final JSON object
+        return JsonConvert.SerializeObject(new
+        {
+            success = true,
+            message = "Lấy dữ liệu điểm thành công.",
+            data = new
+            {
+                TotalStudents = students.Count,
+                StudentsWithGrades = gradeSummary.Count(s => s.Grades.Any()),
+                TotalGrades = grades.Count,
+                FilterApplied = new
+                {
+                    StudentName = studentNameFilter,
+                    Semester = semesterFilter,
+                    SubjectName = subjectNameFilter
+                },
+                Students = gradeSummary
+            }
+        }, new JsonSerializerSettings { Formatting = Formatting.Indented, NullValueHandling = NullValueHandling.Ignore });
+    }
+    catch (Exception ex)
+    {
+        // Log the exception details here if needed
+        return JsonConvert.SerializeObject(new
+        {
+            success = false,
+            message = "❌ Có lỗi xảy ra khi lấy điểm học sinh.",
+            error = "INTERNAL_ERROR",
+            errorDetails = ex.Message 
+        }, Formatting.Indented);
+    }
+}
 
         private async Task<string> GetStudentLessonReportsAsync(Dictionary<string, object> args, string? userId = null)
+{
+    try
+    {
+        // --- Toàn bộ phần xác thực, lọc, và truy vấn CSDL được giữ nguyên y hệt code gốc ---
+
+        if (string.IsNullOrEmpty(userId))
         {
-            try
+            return JsonConvert.SerializeObject(new { success = false, message = "Cần đăng nhập để xem báo cáo học tập của con", error = "AUTHENTICATION_REQUIRED" }, Formatting.Indented);
+        }
+
+        var parent = await _parentRepository.GetByAccountIdAsync(userId);
+        if (parent == null)
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Không tìm thấy thông tin phụ huynh. Vui lòng đảm bảo bạn đã đăng nhập với tài khoản phụ huynh.", error = "PARENT_NOT_FOUND" }, Formatting.Indented);
+        }
+
+        var students = await _context.Students
+            .Include(s => s.Account)
+            .Where(s => s.ParentID == parent.ParentID)
+            .ToListAsync();
+
+        if (!students.Any())
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Không tìm thấy thông tin học sinh nào trong tài khoản của bạn", error = "NO_STUDENTS_FOUND" }, Formatting.Indented);
+        }
+
+        var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? studentNameObj?.ToString() : null;
+        if (!string.IsNullOrEmpty(studentNameFilter))
+        {
+            students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            if (!students.Any())
             {
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Cần đăng nhập để xem báo cáo học tập của con",
-                        error = "AUTHENTICATION_REQUIRED"
-                    }, Formatting.Indented);
-                }
-
-                // Get parent information
-                var parent = await _parentRepository.GetByAccountIdAsync(userId);
-                if (parent == null)
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin phụ huynh. Vui lòng đảm bảo bạn đã đăng nhập với tài khoản phụ huynh.",
-                        error = "PARENT_NOT_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Get all students of this parent
-                var students = await _context.Students
-                    .Include(s => s.Account)
-                    .Where(s => s.ParentID == parent.ParentID)
-                    .ToListAsync();
-
-                if (!students.Any())
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin học sinh nào trong tài khoản của bạn",
-                        error = "NO_STUDENTS_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Filter by student name if provided
-                var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? 
-                    studentNameObj?.ToString() : null;
-
-                if (!string.IsNullOrEmpty(studentNameFilter))
-                {
-                    students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
-                    if (!students.Any())
-                    {
-                        return JsonConvert.SerializeObject(new
-                        {
-                            success = false,
-                            message = $"Không tìm thấy học sinh nào có tên '{studentNameFilter}' trong gia đình",
-                            error = "STUDENT_NOT_FOUND"
-                        }, Formatting.Indented);
-                    }
-                }
-
-                // Get date filters
-                DateTime? fromDate = null, toDate = null;
-                
-                if (args.TryGetValue("from_date", out var fromDateObj) && !string.IsNullOrEmpty(fromDateObj?.ToString()))
-                {
-                    if (DateTime.TryParseExact(fromDateObj.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedFromDate))
-                    {
-                        fromDate = parsedFromDate;
-                    }
-                }
-
-                if (args.TryGetValue("to_date", out var toDateObj) && !string.IsNullOrEmpty(toDateObj?.ToString()))
-                {
-                    if (DateTime.TryParseExact(toDateObj.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedToDate))
-                    {
-                        toDate = parsedToDate.AddDays(1).AddSeconds(-1); // Include entire day
-                    }
-                }
-
-                // Get limit
-                var limit = 20;
-                if (args.TryGetValue("limit", out var limitObj) && int.TryParse(limitObj?.ToString(), out var parsedLimit))
-                {
-                    limit = Math.Min(parsedLimit, 100); // Max 100 reports
-                }
-
-                var studentIds = students.Select(s => s.StudentID).ToList();
-
-                // Get lesson reports and student notes
-                var reportsQuery = _context.LessonReports
-                    .Include(lr => lr.TimetableSlot)
-                        .ThenInclude(ts => ts.Subject)
-                    .Include(lr => lr.TimetableSlot)
-                        .ThenInclude(ts => ts.Timetable)
-                        .ThenInclude(t => t.Class)
-                    .Include(lr => lr.StudentLessonNotes.Where(sln => studentIds.Contains(sln.StudentID)))
-                        .ThenInclude(sln => sln.Student)
-                    .Where(lr => lr.IsDeleted != true && lr.StudentLessonNotes.Any(sln => studentIds.Contains(sln.StudentID)));
-
-                if (fromDate.HasValue)
-                {
-                    reportsQuery = reportsQuery.Where(lr => lr.LessonDate >= fromDate.Value);
-                }
-
-                if (toDate.HasValue)
-                {
-                    reportsQuery = reportsQuery.Where(lr => lr.LessonDate <= toDate.Value);
-                }
-
-                var reports = await reportsQuery
-                    .OrderByDescending(lr => lr.LessonDate)
-                    .Take(limit)
-                    .ToListAsync();
-
-                // Format the data
-                var reportSummary = reports.Select(report => new
-                {
-                    ReportInfo = new
-                    {
-                        ReportId = report.ReportID,
-                        LessonDate = report.LessonDate.ToString("dd/MM/yyyy"),
-                        SubjectName = report.TimetableSlot.Subject?.SubjectName,
-                        ClassName = report.TimetableSlot.Timetable?.Class?.ClassName,
-                        TotalStudents = report.TotalStudents,
-                        AbsentStudents = report.AbsentStudents,
-                        Remarks = report.Remarks,
-                        CreatedAt = report.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                    },
-                    StudentNotes = report.StudentLessonNotes
-                        .Where(sln => studentIds.Contains(sln.StudentID))
-                        .Select(note => new
-                        {
-                            StudentId = note.StudentID,
-                            StudentName = note.Student?.FullName,
-                            NoteType = note.NoteType,
-                            Points = note.Points,
-                            Description = note.Description,
-                            CreatedAt = note.CreatedAt.ToString("dd/MM/yyyy HH:mm")
-                        }).ToList()
-                }).Where(r => r.StudentNotes.Any()).ToList();
-
-                var totalStudentNotes = reportSummary.SelectMany(r => r.StudentNotes).Count();
-
-                // Format dữ liệu thành bảng đẹp
-                var formattedMessage = new System.Text.StringBuilder();
-                formattedMessage.AppendLine($"📝 **BÁO CÁO HỌC TẬP VÀ GHI CHÚ**");
-                formattedMessage.AppendLine($"Tìm thấy {reportSummary.Count} báo cáo học tập với {totalStudentNotes} ghi chú cho {students.Count} học sinh" +
-                                          (fromDate.HasValue || toDate.HasValue ? $" từ {fromDate?.ToString("dd/MM/yyyy") ?? "..."} đến {toDate?.ToString("dd/MM/yyyy") ?? "..."}" : ""));
-                formattedMessage.AppendLine();
-
-                if (reportSummary.Any())
-                {
-                    foreach (var report in reportSummary.OrderByDescending(r => DateTime.ParseExact(r.ReportInfo.LessonDate, "dd/MM/yyyy", CultureInfo.InvariantCulture)))
-                    {
-                        formattedMessage.AppendLine($"📅 **{report.ReportInfo.LessonDate}** - {report.ReportInfo.SubjectName} ({report.ReportInfo.ClassName})");
-                        formattedMessage.AppendLine($"   📊 Tổng số HS: {report.ReportInfo.TotalStudents} | Vắng: {report.ReportInfo.AbsentStudents}");
-                        
-                        if (!string.IsNullOrEmpty(report.ReportInfo.Remarks))
-                        {
-                            formattedMessage.AppendLine($"   📋 Ghi chú tiết học: {report.ReportInfo.Remarks}");
-                        }
-                        
-                        formattedMessage.AppendLine();
-
-                        if (report.StudentNotes.Any())
-                        {
-                            formattedMessage.AppendLine("   👥 **GHI CHÚ CÁC CON:**");
-                            formattedMessage.AppendLine("   ┌─────────────────────────────────────────────────────────────────────┐");
-                            formattedMessage.AppendLine("   │ HỌC SINH            │ LOẠI GHI CHÚ      │ ĐIỂM │ MÔ TẢ              │");
-                            formattedMessage.AppendLine("   ├─────────────────────────────────────────────────────────────────────┤");
-
-                            foreach (var note in report.StudentNotes.OrderBy(n => n.StudentName))
-                            {
-                                var studentName = (note.StudentName ?? "N/A").Length > 18 
-                                    ? (note.StudentName ?? "N/A").Substring(0, 15) + "..." 
-                                    : (note.StudentName ?? "N/A").PadRight(18);
-
-                                var noteType = GetVietnameseNoteType(note.NoteType ?? "").PadRight(16);
-                                var points = note.Points.HasValue ? note.Points.Value.ToString("+0;-0;0").PadRight(4) : "N/A".PadRight(4);
-                                var description = (note.Description ?? "").Length > 18 
-                                    ? (note.Description ?? "").Substring(0, 15) + "..."
-                                    : (note.Description ?? "").PadRight(18);
-
-                                formattedMessage.AppendLine($"   │ {studentName} │ {noteType} │ {points} │ {description} │");
-                            }
-
-                            formattedMessage.AppendLine("   └─────────────────────────────────────────────────────────────────────┘");
-                        }
-                        else
-                        {
-                            formattedMessage.AppendLine("   📝 Không có ghi chú đặc biệt nào cho các con");
-                        }
-                        
-                        formattedMessage.AppendLine();
-                    }
-                }
-                else
-                {
-                    formattedMessage.AppendLine("📝 Không tìm thấy báo cáo học tập nào cho các tiêu chí đã chọn.");
-                    if (!string.IsNullOrEmpty(studentNameFilter) || fromDate.HasValue || toDate.HasValue)
-                    {
-                        formattedMessage.AppendLine("💡 Gợi ý: Thử mở rộng khoảng thời gian hoặc bỏ bớt điều kiện lọc.");
-                    }
-                }
-
-                // Thống kê
-                formattedMessage.AppendLine("📈 **THỐNG KÊ:**");
-                formattedMessage.AppendLine($"   • Tổng số học sinh: {students.Count}");
-                formattedMessage.AppendLine($"   • Số báo cáo: {reportSummary.Count}");
-                formattedMessage.AppendLine($"   • Tổng ghi chú: {totalStudentNotes}");
-
-                if (!string.IsNullOrEmpty(studentNameFilter) || fromDate.HasValue || toDate.HasValue || limit != 20)
-                {
-                    formattedMessage.AppendLine();
-                    formattedMessage.AppendLine("🔍 **BỘ LỌC ĐÃ ÁP DỤNG:**");
-                    if (!string.IsNullOrEmpty(studentNameFilter))
-                        formattedMessage.AppendLine($"   • Tên học sinh: {studentNameFilter}");
-                    if (fromDate.HasValue)
-                        formattedMessage.AppendLine($"   • Từ ngày: {fromDate.Value.ToString("dd/MM/yyyy")}");
-                    if (toDate.HasValue)
-                        formattedMessage.AppendLine($"   • Đến ngày: {toDate.Value.ToString("dd/MM/yyyy")}");
-                    if (limit != 20)
-                        formattedMessage.AppendLine($"   • Giới hạn: {limit} báo cáo");
-                }
-
-                return JsonConvert.SerializeObject(new
-                {
-                    success = true,
-                    message = formattedMessage.ToString(),
-                    data = new
-                    {
-                        TotalStudents = students.Count,
-                        TotalReports = reportSummary.Count,
-                        TotalStudentNotes = totalStudentNotes,
-                        FilterApplied = new
-                        {
-                            StudentName = studentNameFilter,
-                            FromDate = fromDate?.ToString("yyyy-MM-dd"),
-                            ToDate = toDate?.ToString("yyyy-MM-dd"),
-                            Limit = limit
-                        },
-                        Reports = reportSummary
-                    }
-                }, Formatting.Indented);
-            }
-            catch (Exception ex)
-            {
-                return JsonConvert.SerializeObject(new
-                {
-                    success = false,
-                    message = "❌ Có lỗi xảy ra khi lấy báo cáo học tập. Vui lòng thử lại sau.",
-                    error = "INTERNAL_ERROR",
-                    errorDetails = ex.Message
-                }, Formatting.Indented);
+                return JsonConvert.SerializeObject(new { success = false, message = $"Không tìm thấy học sinh nào có tên '{studentNameFilter}' trong gia đình", error = "STUDENT_NOT_FOUND" }, Formatting.Indented);
             }
         }
+
+        DateTime? fromDate = null, toDate = null;
+        if (args.TryGetValue("from_date", out var fromDateObj) && DateTime.TryParseExact(fromDateObj?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedFromDate))
+        {
+            fromDate = parsedFromDate;
+        }
+
+        if (args.TryGetValue("to_date", out var toDateObj) && DateTime.TryParseExact(toDateObj?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedToDate))
+        {
+            toDate = parsedToDate.AddDays(1).AddSeconds(-1);
+        }
+        
+        var limit = 20;
+        if (args.TryGetValue("limit", out var limitObj) && int.TryParse(limitObj?.ToString(), out var parsedLimit))
+        {
+            limit = Math.Min(parsedLimit, 100);
+        }
+
+        var studentIds = students.Select(s => s.StudentID).ToList();
+
+        var reportsQuery = _context.LessonReports
+            .Include(lr => lr.TimetableSlot).ThenInclude(ts => ts.Subject)
+            .Include(lr => lr.TimetableSlot).ThenInclude(ts => ts.Timetable).ThenInclude(t => t.Class)
+            .Include(lr => lr.StudentLessonNotes.Where(sln => studentIds.Contains(sln.StudentID))).ThenInclude(sln => sln.Student)
+            .Where(lr => lr.IsDeleted != true && lr.StudentLessonNotes.Any(sln => studentIds.Contains(sln.StudentID)));
+        
+        if (fromDate.HasValue) reportsQuery = reportsQuery.Where(lr => lr.LessonDate >= fromDate.Value);
+        if (toDate.HasValue) reportsQuery = reportsQuery.Where(lr => lr.LessonDate <= toDate.Value);
+
+        var reports = await reportsQuery
+            .OrderByDescending(lr => lr.LessonDate)
+            .Take(limit)
+            .ToListAsync();
+
+        // --- Tạo đối tượng `reportSummary` y hệt code gốc của bạn ---
+        var reportSummary = reports.Select(report => new
+        {
+            ReportInfo = new
+            {
+                ReportId = report.ReportID,
+                LessonDate = report.LessonDate.ToString("dd/MM/yyyy"), // Giữ định dạng gốc
+                SubjectName = report.TimetableSlot.Subject?.SubjectName,
+                ClassName = report.TimetableSlot.Timetable?.Class?.ClassName,
+                TotalStudents = report.TotalStudents,
+                AbsentStudents = report.AbsentStudents,
+                Remarks = report.Remarks,
+                CreatedAt = report.CreatedAt.ToString("dd/MM/yyyy HH:mm") // Giữ định dạng gốc
+            },
+            StudentNotes = report.StudentLessonNotes
+                .Where(sln => studentIds.Contains(sln.StudentID))
+                .Select(note => new
+                {
+                    StudentId = note.StudentID,
+                    StudentName = note.Student?.FullName,
+                    NoteType = note.NoteType,
+                    Points = note.Points,
+                    Description = note.Description,
+                    CreatedAt = note.CreatedAt.ToString("dd/MM/yyyy HH:mm") // Giữ định dạng gốc
+                }).ToList()
+        }).Where(r => r.StudentNotes.Any()).ToList();
+
+        var totalStudentNotes = reportSummary.SelectMany(r => r.StudentNotes).Count();
+
+        // --- BỎ qua phần tạo bảng bằng StringBuilder và trả về JSON trực tiếp ---
+        return JsonConvert.SerializeObject(new
+        {
+            success = true,
+            message = "Truy xuất báo cáo học tập thành công.", // Message đơn giản
+            data = new
+            {
+                TotalStudents = students.Count,
+                TotalReports = reportSummary.Count,
+                TotalStudentNotes = totalStudentNotes,
+                FilterApplied = new
+                {
+                    StudentName = studentNameFilter,
+                    // Trả về định dạng gốc mà client gửi lên cho nhất quán
+                    FromDate = fromDate?.ToString("yyyy-MM-dd"), 
+                    ToDate = args.TryGetValue("to_date", out var tdo) ? tdo?.ToString() : null,
+                    Limit = limit
+                },
+                Reports = reportSummary // Đây chính là đối tượng dữ liệu bạn đã tạo
+            }
+        }, Formatting.Indented);
+    }
+    catch (Exception ex)
+    {
+        return JsonConvert.SerializeObject(new
+        {
+            success = false,
+            message = "❌ Có lỗi xảy ra khi lấy báo cáo học tập. Vui lòng thử lại sau.",
+            error = "INTERNAL_ERROR",
+            errorDetails = ex.Message
+        }, Formatting.Indented);
+    }
+}
 
         private async Task<string> GetStudentAttendanceAsync(Dictionary<string, object> args, string? userId = null)
+{
+    try
+    {
+        // --- PHẦN KIỂM TRA VÀ LẤY DỮ LIỆU BAN ĐẦU (GIỮ NGUYÊN) ---
+        if (string.IsNullOrEmpty(userId))
         {
-            try
+            return JsonConvert.SerializeObject(new { success = false, message = "Cần đăng nhập để xem điểm danh của con", error = "AUTHENTICATION_REQUIRED" }, Formatting.Indented);
+        }
+
+        var parent = await _parentRepository.GetByAccountIdAsync(userId);
+        if (parent == null)
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Không tìm thấy thông tin phụ huynh.", error = "PARENT_NOT_FOUND" }, Formatting.Indented);
+        }
+
+        var students = await _context.Students
+            .Include(s => s.Account)
+            .Include(s => s.Class)
+            .Where(s => s.ParentID == parent.ParentID)
+            .ToListAsync();
+
+        if (!students.Any())
+        {
+            return JsonConvert.SerializeObject(new { success = false, message = "Không tìm thấy thông tin học sinh nào trong tài khoản của bạn", error = "NO_STUDENTS_FOUND" }, Formatting.Indented);
+        }
+
+        // --- PHẦN XỬ LÝ BỘ LỌC (GIỮ NGUYÊN) ---
+        var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? studentNameObj?.ToString() : null;
+
+        if (!string.IsNullOrEmpty(studentNameFilter))
+        {
+            students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
+            if (!students.Any())
             {
-                if (string.IsNullOrEmpty(userId))
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Cần đăng nhập để xem điểm danh của con",
-                        error = "AUTHENTICATION_REQUIRED"
-                    }, Formatting.Indented);
-                }
-
-                // Get parent information
-                var parent = await _parentRepository.GetByAccountIdAsync(userId);
-                if (parent == null)
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin phụ huynh. Vui lòng đảm bảo bạn đã đăng nhập với tài khoản phụ huynh.",
-                        error = "PARENT_NOT_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Get all students of this parent
-                var students = await _context.Students
-                    .Include(s => s.Account)
-                    .Include(s => s.Class)
-                    .Where(s => s.ParentID == parent.ParentID)
-                    .ToListAsync();
-
-                if (!students.Any())
-                {
-                    return JsonConvert.SerializeObject(new
-                    {
-                        success = false,
-                        message = "Không tìm thấy thông tin học sinh nào trong tài khoản của bạn",
-                        error = "NO_STUDENTS_FOUND"
-                    }, Formatting.Indented);
-                }
-
-                // Filter by student name if provided
-                var studentNameFilter = args.TryGetValue("student_name", out var studentNameObj) ? 
-                    studentNameObj?.ToString() : null;
-
-                if (!string.IsNullOrEmpty(studentNameFilter))
-                {
-                    students = students.Where(s => s.FullName?.Contains(studentNameFilter, StringComparison.OrdinalIgnoreCase) == true).ToList();
-                    if (!students.Any())
-                    {
-                        return JsonConvert.SerializeObject(new
-                        {
-                            success = false,
-                            message = $"Không tìm thấy học sinh nào có tên '{studentNameFilter}' trong gia đình",
-                            error = "STUDENT_NOT_FOUND"
-                        }, Formatting.Indented);
-                    }
-                }
-
-                // Get date filters
-                DateTime? fromDate = null, toDate = null;
-                
-                if (args.TryGetValue("from_date", out var fromDateObj) && !string.IsNullOrEmpty(fromDateObj?.ToString()))
-                {
-                    if (DateTime.TryParseExact(fromDateObj.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedFromDate))
-                    {
-                        fromDate = parsedFromDate;
-                    }
-                }
-
-                if (args.TryGetValue("to_date", out var toDateObj) && !string.IsNullOrEmpty(toDateObj?.ToString()))
-                {
-                    if (DateTime.TryParseExact(toDateObj.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedToDate))
-                    {
-                        toDate = parsedToDate.AddDays(1).AddSeconds(-1); // Include entire day
-                    }
-                }
-
-                // Get subject filter
-                var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? 
-                    subjectNameObj?.ToString() : null;
-
-                // Get limit
-                var limit = 50;
-                if (args.TryGetValue("limit", out var limitObj) && int.TryParse(limitObj?.ToString(), out var parsedLimit))
-                {
-                    limit = Math.Min(parsedLimit, 200); // Max 200 attendance records
-                }
-
-                var studentIds = students.Select(s => s.StudentID).ToList();
-
-                // Get attendance records with timetable and subject info
-                var attendanceQuery = _context.Attendances
-                    .Include(a => a.TimetableSlot)
-                        .ThenInclude(ts => ts.Subject)
-                    .Include(a => a.TimetableSlot)
-                        .ThenInclude(ts => ts.Timetable)
-                        .ThenInclude(t => t.Class)
-                    .Include(a => a.Student)
-                    .Where(a => studentIds.Contains(a.StudentID) && a.IsDeleted != true);
-
-                if (fromDate.HasValue)
-                {
-                    // Get timetable slots within date range
-                    var validSlotIds = await _context.TimetableSlots
-                        .Include(ts => ts.Timetable)
-                        .Where(ts => ts.Timetable.StartDate <= toDate && ts.Timetable.EndDate >= fromDate)
-                        .Select(ts => ts.TimetableSlotID)
-                        .ToListAsync();
-                    
-                    attendanceQuery = attendanceQuery.Where(a => validSlotIds.Contains(a.TimetableSlotID));
-                }
-
-                if (!string.IsNullOrEmpty(subjectNameFilter))
-                {
-                    attendanceQuery = attendanceQuery.Where(a => a.TimetableSlot.Subject.SubjectName.Contains(subjectNameFilter));
-                }
-
-                var attendances = await attendanceQuery
-                    .OrderByDescending(a => a.TimetableSlot.Timetable.StartDate)
-                    .ThenBy(a => a.TimetableSlot.DayOfWeek)
-                    .ThenBy(a => a.TimetableSlot.StartTime)
-                    .Take(limit)
-                    .ToListAsync();
-
-                // Format the data
-                var attendanceSummary = attendances.GroupBy(a => a.Student).Select(studentGroup => new
-                {
-                    StudentInfo = new
-                    {
-                        StudentId = studentGroup.Key.StudentID,
-                        StudentName = studentGroup.Key.FullName,
-                        ClassName = studentGroup.Key.Class?.ClassName
-                    },
-                    AttendanceRecords = studentGroup.Select(a => new
-                    {
-                        AttendanceId = a.AttendanceID,
-                        SubjectName = a.TimetableSlot.Subject?.SubjectName,
-                        DayOfWeek = GetVietnameseDayOfWeek(a.TimetableSlot.DayOfWeek),
-                        StartTime = a.TimetableSlot.StartTime.ToString(@"hh\:mm"),
-                        EndTime = a.TimetableSlot.EndTime.ToString(@"hh\:mm"),
-                        Status = GetVietnameseAttendanceStatus(a.Status),
-                        StatusCode = a.Status,
-                        Note = a.Note,
-                        Room = a.TimetableSlot.Room,
-                        TimetableDate = a.TimetableSlot.Timetable.StartDate.ToString("dd/MM/yyyy") + " - " + a.TimetableSlot.Timetable.EndDate.ToString("dd/MM/yyyy")
-                    }).ToList()
-                }).ToList();
-
-                // Calculate statistics
-                var totalRecords = attendances.Count;
-                var presentCount = attendances.Count(a => a.Status == 1); // Assuming 1 = Present
-                var absentCount = attendances.Count(a => a.Status == 0); // Assuming 0 = Absent
-                var lateCount = attendances.Count(a => a.Status == 2); // Assuming 2 = Late
-
-                // Format dữ liệu thành bảng đẹp
-                var formattedMessage = new System.Text.StringBuilder();
-                formattedMessage.AppendLine($"📊 **ĐIỂM DANH HỌC SINH**");
-                formattedMessage.AppendLine($"Tìm thấy {totalRecords} bản ghi điểm danh cho {students.Count} học sinh" +
-                                          (fromDate.HasValue || toDate.HasValue ? $" từ {fromDate?.ToString("dd/MM/yyyy") ?? "..."} đến {toDate?.ToString("dd/MM/yyyy") ?? "..."}" : "") +
-                                          (string.IsNullOrEmpty(subjectNameFilter) ? "" : $" môn {subjectNameFilter}"));
-                formattedMessage.AppendLine();
-
-                if (attendanceSummary.Any())
-                {
-                    foreach (var student in attendanceSummary)
-                    {
-                        formattedMessage.AppendLine($"👨‍🎓 **{student.StudentInfo.StudentName}** (ID: {student.StudentInfo.StudentId})");
-                        formattedMessage.AppendLine($"   🏫 Lớp: {student.StudentInfo.ClassName ?? "N/A"}");
-                        formattedMessage.AppendLine();
-
-                        if (student.AttendanceRecords.Any())
-                        {
-                            formattedMessage.AppendLine("   📝 **BẢNG ĐIỂM DANH CHI TIẾT:**");
-                            formattedMessage.AppendLine("   ┌────────────────────────────────────────────────────────────────────────────────┐");
-                            formattedMessage.AppendLine("   │ MÔN HỌC           │ THỨ     │ TIẾT      │ TRẠNG THÁI  │ GHI CHÚ       │ PHÒNG │");
-                            formattedMessage.AppendLine("   ├────────────────────────────────────────────────────────────────────────────────┤");
-
-                            foreach (var record in student.AttendanceRecords.Take(20)) // Limit to 20 records per student
-                            {
-                                var subjectName = (record.SubjectName ?? "N/A").Length > 16 
-                                    ? (record.SubjectName ?? "N/A").Substring(0, 13) + "..." 
-                                    : (record.SubjectName ?? "N/A").PadRight(16);
-                                
-                                var dayOfWeek = (record.DayOfWeek ?? "N/A").PadRight(8);
-                                var timeSlot = $"{record.StartTime}-{record.EndTime}".PadRight(9);
-                                var status = (record.Status ?? "N/A").PadRight(11);
-                                var note = (record.Note ?? "").Length > 12 
-                                    ? (record.Note ?? "").Substring(0, 9) + "..."
-                                    : (record.Note ?? "").PadRight(12);
-                                var room = (record.Room ?? "").PadRight(5);
-
-                                var statusIcon = record.StatusCode switch
-                                {
-                                    1 => "✅", // Present
-                                    0 => "❌", // Absent  
-                                    2 => "⚠️", // Late
-                                    _ => "❓"  // Unknown
-                                };
-
-                                formattedMessage.AppendLine($"   │ {subjectName} │ {dayOfWeek} │ {timeSlot} │ {statusIcon} {status} │ {note} │ {room} │");
-                            }
-
-                            formattedMessage.AppendLine("   └────────────────────────────────────────────────────────────────────────────────┘");
-
-                            // Statistics for this student
-                            var studentPresent = student.AttendanceRecords.Count(r => r.StatusCode == 1);
-                            var studentAbsent = student.AttendanceRecords.Count(r => r.StatusCode == 0);
-                            var studentLate = student.AttendanceRecords.Count(r => r.StatusCode == 2);
-                            var studentTotal = student.AttendanceRecords.Count;
-                            var attendanceRate = studentTotal > 0 ? (double)studentPresent / studentTotal * 100 : 0;
-
-                            formattedMessage.AppendLine($"   📈 **Thống kê:** Có mặt: {studentPresent} | Vắng: {studentAbsent} | Muộn: {studentLate} | Tỷ lệ: {attendanceRate:F1}%");
-                        }
-                        else
-                        {
-                            formattedMessage.AppendLine("   📝 Không có dữ liệu điểm danh");
-                        }
-                        
-                        formattedMessage.AppendLine();
-                    }
-                }
-                else
-                {
-                    formattedMessage.AppendLine("📝 Không tìm thấy dữ liệu điểm danh nào cho các tiêu chí đã chọn.");
-                    if (!string.IsNullOrEmpty(studentNameFilter) || fromDate.HasValue || toDate.HasValue || !string.IsNullOrEmpty(subjectNameFilter))
-                    {
-                        formattedMessage.AppendLine("💡 Gợi ý: Thử mở rộng khoảng thời gian hoặc bỏ bớt điều kiện lọc.");
-                    }
-                }
-
-                // Thống kê tổng
-                var overallAttendanceRate = totalRecords > 0 ? (double)presentCount / totalRecords * 100 : 0;
-                formattedMessage.AppendLine("📈 **THỐNG KÊ TỔNG:**");
-                formattedMessage.AppendLine($"   • Tổng số học sinh: {students.Count}");
-                formattedMessage.AppendLine($"   • Tổng số bản ghi: {totalRecords}");
-                formattedMessage.AppendLine($"   • Có mặt: {presentCount} ({(totalRecords > 0 ? (double)presentCount/totalRecords*100 : 0):F1}%)");
-                formattedMessage.AppendLine($"   • Vắng mặt: {absentCount} ({(totalRecords > 0 ? (double)absentCount/totalRecords*100 : 0):F1}%)");
-                formattedMessage.AppendLine($"   • Đi muộn: {lateCount} ({(totalRecords > 0 ? (double)lateCount/totalRecords*100 : 0):F1}%)");
-
-                if (!string.IsNullOrEmpty(studentNameFilter) || fromDate.HasValue || toDate.HasValue || !string.IsNullOrEmpty(subjectNameFilter) || limit != 50)
-                {
-                    formattedMessage.AppendLine();
-                    formattedMessage.AppendLine("🔍 **BỘ LỌC ĐÃ ÁP DỤNG:**");
-                    if (!string.IsNullOrEmpty(studentNameFilter))
-                        formattedMessage.AppendLine($"   • Tên học sinh: {studentNameFilter}");
-                    if (fromDate.HasValue)
-                        formattedMessage.AppendLine($"   • Từ ngày: {fromDate.Value.ToString("dd/MM/yyyy")}");
-                    if (toDate.HasValue)
-                        formattedMessage.AppendLine($"   • Đến ngày: {toDate.Value.ToString("dd/MM/yyyy")}");
-                    if (!string.IsNullOrEmpty(subjectNameFilter))
-                        formattedMessage.AppendLine($"   • Môn học: {subjectNameFilter}");
-                    if (limit != 50)
-                        formattedMessage.AppendLine($"   • Giới hạn: {limit} bản ghi");
-                }
-
-                return JsonConvert.SerializeObject(new
-                {
-                    success = true,
-                    message = formattedMessage.ToString(),
-                    data = new
-                    {
-                        TotalStudents = students.Count,
-                        TotalRecords = totalRecords,
-                        PresentCount = presentCount,
-                        AbsentCount = absentCount,
-                        LateCount = lateCount,
-                        OverallAttendanceRate = overallAttendanceRate,
-                        FilterApplied = new
-                        {
-                            StudentName = studentNameFilter,
-                            FromDate = fromDate?.ToString("yyyy-MM-dd"),
-                            ToDate = toDate?.ToString("yyyy-MM-dd"),
-                            SubjectName = subjectNameFilter,
-                            Limit = limit
-                        },
-                        Students = attendanceSummary
-                    }
-                }, Formatting.Indented);
-            }
-            catch (Exception ex)
-            {
-                return JsonConvert.SerializeObject(new
-                {
-                    success = false,
-                    message = "❌ Có lỗi xảy ra khi lấy dữ liệu điểm danh. Vui lòng thử lại sau.",
-                    error = "INTERNAL_ERROR",
-                    errorDetails = ex.Message
-                }, Formatting.Indented);
+                return JsonConvert.SerializeObject(new { success = false, message = $"Không tìm thấy học sinh nào có tên '{studentNameFilter}'", error = "STUDENT_NOT_FOUND" }, Formatting.Indented);
             }
         }
+        
+        DateTime? fromDate = null, toDate = null;
+        if (args.TryGetValue("from_date", out var fromDateObj) && DateTime.TryParseExact(fromDateObj?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedFromDate))
+        {
+            fromDate = parsedFromDate;
+        }
+        if (args.TryGetValue("to_date", out var toDateObj) && DateTime.TryParseExact(toDateObj?.ToString(), "yyyy-MM-dd", CultureInfo.InvariantCulture, DateTimeStyles.None, out var parsedToDate))
+        {
+            toDate = parsedToDate.AddDays(1).AddSeconds(-1);
+        }
+
+        var subjectNameFilter = args.TryGetValue("subject_name", out var subjectNameObj) ? subjectNameObj?.ToString() : null;
+
+        var limit = 50;
+        if (args.TryGetValue("limit", out var limitObj) && int.TryParse(limitObj?.ToString(), out var parsedLimit))
+        {
+            limit = Math.Min(parsedLimit, 200);
+        }
+
+
+        var studentIds = students.Select(s => s.StudentID).ToList();
+        var attendanceQuery = _context.Attendances
+            .Include(a => a.TimetableSlot).ThenInclude(ts => ts.Subject)
+            .Include(a => a.TimetableSlot).ThenInclude(ts => ts.Timetable).ThenInclude(t => t.Class)
+            .Include(a => a.Student)
+            .Where(a => studentIds.Contains(a.StudentID) && a.IsDeleted != true);
+
+        if (fromDate.HasValue)
+        {
+            var validSlotIds = await _context.TimetableSlots
+                .Include(ts => ts.Timetable)
+                .Where(ts => ts.Timetable.StartDate <= toDate && ts.Timetable.EndDate >= fromDate)
+                .Select(ts => ts.TimetableSlotID)
+                .ToListAsync();
+            attendanceQuery = attendanceQuery.Where(a => validSlotIds.Contains(a.TimetableSlotID));
+        }
+
+        if (!string.IsNullOrEmpty(subjectNameFilter))
+        {
+            attendanceQuery = attendanceQuery.Where(a => a.TimetableSlot.Subject.SubjectName.Contains(subjectNameFilter));
+        }
+
+        var attendances = await attendanceQuery
+            .OrderByDescending(a => a.TimetableSlot.Timetable.StartDate)
+            .ThenBy(a => a.TimetableSlot.DayOfWeek)
+            .ThenBy(a => a.TimetableSlot.StartTime)
+            .Take(limit)
+            .ToListAsync();
+
+        // --- TẠO CẤU TRÚC DỮ LIỆU ĐỂ TRẢ VỀ (GIỮ NGUYÊN) ---
+        var attendanceSummary = attendances.GroupBy(a => a.Student).Select(studentGroup => new
+        {
+            StudentInfo = new
+            {
+                StudentId = studentGroup.Key.StudentID,
+                StudentName = studentGroup.Key.FullName,
+                ClassName = studentGroup.Key.Class?.ClassName
+            },
+            AttendanceRecords = studentGroup.Select(a => new
+            {
+                AttendanceId = a.AttendanceID,
+                SubjectName = a.TimetableSlot.Subject?.SubjectName,
+                DayOfWeek = GetVietnameseDayOfWeek(a.TimetableSlot.DayOfWeek),
+                StartTime = a.TimetableSlot.StartTime.ToString(@"hh\:mm"),
+                EndTime = a.TimetableSlot.EndTime.ToString(@"hh\:mm"),
+                Status = GetVietnameseAttendanceStatus(a.Status),
+                StatusCode = a.Status,
+                Note = a.Note,
+                Room = a.TimetableSlot.Room,
+                TimetableDate = a.TimetableSlot.Timetable.StartDate.ToString("dd/MM/yyyy") + " - " + a.TimetableSlot.Timetable.EndDate.ToString("dd/MM/yyyy")
+            }).ToList()
+        }).ToList();
+        
+        // --- TÍNH TOÁN THỐNG KÊ (GIỮ NGUYÊN) ---
+        var totalRecords = attendances.Count;
+        var presentCount = attendances.Count(a => a.Status == 1);
+        var absentCount = attendances.Count(a => a.Status == 0);
+        var lateCount = attendances.Count(a => a.Status == 2);
+        var overallAttendanceRate = totalRecords > 0 ? (double)presentCount / totalRecords * 100 : 0;
+        
+        // ---------->>> THAY ĐỔI CHÍNH BẮT ĐẦU TỪ ĐÂY <<<----------
+
+        // BỎ: Phần code tạo bảng bằng StringBuilder đã được loại bỏ.
+
+        // THAY ĐỔI: Trả về đối tượng JSON có cấu trúc thay vì chuỗi định dạng.
+        return JsonConvert.SerializeObject(new
+        {
+            success = true,
+            message = "Lấy dữ liệu điểm danh thành công.", // Thông điệp đơn giản
+            data = new
+            {
+                // Thống kê tổng quan
+                Statistics = new 
+                {
+                    TotalStudents = students.Count,
+                    TotalRecords = totalRecords,
+                    PresentCount = presentCount,
+                    AbsentCount = absentCount,
+                    LateCount = lateCount,
+                    OverallAttendanceRate = overallAttendanceRate
+                },
+                // Các bộ lọc đã áp dụng
+                FilterApplied = new
+                {
+                    StudentName = studentNameFilter,
+                    FromDate = fromDate?.ToString("yyyy-MM-dd"),
+                    ToDate = toDate?.ToString("yyyy-MM-dd"), // toDate đã được cộng 1 ngày, nên trừ đi để hiển thị đúng
+                    SubjectName = subjectNameFilter,
+                    Limit = limit
+                },
+                // Dữ liệu điểm danh chi tiết
+                Students = attendanceSummary
+            }
+        }, Formatting.Indented);
+    }
+    catch (Exception ex)
+    {
+        // (GIỮ NGUYÊN)
+        return JsonConvert.SerializeObject(new
+        {
+            success = false,
+            message = "❌ Có lỗi xảy ra khi lấy dữ liệu điểm danh. Vui lòng thử lại sau.",
+            error = "INTERNAL_ERROR",
+            errorDetails = ex.Message
+        }, Formatting.Indented);
+    }
+}
 
         private async Task<string> AddStudentAttendanceAsync(Dictionary<string, object> args, string? userId = null)
         {
