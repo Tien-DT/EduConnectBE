@@ -7,6 +7,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using Newtonsoft.Json;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -39,14 +40,13 @@ namespace EduConnect.Application.Services.Class
                     ParentID = request.ParentId,
                     Content = request.Content,
                     Target = request.Target,
+                    Category = request.Category ?? "Other",
                     DateTime = DateTime.UtcNow,
                     IsDeleted = false
                 };
 
                 var createdFeedback = await _feedbackRepository.CreateAsync(feedback);
-                
                 var feedbackWithParent = await _feedbackRepository.GetByIdAsync(createdFeedback.FeedbackID);
-                
                 var response = MapToFeedbackResponse(feedbackWithParent);
 
                 return ApiResponse<FeedbackResponse>.SuccessResponse(
@@ -188,22 +188,27 @@ namespace EduConnect.Application.Services.Class
             }
         }
 
-        public async Task<ApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId)
+        public async Task<PagedApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId, int pageIndex = 0, int pageSize = 10)
         {
             try
             {
-                var feedbacks = await _feedbackRepository.GetFeedbacksByParentIdAsync(parentId);
+                var (feedbacks, totalCount) = await _feedbackRepository.GetFeedbacksByParentIdAsync(parentId, pageIndex, pageSize);
                 var responses = feedbacks.Select(MapToFeedbackResponse).ToList();
 
-                return ApiResponse<List<FeedbackResponse>>.SuccessResponse(
+                return PagedApiResponse<List<FeedbackResponse>>.SuccessPagedResponse(
                     responses,
-                    "Feedbacks retrieved successfully");
+                    "Feedbacks retrieved successfully",
+                    totalCount,
+                    pageIndex,
+                    pageSize);
             }
             catch (Exception ex)
             {
-                return ApiResponse<List<FeedbackResponse>>.ErrorResponse(
+                return PagedApiResponse<List<FeedbackResponse>>.ErrorPagedResponse(
                     new List<string> { ex.Message },
-                    "Error retrieving feedbacks");
+                    "Error retrieving feedbacks",
+                    pageIndex,
+                    pageSize);
             }
         }
 
@@ -236,7 +241,7 @@ namespace EduConnect.Application.Services.Class
                     ? $"{feedback.Parent.Account.FirstName} {feedback.Parent.Account.LastName}".Trim()
                     : "Unknown",
                 Content = feedback.Content ?? string.Empty,
-                DateTime = feedback.DateTime,
+                CreatedAt = feedback.DateTime,
                 Target = feedback.Target ?? string.Empty,
                 IsDeleted = feedback.IsDeleted ?? false
             };

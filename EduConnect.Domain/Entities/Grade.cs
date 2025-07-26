@@ -26,4 +26,10 @@ public partial class Grade
 
     [StringLength(255)]
     public string? Evaluation { get; set; }
+
+    [ForeignKey("StudentID")]
+    public virtual Student Student { get; set; } = null!;
+
+    [ForeignKey("SubjectID")]
+    public virtual Subject Subject { get; set; } = null!;
 }

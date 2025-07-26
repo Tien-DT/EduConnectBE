@@ -66,7 +66,7 @@ namespace EduConnect.Presentation.Controllers
         {
             if (!string.IsNullOrEmpty(parentId))
             {
-                var result = await _feedbackService.GetFeedbacksByParentIdAsync(parentId);
+                var result = await _feedbackService.GetFeedbacksByParentIdAsync(parentId, pageIndex, pageSize);
                 if (result.Success)
                     return Ok(result);
                 return BadRequest(result);

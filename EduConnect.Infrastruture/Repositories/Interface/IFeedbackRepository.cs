@@ -14,7 +14,7 @@ namespace EduConnect.Infrastruture.Repositories.Interface
             bool ascending = false,
             string? targetFilter = null);
 
-        Task<List<Feedback>> GetFeedbacksByParentIdAsync(string parentId);
+        Task<(List<Feedback> items, int totalCount)> GetFeedbacksByParentIdAsync(string parentId, int pageIndex = 0, int pageSize = 10);
         Task<List<Feedback>> GetFeedbacksByTargetAsync(string target);
     }
 }

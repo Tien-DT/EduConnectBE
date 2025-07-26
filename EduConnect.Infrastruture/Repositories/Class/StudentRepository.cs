@@ -116,6 +116,8 @@ namespace EduConnect.Infrastruture.Repositories.Class
         public async Task<List<Student>> GetStudentsByClassIdAsync(int classId)
         {
             return await _context.Students
+                .Include(s => s.Parent)
+                .Include(s => s.Class)
                 .Where(s => s.ClassID == classId && (s.IsDeleted == null || s.IsDeleted == false))
                 .ToListAsync();
         }

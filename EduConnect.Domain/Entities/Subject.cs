@@ -26,5 +26,6 @@ namespace EduConnect.Domain.Entities
 
         public virtual ICollection<Lesson> Lessons { get; set; } = new List<Lesson>();
         public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
+        public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
     }
 }

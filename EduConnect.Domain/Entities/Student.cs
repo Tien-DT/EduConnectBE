@@ -39,4 +39,5 @@ public partial class Student
     public virtual ICollection<Attendance> Attendances { get; set; } = new List<Attendance>();
     public virtual ICollection<Exam> Exams { get; set; } = new List<Exam>();
     public virtual ICollection<StudentLessonNote> StudentLessonNotes { get; set; } = new List<StudentLessonNote>();
+    public virtual ICollection<Grade> Grades { get; set; } = new List<Grade>();
 }

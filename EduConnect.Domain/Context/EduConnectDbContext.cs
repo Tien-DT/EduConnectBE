@@ -32,6 +32,9 @@ namespace EduConnect.Data
         public DbSet<FirebaseToken> FirebaseTokens { get; set; }
         public DbSet<Notification> Notifications { get; set; }
 
+        public DbSet<Report> Reports { get; set; }
+        public DbSet<Prompt> Prompts { get; set; }
+
         protected override void OnModelCreating(ModelBuilder modelBuilder)
         {
             base.OnModelCreating(modelBuilder);
@@ -55,6 +58,7 @@ namespace EduConnect.Data
             modelBuilder.Entity<StudentLessonNote>().ToTable("StudentLessonNote");
             modelBuilder.Entity<FirebaseToken>().ToTable("FirebaseToken");
             modelBuilder.Entity<Notification>().ToTable("Notification");
+            modelBuilder.Entity<Prompt>().ToTable("Prompt");
 
             modelBuilder.Entity<Subject>()
                 .HasIndex(s => s.SubjectCode)
@@ -237,6 +241,48 @@ namespace EduConnect.Data
                 .WithMany(s => s.StudentLessonNotes)
                 .HasForeignKey(sln => sln.StudentID)
                 .OnDelete(DeleteBehavior.NoAction);
+            modelBuilder.Entity<Feedback>()
+                .HasOne(f => f.Teacher)
+                .WithMany()
+                .HasForeignKey(f => f.TeacherId)
+                .OnDelete(DeleteBehavior.SetNull);
+
+            modelBuilder.Entity<Report>()
+                .HasOne(r => r.Account)
+                .WithMany(u => u.Reports)
+                .HasForeignKey(r => r.AccountId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            modelBuilder.Entity<Prompt>()
+                .HasOne(p => p.Account)
+                .WithMany(u => u.Prompts)
+                .HasForeignKey(p => p.AccountId)
+                .OnDelete(DeleteBehavior.NoAction);
+
+            // Add index for better performance
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.AccountId)
+                .HasDatabaseName("IX_Prompt_AccountId");
+
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.Type)
+                .HasDatabaseName("IX_Prompt_Type");
+
+            modelBuilder.Entity<Prompt>()
+                .HasIndex(p => p.Status)
+                .HasDatabaseName("IX_Prompt_Status");
+
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Student)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.StudentID)
+                .OnDelete(DeleteBehavior.Restrict);
+
+            modelBuilder.Entity<Grade>()
+                .HasOne(g => g.Subject)
+                .WithMany(s => s.Grades)
+                .HasForeignKey(g => g.SubjectID)
+                .OnDelete(DeleteBehavior.Restrict);
         }
     }
 }

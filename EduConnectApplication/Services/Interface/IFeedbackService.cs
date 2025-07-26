@@ -18,7 +18,7 @@ namespace EduConnect.Application.Services.Interface
             string sortBy = "DateTime",
             bool ascending = false,
             string? targetFilter = null);
-        Task<ApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId);
+        Task<PagedApiResponse<List<FeedbackResponse>>> GetFeedbacksByParentIdAsync(string parentId, int pageIndex = 0, int pageSize = 10);
         Task<ApiResponse<List<FeedbackResponse>>> GetFeedbacksByTargetAsync(string target);
     }
 }

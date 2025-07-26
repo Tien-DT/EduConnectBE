@@ -1,5 +1,5 @@
 using EduConnect.Application.DTOs;
-using EduConnect.Application.Options;
+using EduConnect.Infrastruture.Options;
 using EduConnect.Application.Services.Interface;
 using MailKit.Net.Smtp;
 using MailKit.Security;

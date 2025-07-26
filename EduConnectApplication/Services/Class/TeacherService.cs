@@ -8,6 +8,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using EduConnectApplication.DTOs.Response;
 
 namespace EduConnect.Application.Services.Class
 {
@@ -20,6 +21,52 @@ namespace EduConnect.Application.Services.Class
         {
             _timetableSlotRepository = timetableSlotRepository;
             _teacherRepository = teacherRepository;
+        }
+        public async Task<ApiResponse<List<ClassWithTimetableResponse>>> GetClassesWithTimetableByTeacherAsync(string teacherId, int? timetableSlotId = null)
+        {
+            try
+            {
+                // Debug: Kiểm tra teacherId
+                if (string.IsNullOrEmpty(teacherId))
+                {
+                    return ApiResponse<List<ClassWithTimetableResponse>>.ErrorResponse(new List<string> { "TeacherId không được để trống" }, "Invalid teacherId");
+                }
+
+                // Lấy classes với TimetableSlotId dựa trên teacherId và timetableSlotId (nếu có)
+                var classesWithSlotId = await _timetableSlotRepository.GetClassesWithTimetableSlotIdByTeacherIdAsync(teacherId, timetableSlotId);
+                
+                if (classesWithSlotId == null || !classesWithSlotId.Any())
+                {
+                    var message = timetableSlotId.HasValue 
+                        ? $"Không tìm thấy lớp nào cho giáo viên {teacherId} với timetable slot {timetableSlotId}"
+                        : $"Không tìm thấy lớp nào cho giáo viên {teacherId}";
+                    
+                    return ApiResponse<List<ClassWithTimetableResponse>>.SuccessResponse(
+                        new List<ClassWithTimetableResponse>(), 
+                        message);
+                }
+
+                var classGroups = classesWithSlotId
+                    .GroupBy(x => new { x.Class.ClassID, x.Class.ClassName })
+                    .Select(g => new ClassWithTimetableResponse
+                    {
+                        ClassId = g.Key.ClassID,
+                        ClassName = g.Key.ClassName ?? string.Empty,
+                        TimetableSlotId = timetableSlotId ?? g.First().TimetableSlotId // Nếu filter theo timetableSlotId thì dùng đó, không thì lấy slot đầu tiên
+                    }).ToList();
+
+                var successMessage = timetableSlotId.HasValue 
+                    ? $"Lấy thông tin lớp thành công cho timetable slot {timetableSlotId}. Tìm thấy {classGroups.Count} lớp"
+                    : $"Lấy danh sách lớp thành công. Tìm thấy {classGroups.Count} lớp";
+
+                return ApiResponse<List<ClassWithTimetableResponse>>.SuccessResponse(
+                    classGroups, 
+                    successMessage);
+            }
+            catch (Exception ex)
+            {
+                return ApiResponse<List<ClassWithTimetableResponse>>.ErrorResponse(new List<string> { ex.Message }, "Lỗi khi lấy danh sách lớp");
+            }
         }
 
         public async Task<ApiResponse<TimetableResponse>> GetTimetableByTeacherIdAsync(string teacherId, DateTime? startDate = null, DateTime? endDate = null)

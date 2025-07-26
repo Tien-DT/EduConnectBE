@@ -284,7 +284,7 @@ namespace EduConnect.Application.Services.Class
                         Data = new ChatMessageResponse
                         {
                             Role = "bot",
-                            Message = $"Kết quả từ function {functionCallPart.FunctionCall.Name}:\n\n{functionResult}"
+                            Message = functionResult
                         }
                     };
                 }
@@ -368,15 +368,29 @@ namespace EduConnect.Application.Services.Class
             return sb.ToString();
         }
 
-        private string FormatCalculationInfo(dynamic calcData)
+        private string FormatCalculationInfo(dynamic calculationData)
         {
             var sb = new StringBuilder();
             sb.AppendLine("🧮 **Kết quả tính toán:**");
-            sb.AppendLine($"• Phép tính: {calcData.Operation}");
-            sb.AppendLine($"• Loại phép tính: {calcData.CalculationType}");
-            sb.AppendLine($"• Số thứ nhất: {calcData.Number1}");
-            sb.AppendLine($"• Số thứ hai: {calcData.Number2}");
-            sb.AppendLine($"• Kết quả: {calcData.Sum}");
+            
+            try
+            {
+                if (calculationData.success == true)
+                {
+                    sb.AppendLine($"• Số thứ nhất: {calculationData.data.Number1}");
+                    sb.AppendLine($"• Số thứ hai: {calculationData.data.Number2}");
+                    sb.AppendLine($"• Kết quả: {calculationData.data.Sum}");
+                    sb.AppendLine($"• Phép tính: {calculationData.data.Number1} + {calculationData.data.Number2} = {calculationData.data.Sum}");
+                }
+                else
+                {
+                    sb.AppendLine($"• Lỗi: {calculationData.message}");
+                }
+            }
+            catch
+            {
+                sb.AppendLine("• Không thể hiển thị kết quả tính toán");
+            }
             
             return sb.ToString();
         }

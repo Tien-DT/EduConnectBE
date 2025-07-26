@@ -3,6 +3,7 @@ using EduConnect.Domain.Entities;
 using System;
 using System.Threading.Tasks;
 using System.Collections.Generic;
+using EduConnectApplication.DTOs.Response;
 
 namespace EduConnect.Application.Services.Interface
 {
@@ -22,5 +23,13 @@ namespace EduConnect.Application.Services.Interface
             bool ascending = true,
             int pageIndex = 0,
             int pageSize = 10);
+
+        /// <summary>
+        /// Lấy danh sách lớp mà giáo viên có thời khóa biểu
+        /// </summary>
+        /// <param name="teacherId">Id của giáo viên</param>
+        /// <param name="timetableSlotId">Id của timetable slot (tùy chọn) để lọc class cụ thể</param>
+        /// <returns>Danh sách lớp</returns>
+        Task<ApiResponse<List<ClassWithTimetableResponse>>> GetClassesWithTimetableByTeacherAsync(string teacherId, int? timetableSlotId = null);
     }
 }

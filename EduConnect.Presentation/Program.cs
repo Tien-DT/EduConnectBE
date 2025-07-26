@@ -9,6 +9,7 @@ using EduConnect.Domain.Entities;
 using EduConnect.Infrastruture.Options;
 using EduConnect.Infrastruture.Repositories.Class;
 using EduConnect.Infrastruture.Repositories.Interface;
+using EduConnect.Infrastruture.Repositories;
 using EduConnect.Infrastruture.UnitOfWork.Class;
 using EduConnect.Infrastruture.UnitOfWork.Interface;
 using Microsoft.AspNetCore.Authentication.JwtBearer;
@@ -22,6 +23,8 @@ using AutoMapper;
 using EduConnect.Application.Mapping;
 using CloudinaryDotNet;
 using Microsoft.Extensions.Options;
+using EduConnectApplication.Services;
+using EduConnectApplication.Services.Interface;
 
 namespace EduConnect.Presentation
 {
@@ -141,8 +144,14 @@ namespace EduConnect.Presentation
             builder.Services.AddScoped<IEmailQueueService, EmailQueueService>();
             builder.Services.AddScoped<IEmailVerificationTokenService, EmailVerificationTokenService>();
             builder.Services.AddHostedService<EmailQueueBackgroundService>();
+            builder.Services.AddScoped<ILessonService, LessonService>();
+            builder.Services.AddScoped<ILessonRepository, LessonRepository>();
             builder.Services.AddScoped<IAttendanceRepository, AttendanceRepository>();
             builder.Services.AddScoped<IAttendanceService, AttendanceService>();
+
+            builder.Services.AddScoped<IReportService, ReportService>();
+            builder.Services.AddScoped<IPromptService, PromptService>();
+            builder.Services.AddScoped<IPromptRepository, PromptRepository>();
 
             builder.Services.AddAutoMapper(cfg => { cfg.AddProfile<ApplicationProfile>(); }, typeof(ApplicationProfile).Assembly);
 
